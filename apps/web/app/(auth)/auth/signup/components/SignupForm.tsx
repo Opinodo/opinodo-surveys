@@ -106,7 +106,7 @@ export const SignupForm = ({
         </div>
       )}
       <div className="text-center">
-        <h1 className="mb-4 text-slate-700">Create your Formbricks account</h1>
+        <h1 className="mb-4 text-slate-700">Create your Opinodo Surveys account</h1>
         <div className="space-y-2">
           <form onSubmit={handleSubmit} ref={formRef} className="space-y-2" onChange={checkFormValidity}>
             {showLogin && (
