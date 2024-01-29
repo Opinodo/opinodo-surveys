@@ -270,6 +270,32 @@ export const getSurveys = async (environmentId: string, page?: number): Promise<
   return surveys.map((survey) => formatDateFields(survey, ZSurvey));
 };
 
+export const getSurveysCount = async (environmentId: string): Promise<number> =>
+  unstable_cache(
+    async () => {
+      validateInputs([environmentId, ZId]);
+
+      try {
+        return await prisma.survey.count({
+          where: {
+            environmentId: environmentId,
+          },
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new DatabaseError(error.message);
+        }
+
+        throw error;
+      }
+    },
+    [`getSurveysCount-${environmentId}`],
+    {
+      tags: [surveyCache.tag.byEnvironmentId(environmentId)],
+      revalidate: SERVICES_REVALIDATION_INTERVAL,
+    }
+  )();
+
 export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => {
   validateInputs([updatedSurvey, ZSurvey]);
 
