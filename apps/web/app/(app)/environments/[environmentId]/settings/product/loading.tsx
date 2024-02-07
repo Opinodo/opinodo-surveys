@@ -31,6 +31,11 @@ export default function Loading() {
       skeletonLines: [{ classes: "h-4 w-28" }, { classes: "h-6 w-64" }, { classes: "h-8 w-24" }],
     },
     {
+      title: "Default Reward",
+      description: "Define the default reward for a survey in euros.",
+      skeletonLines: [{ classes: "h-4 w-28" }, { classes: "h-6 w-64" }, { classes: "h-8 w-24" }],
+    },
+    {
       title: "Delete Product",
       description:
         "Delete product with all surveys, responses, people, actions and attributes. This cannot be undone.",

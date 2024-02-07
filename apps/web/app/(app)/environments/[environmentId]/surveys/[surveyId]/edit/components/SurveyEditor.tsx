@@ -123,6 +123,7 @@ export default function SurveyEditor({
                 responseCount={responseCount}
                 membershipRole={membershipRole}
                 colours={colours}
+                product={product}
               />
             )}
           </main>

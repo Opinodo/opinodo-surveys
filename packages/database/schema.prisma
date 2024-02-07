@@ -413,6 +413,7 @@ model Product {
   placement            WidgetPlacement @default(bottomRight)
   clickOutsideClose    Boolean         @default(true)
   darkOverlay          Boolean         @default(false)
+  defaultRewardInEuros Float           @default(0)
 
   @@unique([teamId, name])
   @@index([teamId])

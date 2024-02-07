@@ -2,6 +2,7 @@ import { TActionClass } from "@formbricks/types/actionClasses";
 import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TMembershipRole } from "@formbricks/types/memberships";
+import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
 
 import HowToSendCard from "./HowToSendCard";
@@ -20,6 +21,7 @@ interface SettingsViewProps {
   responseCount: number;
   membershipRole?: TMembershipRole;
   colours: string[];
+  product: TProduct;
 }
 
 export default function SettingsView({
@@ -31,6 +33,7 @@ export default function SettingsView({
   responseCount,
   membershipRole,
   colours,
+  product,
 }: SettingsViewProps) {
   return (
     <div className="mt-12 space-y-3 p-5">
@@ -68,6 +71,7 @@ export default function SettingsView({
         setLocalSurvey={setLocalSurvey}
         colours={colours}
         environmentId={environment.id}
+        product={product}
       />
     </div>
   );

@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { cn } from "@formbricks/lib/cn";
 import { TPlacement } from "@formbricks/types/common";
+import { TProduct } from "@formbricks/types/product";
 import { TSurvey, TSurveyBackgroundBgType } from "@formbricks/types/surveys";
 import { ColorPicker } from "@formbricks/ui/ColorPicker";
 import { Input } from "@formbricks/ui/Input";
@@ -16,13 +17,12 @@ import { Switch } from "@formbricks/ui/Switch";
 import Placement from "./Placement";
 import SurveyBgSelectorTab from "./SurveyBgSelectorTab";
 
-const DEFAULT_SURVEY_REWARD = 1000;
-
 interface StylingCardProps {
   localSurvey: TSurvey;
   setLocalSurvey: React.Dispatch<React.SetStateAction<TSurvey>>;
   colours: string[];
   environmentId: string;
+  product: TProduct;
 }
 
 export default function StylingCard({
@@ -30,6 +30,7 @@ export default function StylingCard({
   setLocalSurvey,
   colours,
   environmentId,
+  product,
 }: StylingCardProps) {
   const [open, setOpen] = useState(localSurvey.type === "link" ? true : false);
   const progressBarHidden = localSurvey.styling?.hideProgressBar ?? false;
@@ -168,21 +169,26 @@ export default function StylingCard({
     });
   };
 
-  const [customReward] = useState(localSurvey.reward);
-  const [usingCustomReward, setUsingCustomReward] = useState(localSurvey.reward !== DEFAULT_SURVEY_REWARD);
+  const [customReward, setCustomReward] = useState(localSurvey.reward);
+  const [usingCustomReward, setUsingCustomReward] = useState(
+    localSurvey.reward !== product.defaultRewardInEuros
+  );
 
   const toggleUsingDefaultReward = (isChecked) => {
     setUsingCustomReward(isChecked);
     setLocalSurvey({
       ...localSurvey,
-      reward: isChecked ? customReward : DEFAULT_SURVEY_REWARD,
+      reward: isChecked ? customReward : product.defaultRewardInEuros,
     });
   };
 
   const updateSurveyReward = (e) => {
+    let newValue = parseFloat(e.target.value);
+    newValue = Math.min(Math.max(newValue, 0), 9.99);
+    setCustomReward(newValue);
     setLocalSurvey({
       ...localSurvey,
-      reward: parseFloat(e.target.value),
+      reward: newValue,
     });
   };
 
@@ -361,11 +367,11 @@ export default function StylingCard({
           <div className="p-3">
             <div className="ml-2 flex items-center space-x-1">
               <Switch
-                id="autoComplete"
+                id="customReward"
                 checked={usingCustomReward}
                 onCheckedChange={toggleUsingDefaultReward}
               />
-              <Label htmlFor="autoComplete" className="cursor-pointer">
+              <Label htmlFor="customReward" className="cursor-pointer">
                 <div className="ml-2">
                   <h3 className="text-sm font-semibold text-slate-700">Use Custom Reward</h3>
                   <p className="text-xs font-normal text-slate-500">Change the reward for this survey.</p>
@@ -379,8 +385,9 @@ export default function StylingCard({
                   autoFocus
                   type="number"
                   id="customRewardInput"
-                  value={localSurvey.reward}
+                  step="0.1"
                   onChange={updateSurveyReward}
+                  value={customReward}
                   className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
                 />
               </div>
