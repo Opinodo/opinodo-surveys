@@ -9,11 +9,14 @@ import { cn } from "@formbricks/lib/cn";
 import { TPlacement } from "@formbricks/types/common";
 import { TSurvey, TSurveyBackgroundBgType } from "@formbricks/types/surveys";
 import { ColorPicker } from "@formbricks/ui/ColorPicker";
+import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
 import { Switch } from "@formbricks/ui/Switch";
 
 import Placement from "./Placement";
 import SurveyBgSelectorTab from "./SurveyBgSelectorTab";
+
+const DEFAULT_SURVEY_REWARD = 1000;
 
 interface StylingCardProps {
   localSurvey: TSurvey;
@@ -162,6 +165,24 @@ export default function StylingCard({
         ...localSurvey.styling,
         hideProgressBar: !progressBarHidden,
       },
+    });
+  };
+
+  const [customReward] = useState(localSurvey.reward);
+  const [usingCustomReward, setUsingCustomReward] = useState(localSurvey.reward !== DEFAULT_SURVEY_REWARD);
+
+  const toggleUsingDefaultReward = (isChecked) => {
+    setUsingCustomReward(isChecked);
+    setLocalSurvey({
+      ...localSurvey,
+      reward: isChecked ? customReward : DEFAULT_SURVEY_REWARD,
+    });
+  };
+
+  const updateSurveyReward = (e) => {
+    setLocalSurvey({
+      ...localSurvey,
+      reward: parseFloat(e.target.value),
     });
   };
 
@@ -336,6 +357,34 @@ export default function StylingCard({
                 </div>
               </Label>
             </div>
+          </div>
+          <div className="p-3">
+            <div className="ml-2 flex items-center space-x-1">
+              <Switch
+                id="autoComplete"
+                checked={usingCustomReward}
+                onCheckedChange={toggleUsingDefaultReward}
+              />
+              <Label htmlFor="autoComplete" className="cursor-pointer">
+                <div className="ml-2">
+                  <h3 className="text-sm font-semibold text-slate-700">Use Custom Reward</h3>
+                  <p className="text-xs font-normal text-slate-500">Change the reward for this survey.</p>
+                </div>
+              </Label>
+            </div>
+            {usingCustomReward && (
+              <div>
+                <label htmlFor="customRewardInput">Custom Reward:</label>
+                <Input
+                  autoFocus
+                  type="number"
+                  id="customRewardInput"
+                  value={localSurvey.reward}
+                  onChange={updateSurveyReward}
+                  className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
+                />
+              </div>
+            )}
           </div>
           <div className="mt-2 flex items-center space-x-3 rounded-lg px-4 py-2 text-slate-500">
             <p className="text-xs">
