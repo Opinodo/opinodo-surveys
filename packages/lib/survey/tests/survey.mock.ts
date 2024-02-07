@@ -39,6 +39,7 @@ export const mockProduct: TProduct = {
   brandColor: "#000000",
   highlightBorderColor: "#000000",
   recontactDays: 0,
+  defaultRewardInEuros: 5,
   linkSurveyBranding: false,
   inAppSurveyBranding: false,
   placement: "bottomRight",
@@ -137,6 +138,7 @@ export const mockSurveyOutput: SurveyMock = {
   styling: null,
   pin: null,
   resultShareKey: null,
+  reward: 5,
   ...baseSurveyProperties,
 };
 
@@ -159,6 +161,7 @@ export const updateSurveyInput: TSurvey = {
   singleUse: null,
   pin: null,
   resultShareKey: null,
+  reward: 5,
   ...commonMockProperties,
   ...baseSurveyProperties,
   attributeFilters: [mockAttributeFilter],
