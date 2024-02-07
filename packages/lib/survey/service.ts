@@ -51,6 +51,7 @@ export const selectSurvey = {
   pin: true,
   resultShareKey: true,
   reward: true,
+  language: true,
   triggers: {
     select: {
       actionClass: {

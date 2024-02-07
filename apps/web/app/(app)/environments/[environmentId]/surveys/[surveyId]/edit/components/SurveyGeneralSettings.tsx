@@ -8,7 +8,7 @@ import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
-import { Select, SelectTrigger, SelectValue } from "@formbricks/ui/Select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@formbricks/ui/Select";
 import { Switch } from "@formbricks/ui/Switch";
 
 interface SurveyGeneralSettingsProps {
@@ -28,7 +28,7 @@ export default function SurveyGeneralSettings({
   const [usingCustomReward, setUsingCustomReward] = useState(
     localSurvey.reward !== product.defaultRewardInEuros
   );
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [selectedLanguage, setSelectedLanguage] = useState(localSurvey.language);
 
   const toggleUsingDefaultReward = (isChecked) => {
     setUsingCustomReward(isChecked);
@@ -48,7 +48,17 @@ export default function SurveyGeneralSettings({
     });
   };
 
-  // const languages = ["English", "Spanish", "French", "German"];
+  const handleLanguageChange = (selectedLanguage) => {
+    //todo: dont save full name but ISO code
+    setSelectedLanguage(selectedLanguage);
+    setLocalSurvey({
+      ...localSurvey,
+      language: selectedLanguage,
+    });
+  };
+
+  const languages = ["English", "Spanish", "French", "German"];
+  //todo: add ISO languages
 
   return (
     <Collapsible.Root
@@ -77,12 +87,18 @@ export default function SurveyGeneralSettings({
               <Label htmlFor="language" className="cursor-pointer">
                 Select Survey Language:
               </Label>
-              <Select
-                value={selectedLanguage}
-                onValueChange={(selectedLanguage) => setSelectedLanguage(selectedLanguage)}>
+              <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
                 <SelectTrigger className="w-[240px]">
-                  <SelectValue />
+                  <SelectValue>{selectedLanguage}</SelectValue>
                 </SelectTrigger>
+                {/*todo: make it searchable*/}
+                <SelectContent>
+                  {languages.map((language) => (
+                    <SelectItem key={language} value={language}>
+                      {language}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </div>
