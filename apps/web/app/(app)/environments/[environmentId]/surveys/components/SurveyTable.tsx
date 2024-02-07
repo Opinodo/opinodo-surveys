@@ -120,52 +120,51 @@ export default async function SurveyTable({ environmentId, searchParams }: Surve
             const singleUseId = isSingleUse ? generateSurveySingleUseId(isEncrypted) : undefined;
 
             return (
-              <Link
-                href={
-                  survey.status === "draft"
-                    ? `/environments/${environmentId}/surveys/${survey.id}/edit`
-                    : `/environments/${environmentId}/surveys/${survey.id}/summary`
-                }
-                key={survey.id}
-                className="w-full">
-                <div className="m-2 grid h-16  grid-cols-7 content-center rounded-lg hover:bg-slate-100">
-                  <div className="col-span-3 flex items-center pl-6 text-sm">
-                    <div className="ph-no-capture font-medium text-slate-900">{survey.name}</div>
-                  </div>
-                  <div className="col-span-2 my-auto hidden whitespace-nowrap text-center text-sm text-slate-500 sm:block">
-                    <div className="ph-no-capture text-slate-900">
-                      <div className="flex justify-center">
-                        {survey.status !== "draft" && (
-                          <>
-                            {(survey.type === "link" || environment.widgetSetupCompleted) && (
-                              <SurveyStatusIndicator status={survey.status} />
-                            )}
-                          </>
-                        )}
-                        {survey.status === "draft" && (
-                          <span className="text-xs italic text-slate-400">Draft</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-span-2 my-auto hidden whitespace-nowrap text-center text-sm text-slate-500 sm:block">
-                    <div className="ph-no-capture text-slate-900">
-                      <div className="mr-5 flex justify-end">
-                        <SurveyDropDownMenu
-                          survey={survey}
-                          key={`surveys-${survey.id}`}
-                          environmentId={environmentId}
-                          environment={environment}
-                          otherEnvironment={otherEnvironment!}
-                          webAppUrl={WEBAPP_URL}
-                          singleUseId={singleUseId}
-                          isSurveyCreationDeletionDisabled={isSurveyCreationDeletionDisabled}
-                        />
-                      </div>
+              <div className="m-2 grid h-16  grid-cols-7 content-center rounded-lg hover:bg-slate-100">
+                <Link
+                  href={
+                    survey.status === "draft"
+                      ? `/environments/${environmentId}/surveys/${survey.id}/edit`
+                      : `/environments/${environmentId}/surveys/${survey.id}/summary`
+                  }
+                  key={survey.id}
+                  className="col-span-3 flex items-center pl-6 text-sm">
+                  <div className="ph-no-capture font-medium text-slate-900">{survey.name}</div>
+                </Link>
+
+                <div className="col-span-2 my-auto hidden whitespace-nowrap text-center text-sm text-slate-500 sm:block">
+                  <div className="ph-no-capture text-slate-900">
+                    <div className="flex justify-center">
+                      {survey.status !== "draft" && (
+                        <>
+                          {(survey.type === "link" || environment.widgetSetupCompleted) && (
+                            <SurveyStatusIndicator status={survey.status} />
+                          )}
+                        </>
+                      )}
+                      {survey.status === "draft" && (
+                        <span className="text-xs italic text-slate-400">Draft</span>
+                      )}
                     </div>
                   </div>
                 </div>
-              </Link>
+                <div className="col-span-2 my-auto hidden whitespace-nowrap text-center text-sm text-slate-500 sm:block">
+                  <div className="ph-no-capture text-slate-900">
+                    <div className="mr-5 flex justify-end">
+                      <SurveyDropDownMenu
+                        survey={survey}
+                        key={`surveys-${survey.id}`}
+                        environmentId={environmentId}
+                        environment={environment}
+                        otherEnvironment={otherEnvironment!}
+                        webAppUrl={WEBAPP_URL}
+                        singleUseId={singleUseId}
+                        isSurveyCreationDeletionDisabled={isSurveyCreationDeletionDisabled}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             );
           })}
       </div>
