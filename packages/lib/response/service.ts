@@ -253,6 +253,7 @@ export const createResponse = async (responseInput: TResponseInput): Promise<TRe
       id: response.id,
       personId: response.person?.id,
       surveyId: response.surveyId,
+      ...(response.singleUseId && { singleUseId: response.singleUseId }),
     });
 
     responseNoteCache.revalidate({
