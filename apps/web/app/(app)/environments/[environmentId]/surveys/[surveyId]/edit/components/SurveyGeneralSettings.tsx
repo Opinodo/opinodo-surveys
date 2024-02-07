@@ -1,5 +1,3 @@
-"use client";
-
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { useState } from "react";
@@ -10,6 +8,7 @@ import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
+import { Select, SelectTrigger, SelectValue } from "@formbricks/ui/Select";
 import { Switch } from "@formbricks/ui/Switch";
 
 interface SurveyGeneralSettingsProps {
@@ -25,11 +24,11 @@ export default function SurveyGeneralSettings({
   product,
 }: SurveyGeneralSettingsProps) {
   const [open, setOpen] = useState(false);
-
   const [customReward, setCustomReward] = useState(localSurvey.reward);
   const [usingCustomReward, setUsingCustomReward] = useState(
     localSurvey.reward !== product.defaultRewardInEuros
   );
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
 
   const toggleUsingDefaultReward = (isChecked) => {
     setUsingCustomReward(isChecked);
@@ -48,6 +47,8 @@ export default function SurveyGeneralSettings({
       reward: newValue,
     });
   };
+
+  // const languages = ["English", "Spanish", "French", "German"];
 
   return (
     <Collapsible.Root
@@ -73,6 +74,20 @@ export default function SurveyGeneralSettings({
         <div className="p-3">
           <div className="p-3">
             <div className="ml-2 flex items-center space-x-1">
+              <Label htmlFor="language" className="cursor-pointer">
+                Select Survey Language:
+              </Label>
+              <Select
+                value={selectedLanguage}
+                onValueChange={(selectedLanguage) => setSelectedLanguage(selectedLanguage)}>
+                <SelectTrigger className="w-[240px]">
+                  <SelectValue />
+                </SelectTrigger>
+              </Select>
+            </div>
+          </div>
+          <div className="p-3">
+            <div className="ml-2 flex items-center space-x-1">
               <Switch
                 id="customReward"
                 checked={usingCustomReward}
@@ -86,8 +101,10 @@ export default function SurveyGeneralSettings({
               </Label>
             </div>
             {usingCustomReward && (
-              <div>
-                <label htmlFor="customRewardInput">Custom Reward:</label>
+              <div className="ml-2">
+                <Label htmlFor="customRewardInput" className="cursor-pointer">
+                  Custom Reward:
+                </Label>
                 <Input
                   autoFocus
                   type="number"
