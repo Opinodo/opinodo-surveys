@@ -4,7 +4,7 @@ import { TEnvironment } from "@formbricks/types/environment";
 import { TMembershipRole } from "@formbricks/types/memberships";
 import { TSurvey } from "@formbricks/types/surveys";
 
-import HowToSendCard from "./HowToSendCard";
+// import HowToSendCard from "./HowToSendCard";
 import RecontactOptionsCard from "./RecontactOptionsCard";
 import ResponseOptionsCard from "./ResponseOptionsCard";
 import StylingCard from "./StylingCard";
@@ -34,7 +34,7 @@ export default function SettingsView({
 }: SettingsViewProps) {
   return (
     <div className="mt-12 space-y-3 p-5">
-      <HowToSendCard localSurvey={localSurvey} setLocalSurvey={setLocalSurvey} environment={environment} />
+      {/*<HowToSendCard localSurvey={localSurvey} setLocalSurvey={setLocalSurvey} environment={environment} />*/}
 
       <WhoToSendCard
         localSurvey={localSurvey}
