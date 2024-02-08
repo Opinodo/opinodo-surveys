@@ -1,7 +1,10 @@
+import SurveyGeneralSettings from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/edit/components/SurveyGeneralSettings";
+
 import { TActionClass } from "@formbricks/types/actionClasses";
 import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TMembershipRole } from "@formbricks/types/memberships";
+import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
 
 // import HowToSendCard from "./HowToSendCard";
@@ -20,6 +23,7 @@ interface SettingsViewProps {
   responseCount: number;
   membershipRole?: TMembershipRole;
   colours: string[];
+  product: TProduct;
 }
 
 export default function SettingsView({
@@ -31,9 +35,17 @@ export default function SettingsView({
   responseCount,
   membershipRole,
   colours,
+  product,
 }: SettingsViewProps) {
   return (
     <div className="mt-12 space-y-3 p-5">
+      <SurveyGeneralSettings
+        localSurvey={localSurvey}
+        setLocalSurvey={setLocalSurvey}
+        environment={environment}
+        product={product}
+      />
+
       {/*<HowToSendCard localSurvey={localSurvey} setLocalSurvey={setLocalSurvey} environment={environment} />*/}
 
       <WhoToSendCard

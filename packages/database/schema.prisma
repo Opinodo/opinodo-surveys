@@ -301,6 +301,7 @@ model Survey {
   pin               String?
   resultShareKey    String? @unique
   reward            Float   @default(0)
+  language          String  @default("en")
 
   @@index([environmentId])
 }
@@ -413,6 +414,7 @@ model Product {
   placement            WidgetPlacement @default(bottomRight)
   clickOutsideClose    Boolean         @default(true)
   darkOverlay          Boolean         @default(false)
+  defaultRewardInEuros Float           @default(0)
 
   @@unique([teamId, name])
   @@index([teamId])
