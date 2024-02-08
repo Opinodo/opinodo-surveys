@@ -51,6 +51,7 @@ export const selectSurvey = {
   pin: true,
   resultShareKey: true,
   reward: true,
+  language: true,
   triggers: {
     select: {
       actionClass: {
@@ -441,6 +442,10 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
     ...data,
   };
 
+  if (data.reward !== undefined) {
+    data.reward = Math.max(0, Math.min(9.99, data.reward));
+  }
+
   try {
     const prismaSurvey = await prisma.survey.update({
       where: { id: surveyId },
@@ -451,7 +456,6 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       ...prismaSurvey, // Properties from prismaSurvey
       triggers: updatedSurvey.triggers ? updatedSurvey.triggers : [], // Include triggers from updatedSurvey
       attributeFilters: updatedSurvey.attributeFilters ? updatedSurvey.attributeFilters : [],
-      reward: 0,
     };
 
     surveyCache.revalidate({

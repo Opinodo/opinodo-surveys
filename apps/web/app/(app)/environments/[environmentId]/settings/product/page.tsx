@@ -12,6 +12,7 @@ import { SettingsId } from "@formbricks/ui/SettingsId";
 import SettingsCard from "../components/SettingsCard";
 import SettingsTitle from "../components/SettingsTitle";
 import DeleteProduct from "./components/DeleteProduct";
+import EditDefaultReward from "./components/EditDefaultReward";
 import EditProductName from "./components/EditProductName";
 import EditWaitingTime from "./components/EditWaitingTime";
 
@@ -55,6 +56,9 @@ export default async function ProfileSettingsPage({ params }: { params: { enviro
         title="Recontact Waiting Time"
         description="Control how frequently users can be surveyed across all surveys.">
         <EditWaitingTime environmentId={params.environmentId} product={product} />
+      </SettingsCard>
+      <SettingsCard title="Default Reward" description="Define the default reward for a survey in euros.">
+        <EditDefaultReward environmentId={params.environmentId} product={product} />
       </SettingsCard>
       <SettingsCard
         title="Delete Product"

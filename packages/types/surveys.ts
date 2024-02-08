@@ -433,6 +433,7 @@ export const ZSurvey = z.object({
   pin: z.string().nullable().optional(),
   resultShareKey: z.string().nullable(),
   reward: z.number(),
+  language: z.string(),
 });
 
 export const ZSurveyInput = z.object({
