@@ -1,10 +1,9 @@
+import OpinodoLogo from "@/images/opinodo-logo.png";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
 import Link from "next/link";
 
 import { TSurveySingleUse } from "@formbricks/types/surveys";
-
-import footerLogo from "../lib/footerlogo.svg";
 
 type SurveyLinkUsedProps = {
   singleUseMessage: TSurveySingleUse | null;
@@ -27,7 +26,7 @@ const SurveyLinkUsed = ({ singleUseMessage }: SurveyLinkUsedProps) => {
       </div>
       <div>
         <Link href="https://formbricks.com">
-          <Image src={footerLogo} alt="Brand logo" className="mx-auto w-40" />
+          <Image src={OpinodoLogo} alt="Brand logo" className="mx-auto w-40" />
         </Link>
       </div>
     </div>
