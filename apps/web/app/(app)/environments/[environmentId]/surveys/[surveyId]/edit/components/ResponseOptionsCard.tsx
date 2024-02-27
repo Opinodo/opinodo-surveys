@@ -11,7 +11,6 @@ import { AdvancedOptionToggle } from "@formbricks/ui/AdvancedOptionToggle";
 import { DatePicker } from "@formbricks/ui/DatePicker";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
-import { Switch } from "@formbricks/ui/Switch";
 
 interface ResponseOptionsCardProps {
   localSurvey: TSurvey;
@@ -31,6 +30,7 @@ export default function ResponseOptionsCard({
   useState;
   const [redirectUrl, setRedirectUrl] = useState<string | null>("");
   const [surveyClosedMessageToggle, setSurveyClosedMessageToggle] = useState(false);
+  const [surveyLinkUsedMessageToggle, setSurveyLinkUsedMessageToggle] = useState(false);
   const [verifyEmailToggle, setVerifyEmailToggle] = useState(false);
 
   const [surveyClosedMessage, setSurveyClosedMessage] = useState({
@@ -118,6 +118,12 @@ export default function ResponseOptionsCard({
     }
   };
 
+  const handleSurveyLinkUsedMessageToggle = () => {
+    setSurveyLinkUsedMessageToggle((prev) => !prev);
+
+    setLocalSurvey({ ...localSurvey, singleUse: { enabled: true, isEncrypted: true } });
+  };
+
   const handleVerifyEmailToogle = () => {
     setVerifyEmailToggle((prev) => !prev);
 
@@ -152,16 +158,16 @@ export default function ResponseOptionsCard({
     setLocalSurvey({ ...localSurvey, surveyClosedMessage: message });
   };
 
-  const handleSingleUseSurveyToggle = () => {
-    if (!localSurvey.singleUse?.enabled) {
-      setLocalSurvey({
-        ...localSurvey,
-        singleUse: { enabled: true, ...singleUseMessage, isEncrypted: singleUseEncryption },
-      });
-    } else {
-      setLocalSurvey({ ...localSurvey, singleUse: { enabled: false, isEncrypted: false } });
-    }
-  };
+  // const handleSingleUseSurveyToggle = () => {
+  //   if (!localSurvey.singleUse?.enabled) {
+  //     setLocalSurvey({
+  //       ...localSurvey,
+  //       singleUse: { enabled: true, ...singleUseMessage, isEncrypted: singleUseEncryption },
+  //     });
+  //   } else {
+  //     setLocalSurvey({ ...localSurvey, singleUse: { enabled: false, isEncrypted: false } });
+  //   }
+  // };
 
   const handleSingleUseSurveyMessageChange = ({
     heading,
@@ -183,21 +189,21 @@ export default function ResponseOptionsCard({
     });
   };
 
-  const hangleSingleUseEncryptionToggle = () => {
-    if (!singleUseEncryption) {
-      setSingleUseEncryption(true);
-      setLocalSurvey({
-        ...localSurvey,
-        singleUse: { enabled: true, ...singleUseMessage, isEncrypted: true },
-      });
-    } else {
-      setSingleUseEncryption(false);
-      setLocalSurvey({
-        ...localSurvey,
-        singleUse: { enabled: true, ...singleUseMessage, isEncrypted: false },
-      });
-    }
-  };
+  // const hangleSingleUseEncryptionToggle = () => {
+  //   if (!singleUseEncryption) {
+  //     setSingleUseEncryption(true);
+  //     setLocalSurvey({
+  //       ...localSurvey,
+  //       singleUse: { enabled: true, ...singleUseMessage, isEncrypted: true },
+  //     });
+  //   } else {
+  //     setSingleUseEncryption(false);
+  //     setLocalSurvey({
+  //       ...localSurvey,
+  //       singleUse: { enabled: true, ...singleUseMessage, isEncrypted: false },
+  //     });
+  //   }
+  // };
 
   const handleVerifyEmailSurveyDetailsChange = ({
     name,
@@ -406,28 +412,17 @@ export default function ResponseOptionsCard({
                 </div>
               </AdvancedOptionToggle>
 
-              {/* Single User Survey Options */}
+              {/* Adjust Survey Link Used Message */}
               <AdvancedOptionToggle
-                htmlId="singleUserSurveyOptions"
-                isChecked={!!localSurvey.singleUse?.enabled}
-                onToggle={handleSingleUseSurveyToggle}
-                title="Single-Use Survey Links"
-                description="Allow only 1 response per survey link."
+                htmlId="adjustSurveyLinkUsedMessage"
+                isChecked={surveyLinkUsedMessageToggle}
+                onToggle={handleSurveyLinkUsedMessageToggle}
+                title="Adjust 'Survey Used' message"
+                description="Change the message visitors see when the survey has been already used."
                 childBorder={true}>
                 <div className="flex w-full items-center space-x-1 p-4 pb-4">
                   <div className="w-full cursor-pointer items-center  bg-slate-50">
-                    <div className="row mb-2 flex cursor-default items-center space-x-2">
-                      <Label htmlFor="howItWorks">How it works</Label>
-                    </div>
-                    <ul className="mb-3 ml-4 cursor-default list-inside list-disc space-y-1">
-                      <li className="text-sm text-slate-600">
-                        Blocks survey if the survey URL has no Single Use Id (suId).
-                      </li>
-                      <li className="text-sm text-slate-600">
-                        Blocks survey if a submission with the Single Use Id (suId) in the URL exists already.
-                      </li>
-                    </ul>
-                    <Label htmlFor="headline">&lsquo;Link Used&rsquo; Message</Label>
+                    <Label htmlFor="headline">‘Link Used’ Message</Label>
                     <Input
                       autoFocus
                       id="heading"
@@ -439,32 +434,75 @@ export default function ResponseOptionsCard({
 
                     <Label htmlFor="headline">Subheading</Label>
                     <Input
-                      className="mb-4 mt-2 bg-white"
+                      className="mt-2 bg-white"
                       id="subheading"
                       name="subheading"
                       defaultValue={singleUseMessage.subheading}
                       onChange={(e) => handleSingleUseSurveyMessageChange({ subheading: e.target.value })}
                     />
-                    <Label htmlFor="headline">URL Encryption</Label>
-                    <div>
-                      <div className="mt-2 flex items-center space-x-1 ">
-                        <Switch
-                          id="encryption-switch"
-                          checked={singleUseEncryption}
-                          onCheckedChange={hangleSingleUseEncryptionToggle}
-                        />
-                        <Label htmlFor="encryption-label">
-                          <div className="ml-2">
-                            <p className="text-sm font-normal text-slate-600">
-                              Enable encryption of Single Use Id (suId) in survey URL.
-                            </p>
-                          </div>
-                        </Label>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </AdvancedOptionToggle>
+
+              {/* Single User Survey Options */}
+              {/*<AdvancedOptionToggle*/}
+              {/*  htmlId="singleUserSurveyOptions"*/}
+              {/*  isChecked={!!localSurvey.singleUse?.enabled}*/}
+              {/*  onToggle={handleSingleUseSurveyToggle}*/}
+              {/*  title="Single-Use Survey Links"*/}
+              {/*  description="Allow only 1 response per survey link."*/}
+              {/*  childBorder={true}>*/}
+              {/*  <div className="flex w-full items-center space-x-1 p-4 pb-4">*/}
+              {/*    <div className="w-full cursor-pointer items-center  bg-slate-50">*/}
+              {/*      <div className="row mb-2 flex cursor-default items-center space-x-2">*/}
+              {/*        <Label htmlFor="howItWorks">How it works</Label>*/}
+              {/*      </div>*/}
+              {/*      <ul className="mb-3 ml-4 cursor-default list-inside list-disc space-y-1">*/}
+              {/*        <li className="text-sm text-slate-600">*/}
+              {/*          Blocks survey if the survey URL has no Single Use Id (suId).*/}
+              {/*        </li>*/}
+              {/*        <li className="text-sm text-slate-600">*/}
+              {/*          Blocks survey if a submission with the Single Use Id (suId) in the URL exists already.*/}
+              {/*        </li>*/}
+              {/*      </ul>*/}
+              {/*      <Label htmlFor="headline">&lsquo;Link Used&rsquo; Message</Label>*/}
+              {/*      <Input*/}
+              {/*        autoFocus*/}
+              {/*        id="heading"*/}
+              {/*        className="mb-4 mt-2 bg-white"*/}
+              {/*        name="heading"*/}
+              {/*        defaultValue={singleUseMessage.heading}*/}
+              {/*        onChange={(e) => handleSingleUseSurveyMessageChange({ heading: e.target.value })}*/}
+              {/*      />*/}
+
+              {/*      <Label htmlFor="headline">Subheading</Label>*/}
+              {/*      <Input*/}
+              {/*        className="mb-4 mt-2 bg-white"*/}
+              {/*        id="subheading"*/}
+              {/*        name="subheading"*/}
+              {/*        defaultValue={singleUseMessage.subheading}*/}
+              {/*        onChange={(e) => handleSingleUseSurveyMessageChange({ subheading: e.target.value })}*/}
+              {/*      />*/}
+              {/*      <Label htmlFor="headline">URL Encryption</Label>*/}
+              {/*      <div>*/}
+              {/*        <div className="mt-2 flex items-center space-x-1 ">*/}
+              {/*          <Switch*/}
+              {/*            id="encryption-switch"*/}
+              {/*            checked={singleUseEncryption}*/}
+              {/*            onCheckedChange={hangleSingleUseEncryptionToggle}*/}
+              {/*          />*/}
+              {/*          <Label htmlFor="encryption-label">*/}
+              {/*            <div className="ml-2">*/}
+              {/*              <p className="text-sm font-normal text-slate-600">*/}
+              {/*                Enable encryption of Single Use Id (suId) in survey URL.*/}
+              {/*              </p>*/}
+              {/*            </div>*/}
+              {/*          </Label>*/}
+              {/*        </div>*/}
+              {/*      </div>*/}
+              {/*    </div>*/}
+              {/*  </div>*/}
+              {/*</AdvancedOptionToggle>*/}
 
               {/* Verify Email Section */}
               <AdvancedOptionToggle
