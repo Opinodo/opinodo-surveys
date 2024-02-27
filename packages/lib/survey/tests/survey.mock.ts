@@ -125,6 +125,7 @@ const baseSurveyProperties = {
     subheading: "please verify your email",
   },
   attributeFilters: [],
+  reward: 5,
   ...commonMockProperties,
 };
 
@@ -138,7 +139,6 @@ export const mockSurveyOutput: SurveyMock = {
   styling: null,
   pin: null,
   resultShareKey: null,
-  reward: 5,
   language: "en",
   countries: [],
   ...baseSurveyProperties,
@@ -163,7 +163,6 @@ export const updateSurveyInput: TSurvey = {
   singleUse: null,
   pin: null,
   resultShareKey: null,
-  reward: 5,
   language: "en",
   countries: [],
   ...commonMockProperties,
