@@ -140,6 +140,7 @@ export const mockSurveyOutput: SurveyMock = {
   resultShareKey: null,
   reward: 5,
   language: "en",
+  countries: [],
   ...baseSurveyProperties,
 };
 
@@ -164,6 +165,7 @@ export const updateSurveyInput: TSurvey = {
   resultShareKey: null,
   reward: 5,
   language: "en",
+  countries: [],
   ...commonMockProperties,
   ...baseSurveyProperties,
   attributeFilters: [mockAttributeFilter],

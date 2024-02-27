@@ -13,7 +13,7 @@ import { createProduct } from "@formbricks/lib/product/service";
 import { createShortUrl } from "@formbricks/lib/shortUrl/service";
 import { canUserAccessSurvey, verifyUserRoleAccess } from "@formbricks/lib/survey/auth";
 import { surveyCache } from "@formbricks/lib/survey/cache";
-import { deleteSurvey, duplicateSurvey, getSurvey } from "@formbricks/lib/survey/service";
+import { deleteSurvey, duplicateSurvey, getAllDbCountries, getSurvey } from "@formbricks/lib/survey/service";
 import { createTeam, getTeamByEnvironmentId } from "@formbricks/lib/team/service";
 import { AuthenticationError, AuthorizationError, ResourceNotFoundError } from "@formbricks/types/errors";
 
@@ -229,6 +229,10 @@ export const deleteSurveyAction = async (surveyId: string) => {
   if (!hasDeleteAccess) throw new AuthorizationError("Not authorized");
 
   await deleteSurvey(surveyId);
+};
+
+export const getAllCountries = async () => {
+  return await getAllDbCountries();
 };
 
 export const createProductAction = async (environmentId: string, productName: string) => {

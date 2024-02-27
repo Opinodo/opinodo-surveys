@@ -404,6 +404,10 @@ const ZSurveyStatus = z.enum(["draft", "inProgress", "paused", "completed"]);
 
 export type TSurveyStatus = z.infer<typeof ZSurveyStatus>;
 
+export const ZCountry = z.object({
+  name: z.string(),
+  isoCode: z.string(),
+});
 export const ZSurvey = z.object({
   id: z.string().cuid2(),
   createdAt: z.date(),
@@ -434,6 +438,7 @@ export const ZSurvey = z.object({
   resultShareKey: z.string().nullable(),
   reward: z.number(),
   language: z.string(),
+  countries: z.array(ZCountry),
 });
 
 export const ZSurveyInput = z.object({

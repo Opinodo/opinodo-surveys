@@ -52,6 +52,7 @@ export const selectSurvey = {
   resultShareKey: true,
   reward: true,
   language: true,
+  countries: true,
   triggers: {
     select: {
       actionClass: {
@@ -311,7 +312,13 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
     throw new ResourceNotFoundError("Survey", surveyId);
   }
 
-  const { triggers, attributeFilters, environmentId, ...surveyData } = updatedSurvey;
+  const { countries, triggers, attributeFilters, environmentId, ...surveyData } = updatedSurvey;
+
+  if (countries) {
+    data.countries = {
+      set: countries.map((country) => ({ isoCode: country.isoCode })),
+    };
+  }
 
   if (triggers) {
     const newTriggers: string[] = [];
@@ -456,6 +463,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       ...prismaSurvey, // Properties from prismaSurvey
       triggers: updatedSurvey.triggers ? updatedSurvey.triggers : [], // Include triggers from updatedSurvey
       attributeFilters: updatedSurvey.attributeFilters ? updatedSurvey.attributeFilters : [],
+      countries: updatedSurvey.countries ? updatedSurvey.countries : [],
     };
 
     surveyCache.revalidate({
@@ -604,6 +612,9 @@ export const duplicateSurvey = async (environmentId: string, surveyId: string) =
       verifyEmail: existingSurvey.verifyEmail
         ? JSON.parse(JSON.stringify(existingSurvey.verifyEmail))
         : Prisma.JsonNull,
+      countries: {
+        connect: existingSurvey.countries,
+      },
     },
   });
 
@@ -741,3 +752,14 @@ export const getSurveyByResultShareKey = async (resultShareKey: string): Promise
     throw error;
   }
 };
+
+export async function getAllDbCountries() {
+  try {
+    return await prisma.country.findMany();
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      throw new DatabaseError(error.message);
+    }
+    throw error;
+  }
+}
