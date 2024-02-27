@@ -460,6 +460,7 @@ export const ZSurveyInput = z.object({
   verifyEmail: ZSurveyVerifyEmail.optional(),
   attributeFilters: z.array(ZSurveyAttributeFilter).optional(),
   triggers: z.array(z.string()).optional(),
+  reward: z.number(),
 });
 
 export type TSurvey = z.infer<typeof ZSurvey>;

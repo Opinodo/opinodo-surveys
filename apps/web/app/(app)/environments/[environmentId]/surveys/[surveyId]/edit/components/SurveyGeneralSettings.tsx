@@ -50,7 +50,7 @@ export default function SurveyGeneralSettings({
 
   const updateSurveyReward = (e) => {
     let newValue = parseFloat(e.target.value);
-    newValue = Math.min(Math.max(newValue, 0), 9.99);
+    newValue = Math.min(Math.max(newValue, 0), 20);
     setCustomReward(newValue);
     setLocalSurvey({
       ...localSurvey,
@@ -178,7 +178,7 @@ export default function SurveyGeneralSettings({
             {usingCustomReward && (
               <div className="ml-2">
                 <Label htmlFor="customRewardInput" className="cursor-pointer">
-                  Custom Reward:
+                  Custom Reward: €
                 </Label>
                 <Input
                   autoFocus

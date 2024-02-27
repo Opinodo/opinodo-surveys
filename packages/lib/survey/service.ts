@@ -450,7 +450,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
   };
 
   if (data.reward !== undefined) {
-    data.reward = Math.max(0, Math.min(9.99, data.reward));
+    data.reward = Math.max(0, Math.min(20, data.reward));
   }
 
   try {
