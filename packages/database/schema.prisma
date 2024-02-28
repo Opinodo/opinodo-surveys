@@ -303,7 +303,16 @@ model Survey {
   reward            Float   @default(0)
   language          String  @default("en")
 
+  countries Country[] @relation("SurveyCountries")
+
   @@index([environmentId])
+}
+
+model Country {
+  isoCode String @id
+  name    String
+
+  surveys Survey[] @relation("SurveyCountries")
 }
 
 enum ActionType {

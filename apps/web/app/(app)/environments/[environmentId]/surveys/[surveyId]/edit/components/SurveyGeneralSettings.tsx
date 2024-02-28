@@ -1,6 +1,8 @@
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import * as Collapsible from "@radix-ui/react-collapsible";
-import { useState } from "react";
+import iso6391 from "iso-639-1";
+import { useEffect, useState } from "react";
+import Select from "react-select";
 
 import { cn } from "@formbricks/lib/cn";
 import { TEnvironment } from "@formbricks/types/environment";
@@ -8,8 +10,16 @@ import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@formbricks/ui/Select";
+import {
+  Select as FormbricksSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@formbricks/ui/Select";
 import { Switch } from "@formbricks/ui/Switch";
+
+import { getAllCountries } from "../../../../actions";
 
 interface SurveyGeneralSettingsProps {
   localSurvey: TSurvey;
@@ -40,7 +50,7 @@ export default function SurveyGeneralSettings({
 
   const updateSurveyReward = (e) => {
     let newValue = parseFloat(e.target.value);
-    newValue = Math.min(Math.max(newValue, 0), 9.99);
+    newValue = Math.min(Math.max(newValue, 0), 20);
     setCustomReward(newValue);
     setLocalSurvey({
       ...localSurvey,
@@ -49,16 +59,45 @@ export default function SurveyGeneralSettings({
   };
 
   const handleLanguageChange = (selectedLanguage) => {
-    //todo: dont save full name but ISO code
     setSelectedLanguage(selectedLanguage);
+    const isoCode = iso6391.getCode(selectedLanguage);
     setLocalSurvey({
       ...localSurvey,
-      language: selectedLanguage,
+      language: isoCode,
     });
   };
 
-  const languages = ["English", "Spanish", "French", "German"];
-  //todo: add ISO languages
+  const languages = iso6391.getAllNames();
+
+  interface Country {
+    name: string;
+    isoCode: string;
+  }
+
+  const [countries, setCountries] = useState<Country[]>([]);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      const countriesData = await getAllCountries();
+      setCountries(countriesData);
+    };
+
+    fetchCountries();
+    const languageName = iso6391.getName(localSurvey.language);
+    setSelectedLanguage(languageName);
+  }, [localSurvey.language]);
+
+  const handleCountryChange = (selectedCountries) => {
+    const updatedCountries = selectedCountries.map((country) => ({
+      isoCode: country.value,
+      name: country.label,
+    }));
+
+    setLocalSurvey((prevState) => ({
+      ...prevState,
+      countries: updatedCountries,
+    }));
+  };
 
   return (
     <Collapsible.Root
@@ -84,10 +123,30 @@ export default function SurveyGeneralSettings({
         <div className="p-3">
           <div className="p-3">
             <div className="ml-2 flex items-center space-x-1">
+              <Label htmlFor="countries" className="cursor-pointer">
+                Limit to Countries:
+              </Label>
+              <Select
+                options={countries.map((country) => ({
+                  value: country.isoCode,
+                  label: country.name,
+                }))}
+                isMulti
+                isSearchable
+                onChange={handleCountryChange}
+                value={localSurvey.countries.map((country) => ({
+                  value: country.isoCode,
+                  label: country.name,
+                }))}
+              />
+            </div>
+          </div>
+          <div className="p-3">
+            <div className="ml-2 flex items-center space-x-1">
               <Label htmlFor="language" className="cursor-pointer">
                 Select Survey Language:
               </Label>
-              <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
+              <FormbricksSelect value={selectedLanguage} onValueChange={handleLanguageChange}>
                 <SelectTrigger className="w-[240px]">
                   <SelectValue>{selectedLanguage}</SelectValue>
                 </SelectTrigger>
@@ -99,7 +158,7 @@ export default function SurveyGeneralSettings({
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </FormbricksSelect>
             </div>
           </div>
           <div className="p-3">
@@ -119,7 +178,7 @@ export default function SurveyGeneralSettings({
             {usingCustomReward && (
               <div className="ml-2">
                 <Label htmlFor="customRewardInput" className="cursor-pointer">
-                  Custom Reward:
+                  Custom Reward: €
                 </Label>
                 <Input
                   autoFocus
