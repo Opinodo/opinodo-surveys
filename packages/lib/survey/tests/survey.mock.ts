@@ -116,6 +116,7 @@ const baseSurveyProperties = {
   welcomeCard: mockWelcomeCard,
   questions: [mockQuestion],
   thankYouCard: { enabled: false },
+  failureCard: { enabled: false },
   hiddenFields: { enabled: false },
   surveyClosedMessage: {
     enabled: false,
@@ -126,6 +127,7 @@ const baseSurveyProperties = {
   },
   attributeFilters: [],
   reward: 5,
+  failureChance: 0,
   ...commonMockProperties,
 };
 

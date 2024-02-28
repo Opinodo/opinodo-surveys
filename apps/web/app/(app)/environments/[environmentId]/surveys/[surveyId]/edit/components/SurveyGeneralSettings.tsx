@@ -8,6 +8,7 @@ import { cn } from "@formbricks/lib/cn";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
+import { AdvancedOptionToggle } from "@formbricks/ui/AdvancedOptionToggle";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
 import {
@@ -28,6 +29,9 @@ interface SurveyGeneralSettingsProps {
   product: TProduct;
 }
 
+const SURVEY_FAILED_HEADLINE = "Survey Failed";
+const SURVEY_FAILED_SUBHEADER = "Submission unsuccessful.";
+
 export default function SurveyGeneralSettings({
   localSurvey,
   setLocalSurvey,
@@ -38,6 +42,8 @@ export default function SurveyGeneralSettings({
   const [usingCustomReward, setUsingCustomReward] = useState(
     localSurvey.reward !== product.defaultRewardInEuros
   );
+  const [failureChance, setFailureChance] = useState(localSurvey.failureChance);
+  const [hasFailureChance, setHasFailureChance] = useState(localSurvey.failureChance > 0);
   const [selectedLanguage, setSelectedLanguage] = useState(localSurvey.language);
 
   const toggleUsingDefaultReward = (isChecked) => {
@@ -55,6 +61,25 @@ export default function SurveyGeneralSettings({
     setLocalSurvey({
       ...localSurvey,
       reward: newValue,
+    });
+  };
+
+  const toggleFailureChance = (isChecked) => {
+    setHasFailureChance(isChecked);
+    setLocalSurvey({
+      ...localSurvey,
+      failureChance: isChecked ? failureChance : 0,
+      failureCard: isChecked ? localSurvey.failureCard : { enabled: false },
+    });
+  };
+
+  const updateFailureRate = (e) => {
+    let newValue = parseFloat(e.target.value);
+    newValue = Math.min(Math.max(newValue, 0.01), 1);
+    setFailureChance(newValue);
+    setLocalSurvey({
+      ...localSurvey,
+      failureChance: newValue,
     });
   };
 
@@ -97,6 +122,48 @@ export default function SurveyGeneralSettings({
       ...prevState,
       countries: updatedCountries,
     }));
+  };
+
+  const [failureCardMessage, setFailureCardMessage] = useState({
+    headline: SURVEY_FAILED_HEADLINE,
+    subheader: SURVEY_FAILED_SUBHEADER,
+  });
+  const [failureCardMessageToggle, setFailureCardMessageToggle] = useState(localSurvey.failureCard.enabled);
+
+  const toggleCustomFailureScreen = () => {
+    setFailureCardMessageToggle((prev) => !prev);
+    const defaultHeadline = SURVEY_FAILED_HEADLINE;
+    const defaultSubheader = SURVEY_FAILED_SUBHEADER;
+
+    setLocalSurvey({
+      ...localSurvey,
+      failureCard: {
+        enabled: !failureCardMessageToggle,
+        headline: !failureCardMessageToggle
+          ? defaultHeadline
+          : localSurvey.failureCard.headline || defaultHeadline,
+        subheader: !failureCardMessageToggle
+          ? defaultSubheader
+          : localSurvey.failureCard.subheader || defaultSubheader,
+      },
+    });
+  };
+
+  const handleCustomFailureCardMessageChange = ({
+    headline,
+    subheader,
+  }: {
+    headline?: string;
+    subheader?: string;
+  }) => {
+    const message = {
+      enabled: true,
+      headline: headline ?? failureCardMessage.headline,
+      subheader: subheader ?? failureCardMessage.subheader,
+    };
+
+    setFailureCardMessage(message);
+    setLocalSurvey({ ...localSurvey, failureCard: message });
   };
 
   return (
@@ -150,7 +217,6 @@ export default function SurveyGeneralSettings({
                 <SelectTrigger className="w-[240px]">
                   <SelectValue>{selectedLanguage}</SelectValue>
                 </SelectTrigger>
-                {/*todo: make it searchable*/}
                 <SelectContent>
                   {languages.map((language) => (
                     <SelectItem key={language} value={language}>
@@ -190,6 +256,68 @@ export default function SurveyGeneralSettings({
                   className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
                 />
               </div>
+            )}
+          </div>
+          <div className="p-3">
+            <div className="ml-2 flex items-center space-x-1">
+              <Switch id="failureChance" checked={hasFailureChance} onCheckedChange={toggleFailureChance} />
+              <Label htmlFor="failureChance" className="cursor-pointer">
+                <div className="ml-2">
+                  <h3 className="text-sm font-semibold text-slate-700">Enable Survey Failure Chance</h3>
+                  <p className="text-xs font-normal text-slate-500">
+                    Set the chance for a completion to be treated as failed.
+                  </p>
+                </div>
+              </Label>
+            </div>
+
+            {hasFailureChance && (
+              <div className="ml-2">
+                <Label htmlFor="failureChanceInput" className="cursor-pointer">
+                  Failure Chance:
+                </Label>
+                <Input
+                  autoFocus
+                  type="number"
+                  id="failureChanceInput"
+                  step="0.01"
+                  onChange={updateFailureRate}
+                  value={failureChance}
+                  className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
+                />
+              </div>
+            )}
+            {hasFailureChance && (
+              <AdvancedOptionToggle
+                htmlId="failureRateToggle"
+                isChecked={failureCardMessageToggle}
+                onToggle={toggleCustomFailureScreen}
+                title="Use custom fail screen"
+                description="Customise the text on the fail screen."
+                childBorder={true}>
+                <div className="flex w-full items-center space-x-1 p-4 pb-4">
+                  <div className="w-full cursor-pointer items-center  bg-slate-50">
+                    <Label htmlFor="headline">Heading</Label>
+                    <Input
+                      autoFocus
+                      id="heading"
+                      className="mb-4 mt-2 bg-white"
+                      name="heading"
+                      defaultValue={localSurvey.failureCard.headline || SURVEY_FAILED_HEADLINE}
+                      onChange={(e) => handleCustomFailureCardMessageChange({ headline: e.target.value })}
+                    />
+
+                    <Label htmlFor="headline">Subheading</Label>
+                    <Input
+                      className="mb-4 mt-2 bg-white"
+                      id="subheading"
+                      name="subheading"
+                      defaultValue={localSurvey.failureCard.subheader || SURVEY_FAILED_SUBHEADER}
+                      onChange={(e) => handleCustomFailureCardMessageChange({ subheader: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </AdvancedOptionToggle>
             )}
           </div>
         </div>

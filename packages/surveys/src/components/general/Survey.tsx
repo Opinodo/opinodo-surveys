@@ -12,6 +12,7 @@ import { extractFallbackValue, extractId, extractRecallInfo } from "@formbricks/
 import type { TResponseData, TResponseTtc } from "@formbricks/types/responses";
 import { TSurveyQuestion } from "@formbricks/types/surveys";
 
+import FailureCard from "./FailureCard";
 import QuestionConditional from "./QuestionConditional";
 import ThankYouCard from "./ThankYouCard";
 import WelcomeCard from "./WelcomeCard";
@@ -186,6 +187,7 @@ export function Survey({
     setQuestionId(prevQuestionId);
     onActiveQuestionChange(prevQuestionId);
   };
+
   function getCardContent() {
     if (showError) {
       return (
@@ -204,23 +206,32 @@ export function Survey({
           responseCount={responseCount}
         />
       );
-    } else if (questionId === "end" && survey.thankYouCard.enabled) {
-      return (
-        <ThankYouCard
-          headline={
-            typeof survey.thankYouCard.headline === "string"
-              ? replaceRecallInfo(survey.thankYouCard.headline)
-              : ""
+    } else if (questionId === "end") {
+      if (survey.thankYouCard.enabled) {
+        if (survey.failureCard.enabled) {
+          const random = Math.random();
+          if (random <= survey.failureChance) {
+            return (
+              <FailureCard
+                headline={replaceRecallInfo(survey.failureCard.headline ? survey.failureCard.headline : "")}
+                subheader={replaceRecallInfo(
+                  survey.failureCard.subheader ? survey.failureCard.subheader : ""
+                )}
+                redirectUrl={survey.redirectUrl}
+                isRedirectDisabled={isRedirectDisabled}
+              />
+            );
           }
-          subheader={
-            typeof survey.thankYouCard.subheader === "string"
-              ? replaceRecallInfo(survey.thankYouCard.subheader)
-              : ""
-          }
-          redirectUrl={survey.redirectUrl}
-          isRedirectDisabled={isRedirectDisabled}
-        />
-      );
+        }
+        return (
+          <ThankYouCard
+            headline={replaceRecallInfo(survey.failureCard.headline ? survey.failureCard.headline : "")}
+            subheader={replaceRecallInfo(survey.failureCard.subheader ? survey.failureCard.subheader : "")}
+            redirectUrl={survey.redirectUrl}
+            isRedirectDisabled={isRedirectDisabled}
+          />
+        );
+      }
     } else {
       const currQues = survey.questions.find((q) => q.id === questionId);
       return (
