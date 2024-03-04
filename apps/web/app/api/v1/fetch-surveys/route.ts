@@ -12,15 +12,40 @@ export async function GET(request: Request) {
     if (!authentication) return responses.notAuthenticatedResponse();
     const surveys = await getSurveys(authentication.environmentId!);
 
+    const { searchParams } = new URL(request.url);
+
+    if (!searchParams.has("country")) {
+      return responses.validationResponse({ country: "required" });
+    } else if (!searchParams.has("panelist_id")) {
+      return responses.validationResponse({ panelist_id: "required" });
+    } else if (!searchParams.has("language")) {
+      return responses.validationResponse({ language: "required" });
+    } else if (!searchParams.has("email")) {
+      return responses.validationResponse({ email: "required" });
+    }
+
+    //TODO FILTER surveys if panelist already completed
     const activeSurveys = surveys
       .filter((survey) => {
         return survey.status === "inProgress" && survey.type === "link";
+      })
+      .filter((survey) => {
+        if (survey.countries) {
+          const found = survey.countries.find((country) => {
+            return country.isoCode === searchParams.get("country");
+          });
+
+          //If panelist doesn't belong to survey country, then skip it.
+          if (!found) return false;
+        }
+
+        return survey.language === searchParams.get("language");
       })
       .map((survey) => {
         let url = WEBAPP_URL + "/s/" + survey.id;
         if (survey.singleUse?.enabled) {
           const singleUseId = generateSurveySingleUseId(survey.singleUse.isEncrypted);
-          url += "?suId=" + singleUseId;
+          url += `?suId=${singleUseId}&email=${searchParams.get("email")}&userId=${searchParams.get("panelist_id")}&country=${searchParams.get("country")}&language=${searchParams.get("language")}`;
         }
 
         return {
@@ -32,7 +57,11 @@ export async function GET(request: Request) {
           reward: survey.reward,
           redirect_url: survey.redirectUrl,
           survey_url: url,
-          // "country": survey.country
+          country: survey.countries.reduce((acc, country) => {
+            acc[country.isoCode] = country.name;
+
+            return acc;
+          }, {}),
         };
       });
 

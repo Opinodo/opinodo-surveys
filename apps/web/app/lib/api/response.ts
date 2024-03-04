@@ -14,7 +14,8 @@ export interface ApiErrorResponse {
     | "internal_server_error"
     | "unauthorized"
     | "method_not_allowed"
-    | "not_authenticated";
+    | "not_authenticated"
+    | "validation_error";
   message: string;
   details: {
     [key: string]: string | string[] | number | number[] | boolean | boolean[];
@@ -138,6 +139,19 @@ const internalServerErrorResponse = (message: string, cors: boolean = false) =>
     }
   );
 
+const validationResponse = (details?: { [key: string]: string }, cors: boolean = false) =>
+  NextResponse.json(
+    {
+      code: "validation_error",
+      message: "The given data was invalid.",
+      details: details || {},
+    } as ApiErrorResponse,
+    {
+      status: 422,
+      ...(cors && { headers: corsHeaders }),
+    }
+  );
+
 export const responses = {
   badRequestResponse,
   internalServerErrorResponse,
@@ -147,4 +161,5 @@ export const responses = {
   unauthorizedResponse,
   notFoundResponse,
   successResponse,
+  validationResponse,
 };
