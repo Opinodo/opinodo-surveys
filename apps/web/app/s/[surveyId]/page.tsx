@@ -10,12 +10,13 @@ import { notFound } from "next/navigation";
 
 import { IMPRINT_URL, IS_FORMBRICKS_CLOUD, PRIVACY_URL } from "@formbricks/lib/constants";
 import { WEBAPP_URL } from "@formbricks/lib/constants";
-import { createPerson, getPersonByUserId } from "@formbricks/lib/person/service";
+import { createPerson, getPersonByUserId, updatePerson } from "@formbricks/lib/person/service";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
 import { getResponseBySingleUseId } from "@formbricks/lib/response/service";
 import { getResponseCountBySurveyId } from "@formbricks/lib/response/service";
 import { getSurvey } from "@formbricks/lib/survey/service";
 import { ZId } from "@formbricks/types/environment";
+import { TPersonUpdateInput } from "@formbricks/types/people";
 import { TResponse } from "@formbricks/types/responses";
 
 import { getEmailVerificationDetails } from "./lib/helpers";
@@ -28,6 +29,9 @@ interface LinkSurveyPageProps {
     suId?: string;
     userId?: string;
     verify?: string;
+    email?: string;
+    country?: string;
+    language?: string;
   };
 }
 
@@ -167,10 +171,20 @@ export default async function LinkSurveyPage({ params, searchParams }: LinkSurve
   const userId = searchParams.userId;
   if (userId) {
     // make sure the person exists or get's created
-    const person = await getPersonByUserId(survey.environmentId, userId);
+    let person = await getPersonByUserId(survey.environmentId, userId);
     if (!person) {
-      await createPerson(survey.environmentId, userId);
+      person = await createPerson(survey.environmentId, userId);
     }
+
+    const userData: TPersonUpdateInput = {
+      attributes: {
+        ...(searchParams.email && { email: searchParams.email }),
+        ...(searchParams.country && { country: searchParams.country }),
+        ...(searchParams.language && { language: searchParams.language }),
+      },
+    };
+
+    await updatePerson(person.id, userData);
   }
 
   const isSurveyPinProtected = Boolean(!!survey && survey.pin);
