@@ -176,6 +176,7 @@ export default async function LinkSurveyPage({ params, searchParams }: LinkSurve
       person = await createPerson(survey.environmentId, userId);
     }
 
+    // update attributes for the person
     const userData: TPersonUpdateInput = {
       attributes: {
         ...(searchParams.email && { email: searchParams.email }),
@@ -183,7 +184,6 @@ export default async function LinkSurveyPage({ params, searchParams }: LinkSurve
         ...(searchParams.language && { language: searchParams.language }),
       },
     };
-
     await updatePerson(person.id, userData);
   }
 

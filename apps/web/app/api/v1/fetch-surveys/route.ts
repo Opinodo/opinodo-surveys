@@ -45,7 +45,12 @@ export async function GET(request: Request) {
         let url = WEBAPP_URL + "/s/" + survey.id;
         if (survey.singleUse?.enabled) {
           const singleUseId = generateSurveySingleUseId(survey.singleUse.isEncrypted);
-          url += `?suId=${singleUseId}&email=${searchParams.get("email")}&userId=${searchParams.get("panelist_id")}&country=${searchParams.get("country")}&language=${searchParams.get("language")}`;
+          url += `?suId=${singleUseId}`;
+          url += `&email=${encodeURIComponent(searchParams.get("email") ?? "")}`;
+          url += `&userId=${searchParams.get("panelist_id")}`;
+          url += `&country=${searchParams.get("country")}`;
+          url += `&language=${searchParams.get("language")}`;
+          url += `&source=[SOURCE]`;
         }
 
         return {
