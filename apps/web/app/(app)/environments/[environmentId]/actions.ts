@@ -184,6 +184,7 @@ export async function copyToOtherEnvironmentAction(
       status: "draft",
       questions: JSON.parse(JSON.stringify(existingSurvey.questions)),
       thankYouCard: JSON.parse(JSON.stringify(existingSurvey.thankYouCard)),
+      failureCard: JSON.parse(JSON.stringify(existingSurvey.failureCard)),
       triggers: {
         create: targetEnvironmentTriggers.map((actionClassId) => ({
           actionClassId: actionClassId,

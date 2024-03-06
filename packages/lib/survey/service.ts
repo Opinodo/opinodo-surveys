@@ -35,6 +35,7 @@ export const selectSurvey = {
   welcomeCard: true,
   questions: true,
   thankYouCard: true,
+  failureCard: true,
   hiddenFields: true,
   displayOption: true,
   recontactDays: true,
@@ -51,6 +52,7 @@ export const selectSurvey = {
   pin: true,
   resultShareKey: true,
   reward: true,
+  failureChance: true,
   language: true,
   countries: true,
   triggers: {
@@ -586,6 +588,7 @@ export const duplicateSurvey = async (environmentId: string, surveyId: string) =
       status: "draft",
       questions: JSON.parse(JSON.stringify(existingSurvey.questions)),
       thankYouCard: JSON.parse(JSON.stringify(existingSurvey.thankYouCard)),
+      failureCard: JSON.parse(JSON.stringify(existingSurvey.failureCard)),
       triggers: {
         create: existingSurvey.triggers.map((trigger) => ({
           actionClassId: getActionClassIdFromName(actionClasses, trigger),
