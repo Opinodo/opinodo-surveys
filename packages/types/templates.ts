@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import { ZSurveyHiddenFields, ZSurveyQuestions, ZSurveyThankYouCard, ZSurveyWelcomeCard } from "./surveys";
+import {
+  ZSurveyFailureCard,
+  ZSurveyHiddenFields,
+  ZSurveyQuestions,
+  ZSurveyThankYouCard,
+  ZSurveyWelcomeCard,
+} from "./surveys";
 import { ZUserObjective } from "./user";
 
 export const ZTemplate = z.object({
@@ -16,6 +22,7 @@ export const ZTemplate = z.object({
     welcomeCard: ZSurveyWelcomeCard,
     questions: ZSurveyQuestions,
     thankYouCard: ZSurveyThankYouCard,
+    failureCard: ZSurveyFailureCard,
     hiddenFields: ZSurveyHiddenFields,
   }),
 });

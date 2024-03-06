@@ -9,6 +9,12 @@ export const ZSurveyThankYouCard = z.object({
   subheader: z.optional(z.string()),
 });
 
+export const ZSurveyFailureCard = z.object({
+  enabled: z.boolean(),
+  headline: z.optional(z.string()),
+  subheader: z.optional(z.string()),
+});
+
 export enum TSurveyQuestionType {
   FileUpload = "fileUpload",
   OpenText = "openText",
@@ -99,6 +105,8 @@ export type TSurveyVerifyEmail = z.infer<typeof ZSurveyVerifyEmail>;
 export type TSurveyWelcomeCard = z.infer<typeof ZSurveyWelcomeCard>;
 
 export type TSurveyThankYouCard = z.infer<typeof ZSurveyThankYouCard>;
+
+export type TSurveyFailureCard = z.infer<typeof ZSurveyFailureCard>;
 
 export type TSurveyHiddenFields = z.infer<typeof ZSurveyHiddenFields>;
 
@@ -425,6 +433,7 @@ export const ZSurvey = z.object({
   welcomeCard: ZSurveyWelcomeCard,
   questions: ZSurveyQuestions,
   thankYouCard: ZSurveyThankYouCard,
+  failureCard: ZSurveyFailureCard,
   hiddenFields: ZSurveyHiddenFields,
   delay: z.number(),
   autoComplete: z.number().nullable(),
@@ -437,6 +446,7 @@ export const ZSurvey = z.object({
   pin: z.string().nullable().optional(),
   resultShareKey: z.string().nullable(),
   reward: z.number(),
+  failureChance: z.number(),
   language: z.string(),
   countries: z.array(ZCountry),
 });
@@ -452,6 +462,7 @@ export const ZSurveyInput = z.object({
   welcomeCard: ZSurveyWelcomeCard.optional(),
   questions: ZSurveyQuestions.optional(),
   thankYouCard: ZSurveyThankYouCard.optional(),
+  failureCard: ZSurveyFailureCard.optional(),
   hiddenFields: ZSurveyHiddenFields,
   delay: z.number().optional(),
   autoComplete: z.number().optional(),
@@ -461,6 +472,7 @@ export const ZSurveyInput = z.object({
   attributeFilters: z.array(ZSurveyAttributeFilter).optional(),
   triggers: z.array(z.string()).optional(),
   reward: z.number(),
+  failureChance: z.number(),
 });
 
 export type TSurvey = z.infer<typeof ZSurvey>;
