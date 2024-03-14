@@ -167,6 +167,7 @@ export default function LinkSurvey({
               });
               const res = await api.client.display.create({
                 surveyId: survey.id,
+                ...(userId ? { userId: userId } : {}),
               });
               if (!res.ok) {
                 throw new Error("Could not create display");
