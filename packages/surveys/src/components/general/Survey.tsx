@@ -225,8 +225,8 @@ export function Survey({
         }
         return (
           <ThankYouCard
-            headline={replaceRecallInfo(survey.failureCard.headline ? survey.failureCard.headline : "")}
-            subheader={replaceRecallInfo(survey.failureCard.subheader ? survey.failureCard.subheader : "")}
+            headline={replaceRecallInfo(survey.thankYouCard.headline ? survey.thankYouCard.headline : "")}
+            subheader={replaceRecallInfo(survey.thankYouCard.subheader ? survey.thankYouCard.subheader : "")}
             redirectUrl={survey.redirectUrl}
             isRedirectDisabled={isRedirectDisabled}
           />
