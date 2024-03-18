@@ -69,10 +69,8 @@ export async function POST(request: Request) {
         data: response,
       };
 
-      console.log(JSON.stringify(body));
       body["hash"] = createHmac("sha256", WEBHOOK_SECRET).update(JSON.stringify(body)).digest("hex");
 
-      console.log(body["hash"]);
       await fetch(webhook.url, {
         method: "POST",
         headers: {
