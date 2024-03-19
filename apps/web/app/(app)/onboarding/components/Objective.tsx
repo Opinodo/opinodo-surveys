@@ -69,7 +69,8 @@ const Objective: React.FC<ObjectiveProps> = ({ next, skip, formbricksResponseId,
             {
               objective: selectedObjective.label,
             },
-            true
+            true,
+            false
           );
           if (!res.ok) {
             console.error("Error updating response", res.error);

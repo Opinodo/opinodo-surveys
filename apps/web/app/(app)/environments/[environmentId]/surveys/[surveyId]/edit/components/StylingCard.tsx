@@ -28,7 +28,7 @@ export default function StylingCard({
   colours,
   environmentId,
 }: StylingCardProps) {
-  const [open, setOpen] = useState(localSurvey.type === "link" ? true : false);
+  const [open, setOpen] = useState(false);
   const progressBarHidden = localSurvey.styling?.hideProgressBar ?? false;
   const { type, productOverwrites, styling } = localSurvey;
   const { brandColor, clickOutsideClose, darkOverlay, placement, highlightBorderColor } =

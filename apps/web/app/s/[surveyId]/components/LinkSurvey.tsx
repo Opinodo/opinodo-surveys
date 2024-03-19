@@ -189,6 +189,7 @@ export default function LinkSurvey({
                 },
                 ttc: responseUpdate.ttc,
                 finished: responseUpdate.finished,
+                failed: responseUpdate.failed,
                 meta: {
                   url: window.location.href,
                   source: sourceParam || "",

@@ -2555,6 +2555,7 @@ export const minimalSurvey: TSurvey = {
   autoClose: null,
   triggers: [],
   redirectUrl: null,
+  redirectOnFailUrl: null,
   recontactDays: null,
   welcomeCard: welcomeCardDefault,
   questions: [],
@@ -2581,4 +2582,5 @@ export const minimalSurvey: TSurvey = {
   failureChance: 0,
   language: "en",
   countries: [],
+  limitedCountries: false,
 };

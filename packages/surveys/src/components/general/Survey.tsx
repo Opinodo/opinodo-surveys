@@ -124,12 +124,17 @@ export function Survey({
     setResponseData(updatedResponseData);
   };
 
+  const [failed, setFailed] = useState(false);
+
   const onSubmit = (responseData: TResponseData, ttc: TResponseTtc, isFromPrefilling: Boolean = false) => {
     const questionId = Object.keys(responseData)[0];
     setLoadingElement(true);
     const nextQuestionId = getNextQuestionId(responseData, isFromPrefilling);
     const finished = nextQuestionId === "end";
-    onResponse({ data: responseData, ttc, finished });
+    const random = Math.random() * 100;
+    const surveyFailed = finished && random <= survey.failureChance;
+    setFailed(surveyFailed);
+    onResponse({ data: responseData, ttc, finished, failed: surveyFailed });
     if (finished) {
       onFinished();
     }
@@ -208,20 +213,15 @@ export function Survey({
       );
     } else if (questionId === "end") {
       if (survey.thankYouCard.enabled) {
-        if (survey.failureCard.enabled) {
-          const random = Math.random();
-          if (random <= survey.failureChance) {
-            return (
-              <FailureCard
-                headline={replaceRecallInfo(survey.failureCard.headline ? survey.failureCard.headline : "")}
-                subheader={replaceRecallInfo(
-                  survey.failureCard.subheader ? survey.failureCard.subheader : ""
-                )}
-                redirectUrl={survey.redirectUrl}
-                isRedirectDisabled={isRedirectDisabled}
-              />
-            );
-          }
+        if (survey.failureCard.enabled && failed) {
+          return (
+            <FailureCard
+              headline={replaceRecallInfo(survey.failureCard.headline ? survey.failureCard.headline : "")}
+              subheader={replaceRecallInfo(survey.failureCard.subheader ? survey.failureCard.subheader : "")}
+              redirectUrl={survey.redirectOnFailUrl}
+              isRedirectDisabled={isRedirectDisabled}
+            />
+          );
         }
         return (
           <ThankYouCard

@@ -57,7 +57,7 @@ export default async function ProfileSettingsPage({ params }: { params: { enviro
         description="Control how frequently users can be surveyed across all surveys.">
         <EditWaitingTime environmentId={params.environmentId} product={product} />
       </SettingsCard>
-      <SettingsCard title="Default Reward" description="Define the default reward for a survey in euros.">
+      <SettingsCard title="Default Reward" description="Define the default reward for a survey in dollars.">
         <EditDefaultReward environmentId={params.environmentId} product={product} />
       </SettingsCard>
       <SettingsCard

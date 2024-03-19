@@ -70,7 +70,7 @@ export default function TemplateList({
     setLoading(true);
     const surveyType = environment?.widgetSetupCompleted ? "web" : "link";
     const autoComplete = surveyType === "web" ? 50 : null;
-    activeTemplate.preset.reward = product.defaultRewardInEuros;
+    activeTemplate.preset.reward = product.defaultRewardInUSD;
     const augmentedTemplate = {
       ...activeTemplate.preset,
       type: surveyType,

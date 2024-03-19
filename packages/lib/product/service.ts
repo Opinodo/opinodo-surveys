@@ -28,7 +28,7 @@ const selectProduct = {
   brandColor: true,
   highlightBorderColor: true,
   recontactDays: true,
-  defaultRewardInEuros: true,
+  defaultRewardInUSD: true,
   linkSurveyBranding: true,
   inAppSurveyBranding: true,
   placement: true,
