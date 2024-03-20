@@ -10,7 +10,6 @@ import Onboarding from "./components/Onboarding";
 
 export default async function OnboardingPage() {
   const session = await getServerSession(authOptions);
-  console.log(session);
   if (!session) {
     redirect("/auth/login");
   }
