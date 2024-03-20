@@ -6,7 +6,7 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@formbricks/database";
 import { ZOptionalNumber, ZString } from "@formbricks/types/common";
 import { ZId } from "@formbricks/types/environment";
-import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
+import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TPerson } from "@formbricks/types/people";
 import {
   TResponse,
@@ -521,6 +521,9 @@ export const updateResponse = async (
 
     if (!currentResponse) {
       throw new ResourceNotFoundError("Response", responseId);
+    }
+    if (currentResponse.finished) {
+      throw new InvalidInputError("Already finished response " + responseId);
     }
 
     // merge data object
