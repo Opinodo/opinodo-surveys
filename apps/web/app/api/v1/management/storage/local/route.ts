@@ -99,6 +99,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (err.name === "FileTooLargeError") {
       return responses.badRequestResponse(err.message);
     }
+    console.log(err);
     return responses.internalServerErrorResponse("File upload failed");
   }
 }
