@@ -101,6 +101,7 @@ export const mockResponse: ResponseMock = {
   personAttributes: {},
   createdAt: new Date(),
   finished: constantsForTests.boolean,
+  failed: false,
   meta: mockMeta,
   notes: [mockResponseNote],
   tags: mockTags,
@@ -120,7 +121,11 @@ export const mockResponseData: TResponseUpdateInput["data"] = {
   key3: 20,
 };
 
-export const getMockUpdateResponseInput = (finished: boolean = false): TResponseUpdateInput => ({
+export const getMockUpdateResponseInput = (
+  finished: boolean = false,
+  failed: boolean = false
+): TResponseUpdateInput => ({
   data: mockResponseData,
   finished,
+  failed,
 });

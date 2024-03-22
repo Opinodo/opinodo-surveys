@@ -135,6 +135,7 @@ export const renderWidget = (survey: TSurvey) => {
           data: responseUpdate.data,
           ttc: responseUpdate.ttc,
           finished: responseUpdate.finished,
+          failed: responseUpdate.failed,
         });
       },
       onClose: closeSurvey,

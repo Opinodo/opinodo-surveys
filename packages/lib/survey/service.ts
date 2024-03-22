@@ -45,6 +45,7 @@ export const selectSurvey = {
   autoComplete: true,
   verifyEmail: true,
   redirectUrl: true,
+  redirectOnFailUrl: true,
   productOverwrites: true,
   styling: true,
   surveyClosedMessage: true,
@@ -55,6 +56,7 @@ export const selectSurvey = {
   failureChance: true,
   language: true,
   countries: true,
+  limitedCountries: true,
   triggers: {
     select: {
       actionClass: {

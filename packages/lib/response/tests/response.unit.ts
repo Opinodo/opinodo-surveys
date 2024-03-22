@@ -54,6 +54,7 @@ const mockResponseInputWithoutUserId: TResponseInput = {
   surveyId: mockSurveyId,
   singleUseId: mockSingleUseId,
   finished: constantsForTests.boolean,
+  failed: constantsForTests.boolean,
   data: {},
   meta: mockMeta,
 };
@@ -65,6 +66,7 @@ const mockResponseInputWithUserId: TResponseInput = {
 
 const createMockResponseLegacyInput = (personId?: string): TResponseLegacyInput => ({
   finished: constantsForTests.boolean,
+  failed: constantsForTests.boolean,
   personId: personId ?? null,
   surveyId: mockSurveyId,
   meta: mockMeta,

@@ -11,7 +11,7 @@ import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
 
 type EditDefaultRewardFormValues = {
-  defaultRewardInEuros: number;
+  defaultRewardInUSD: number;
 };
 
 type EditDefaultRewardProps = {
@@ -27,13 +27,13 @@ const EditDefaultReward: React.FC<EditDefaultRewardProps> = ({ product, environm
     formState: { errors },
   } = useForm<EditDefaultRewardFormValues>({
     defaultValues: {
-      defaultRewardInEuros: product.defaultRewardInEuros,
+      defaultRewardInUSD: product.defaultRewardInUSD,
     },
   });
 
   const updateDefaultReward: SubmitHandler<EditDefaultRewardFormValues> = async (data) => {
     try {
-      data.defaultRewardInEuros = parseFloat(String(data.defaultRewardInEuros));
+      data.defaultRewardInUSD = parseFloat(String(data.defaultRewardInUSD));
       const updatedProduct = await updateProductAction(environmentId, product.id, data);
       if (!!updatedProduct?.id) {
         toast.success("Default reward updated successfully.");
@@ -46,24 +46,24 @@ const EditDefaultReward: React.FC<EditDefaultRewardProps> = ({ product, environm
 
   return (
     <form className="w-full max-w-sm items-center" onSubmit={handleSubmit(updateDefaultReward)}>
-      <Label htmlFor="defaultRewardInEuros">Amount received for successful survey completion in euros:</Label>
+      <Label htmlFor="defaultRewardInUSD">Amount received for successful survey completion in dollars:</Label>
       <Input
         type="number"
-        id="defaultRewardInEuros"
-        step="0.01"
-        defaultValue={product.defaultRewardInEuros}
-        {...register("defaultRewardInEuros", {
+        id="defaultRewardInUSD"
+        step="0.1"
+        defaultValue={product.defaultRewardInUSD}
+        {...register("defaultRewardInUSD", {
           min: { value: 0, message: "Must be a positive number" },
-          max: { value: 10, message: "Must be less than 10" },
+          max: { value: 20, message: "Must not be be greater than 20" },
           required: {
             value: true,
             message: "Required",
           },
         })}
       />
-      {errors?.defaultRewardInEuros ? (
+      {errors?.defaultRewardInUSD ? (
         <div className="my-2">
-          <p className="text-xs text-red-500">{errors?.defaultRewardInEuros?.message}</p>
+          <p className="text-xs text-red-500">{errors?.defaultRewardInUSD?.message}</p>
         </div>
       ) : null}
 

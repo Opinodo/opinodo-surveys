@@ -6,7 +6,7 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@formbricks/database";
 import { ZOptionalNumber, ZString } from "@formbricks/types/common";
 import { ZId } from "@formbricks/types/environment";
-import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
+import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TPerson } from "@formbricks/types/people";
 import {
   TResponse,
@@ -40,6 +40,7 @@ export const responseSelection = {
   updatedAt: true,
   surveyId: true,
   finished: true,
+  failed: true,
   data: true,
   meta: true,
   ttc: true,
@@ -107,6 +108,7 @@ export const getResponsesByPersonId = async (
         const responsePrisma = await prisma.response.findMany({
           where: {
             personId,
+            failed: false,
           },
           select: responseSelection,
           take: page ? ITEMS_PER_PAGE : undefined,
@@ -207,7 +209,7 @@ export const createResponse = async (responseInput: TResponseInput): Promise<TRe
   validateInputs([responseInput, ZResponseInput]);
   captureTelemetry("response created");
 
-  const { environmentId, userId, surveyId, finished, data, meta, singleUseId } = responseInput;
+  const { environmentId, userId, surveyId, finished, failed, data, meta, singleUseId } = responseInput;
 
   try {
     let person: TPerson | null = null;
@@ -228,6 +230,7 @@ export const createResponse = async (responseInput: TResponseInput): Promise<TRe
           },
         },
         finished: finished,
+        failed: failed,
         data: data,
         ...(person?.id && {
           person: {
@@ -398,6 +401,7 @@ export const getResponses = async (
         const responses = await prisma.response.findMany({
           where: {
             surveyId,
+            failed: false,
           },
           select: responseSelection,
           orderBy: [
@@ -455,6 +459,7 @@ export const getResponsesByEnvironmentId = async (
             survey: {
               environmentId,
             },
+            failed: false,
           },
           select: responseSelection,
           orderBy: [
@@ -516,6 +521,9 @@ export const updateResponse = async (
 
     if (!currentResponse) {
       throw new ResourceNotFoundError("Response", responseId);
+    }
+    if (currentResponse.finished) {
+      throw new InvalidInputError("Already finished response " + responseId);
     }
 
     // merge data object

@@ -429,6 +429,7 @@ export const ZSurvey = z.object({
   autoClose: z.number().nullable(),
   triggers: z.array(z.string()),
   redirectUrl: z.string().url().nullable(),
+  redirectOnFailUrl: z.string().url().nullable(),
   recontactDays: z.number().nullable(),
   welcomeCard: ZSurveyWelcomeCard,
   questions: ZSurveyQuestions,
@@ -449,6 +450,7 @@ export const ZSurvey = z.object({
   failureChance: z.number(),
   language: z.string(),
   countries: z.array(ZCountry),
+  limitedCountries: z.boolean(),
 });
 
 export const ZSurveyInput = z.object({
@@ -458,6 +460,7 @@ export const ZSurveyInput = z.object({
   displayOption: ZSurveyDisplayOption.optional(),
   autoClose: z.number().optional(),
   redirectUrl: z.string().url().optional(),
+  redirectOnFailUrl: z.string().url().optional(),
   recontactDays: z.number().optional(),
   welcomeCard: ZSurveyWelcomeCard.optional(),
   questions: ZSurveyQuestions.optional(),
@@ -473,6 +476,7 @@ export const ZSurveyInput = z.object({
   triggers: z.array(z.string()).optional(),
   reward: z.number(),
   failureChance: z.number(),
+  limitedCountries: z.boolean(),
 });
 
 export type TSurvey = z.infer<typeof ZSurvey>;

@@ -9,13 +9,15 @@ export const createResponse = async (
   surveyId: string,
   userId: string,
   data: { [questionId: string]: any },
-  finished: boolean = false
+  finished: boolean = false,
+  failed: boolean = false
 ): Promise<any> => {
   const api = formbricks.getApi();
   return await api.client.response.create({
     surveyId,
     userId,
     finished,
+    failed,
     data,
     ttc,
   });
@@ -24,12 +26,14 @@ export const createResponse = async (
 export const updateResponse = async (
   responseId: string,
   data: { [questionId: string]: any },
-  finished: boolean = false
+  finished: boolean = false,
+  failed: boolean
 ): Promise<any> => {
   const api = formbricks.getApi();
   return await api.client.response.update({
     responseId,
     finished,
+    failed,
     data,
     ttc,
   });

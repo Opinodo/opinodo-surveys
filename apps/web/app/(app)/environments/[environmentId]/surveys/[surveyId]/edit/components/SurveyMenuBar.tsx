@@ -197,7 +197,10 @@ export default function SurveyMenuBar({
     if (
       survey.redirectUrl &&
       !survey.redirectUrl.includes("https://") &&
-      !survey.redirectUrl.includes("http://")
+      !survey.redirectUrl.includes("http://") &&
+      survey.redirectOnFailUrl &&
+      !survey.redirectOnFailUrl.includes("https://") &&
+      !survey.redirectOnFailUrl.includes("http://")
     ) {
       toast.error("Please enter a valid URL for redirecting respondents.");
       return false;

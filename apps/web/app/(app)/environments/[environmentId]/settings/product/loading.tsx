@@ -32,7 +32,7 @@ export default function Loading() {
     },
     {
       title: "Default Reward",
-      description: "Define the default reward for a survey in euros.",
+      description: "Define the default reward for a survey in dollars.",
       skeletonLines: [{ classes: "h-4 w-28" }, { classes: "h-6 w-64" }, { classes: "h-8 w-24" }],
     },
     {

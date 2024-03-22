@@ -24,7 +24,7 @@ import { getAllCountries } from "../../../../actions";
 
 interface SurveyGeneralSettingsProps {
   localSurvey: TSurvey;
-  setLocalSurvey: (survey: TSurvey | ((TSurvey) => TSurvey)) => void;
+  setLocalSurvey: (survey: TSurvey | ((s: TSurvey) => TSurvey)) => void;
   environment: TEnvironment;
   product: TProduct;
 }
@@ -37,25 +37,26 @@ export default function SurveyGeneralSettings({
   setLocalSurvey,
   product,
 }: SurveyGeneralSettingsProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [customReward, setCustomReward] = useState(localSurvey.reward);
   const [usingCustomReward, setUsingCustomReward] = useState(
-    localSurvey.reward !== product.defaultRewardInEuros
+    localSurvey.reward !== product.defaultRewardInUSD
   );
   const [failureChance, setFailureChance] = useState(localSurvey.failureChance);
   const [hasFailureChance, setHasFailureChance] = useState(localSurvey.failureChance > 0);
   const [selectedLanguage, setSelectedLanguage] = useState(localSurvey.language);
 
-  const toggleUsingDefaultReward = (isChecked) => {
+  const toggleUsingDefaultReward = (isChecked: boolean) => {
     setUsingCustomReward(isChecked);
     setLocalSurvey({
       ...localSurvey,
-      reward: isChecked ? customReward : product.defaultRewardInEuros,
+      reward: isChecked ? customReward : product.defaultRewardInUSD,
     });
   };
 
   const updateSurveyReward = (e) => {
     let newValue = parseFloat(e.target.value);
+    if (isNaN(newValue)) newValue = 0;
     newValue = Math.min(Math.max(newValue, 0), 20);
     setCustomReward(newValue);
     setLocalSurvey({
@@ -64,18 +65,21 @@ export default function SurveyGeneralSettings({
     });
   };
 
-  const toggleFailureChance = (isChecked) => {
+  const toggleFailureChance = (isChecked: boolean) => {
     setHasFailureChance(isChecked);
+    const enabledFailureCard = localSurvey.failureCard;
+    enabledFailureCard.enabled = true;
     setLocalSurvey({
       ...localSurvey,
       failureChance: isChecked ? failureChance : 0,
-      failureCard: isChecked ? localSurvey.failureCard : { enabled: false },
+      failureCard: isChecked ? enabledFailureCard : { enabled: false },
     });
   };
 
   const updateFailureRate = (e) => {
     let newValue = parseFloat(e.target.value);
-    newValue = Math.min(Math.max(newValue, 0.01), 1);
+    if (isNaN(newValue)) newValue = 0;
+    newValue = Math.min(Math.max(newValue, 1), 100);
     setFailureChance(newValue);
     setLocalSurvey({
       ...localSurvey,
@@ -121,6 +125,19 @@ export default function SurveyGeneralSettings({
     setLocalSurvey((prevState) => ({
       ...prevState,
       countries: updatedCountries,
+      limitedCountries: updatedCountries.length > 0,
+    }));
+  };
+
+  const [limitedToCountries, setLimitedToCountries] = useState(localSurvey.countries.length > 0);
+
+  const toggleLimitedToCountries = (isChecked) => {
+    setLimitedToCountries(isChecked);
+    const newCountries = !isChecked ? [] : localSurvey.countries;
+    setLocalSurvey((prevState) => ({
+      ...prevState,
+      countries: newCountries,
+      limitedCountries: newCountries.length > 0,
     }));
   };
 
@@ -166,6 +183,37 @@ export default function SurveyGeneralSettings({
     setLocalSurvey({ ...localSurvey, failureCard: message });
   };
 
+  const [redirectToggle, setRedirectToggle] = useState(
+    localSurvey.redirectOnFailUrl != null && localSurvey.redirectOnFailUrl != ""
+  );
+  const [urlError, setUrlError] = useState(localSurvey.redirectOnFailUrl == null);
+  const [redirectOnFailUrl, setRedirectOnFailUrl] = useState<string | null>(localSurvey.redirectOnFailUrl);
+
+  const handleRedirectCheckMark = () => {
+    setRedirectToggle((prev) => !prev);
+
+    if (redirectToggle && localSurvey.redirectOnFailUrl) {
+      setRedirectOnFailUrl(null);
+      setLocalSurvey({ ...localSurvey, redirectOnFailUrl: null });
+    }
+  };
+
+  const handleRedirectUrlChange = (link: string) => {
+    setRedirectOnFailUrl(link);
+    setLocalSurvey({ ...localSurvey, redirectOnFailUrl: link });
+  };
+
+  const validateUrl = (e) => {
+    const url = e.target.value;
+    const urlPattern = /^(http|https):\/\/[^ "]+$/;
+
+    if (!urlPattern.test(url)) {
+      setUrlError(true);
+    } else {
+      setUrlError(false);
+    }
+  };
+
   return (
     <Collapsible.Root
       open={open}
@@ -188,26 +236,6 @@ export default function SurveyGeneralSettings({
       <Collapsible.CollapsibleContent>
         <hr className="py-1 text-slate-600" />
         <div className="p-3">
-          <div className="p-3">
-            <div className="ml-2 flex items-center space-x-1">
-              <Label htmlFor="countries" className="cursor-pointer">
-                Limit to Countries:
-              </Label>
-              <Select
-                options={countries.map((country) => ({
-                  value: country.isoCode,
-                  label: country.name,
-                }))}
-                isMulti
-                isSearchable
-                onChange={handleCountryChange}
-                value={localSurvey.countries.map((country) => ({
-                  value: country.isoCode,
-                  label: country.name,
-                }))}
-              />
-            </div>
-          </div>
           <div className="p-3">
             <div className="ml-2 flex items-center space-x-1">
               <Label htmlFor="language" className="cursor-pointer">
@@ -242,9 +270,9 @@ export default function SurveyGeneralSettings({
               </Label>
             </div>
             {usingCustomReward && (
-              <div className="ml-2">
+              <div className="ml-2 mt-2">
                 <Label htmlFor="customRewardInput" className="cursor-pointer">
-                  Custom Reward: €
+                  Custom Reward:
                 </Label>
                 <Input
                   autoFocus
@@ -255,6 +283,9 @@ export default function SurveyGeneralSettings({
                   value={customReward}
                   className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
                 />
+                <Label htmlFor="dollarSymbol" className="cursor-pointer">
+                  $
+                </Label>
               </div>
             )}
           </div>
@@ -272,7 +303,7 @@ export default function SurveyGeneralSettings({
             </div>
 
             {hasFailureChance && (
-              <div className="ml-2">
+              <div className="ml-4 mt-2">
                 <Label htmlFor="failureChanceInput" className="cursor-pointer">
                   Failure Chance:
                 </Label>
@@ -280,19 +311,28 @@ export default function SurveyGeneralSettings({
                   autoFocus
                   type="number"
                   id="failureChanceInput"
-                  step="0.01"
+                  step="1"
                   onChange={updateFailureRate}
                   value={failureChance}
                   className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
                 />
+                <Label htmlFor="failureChanceInput" className="cursor-pointer">
+                  %
+                </Label>
+                {failureChance === 100 && (
+                  <Label className="ml-2 text-sm text-yellow-500">
+                    It will not be possible for panelists to complete this survey successfully!
+                  </Label>
+                )}
               </div>
             )}
+
             {hasFailureChance && (
               <AdvancedOptionToggle
                 htmlId="failureRateToggle"
                 isChecked={failureCardMessageToggle}
                 onToggle={toggleCustomFailureScreen}
-                title="Use custom fail screen"
+                title="Use custom fail screen text"
                 description="Customise the text on the fail screen."
                 childBorder={true}>
                 <div className="flex w-full items-center space-x-1 p-4 pb-4">
@@ -315,10 +355,65 @@ export default function SurveyGeneralSettings({
                       defaultValue={localSurvey.failureCard.subheader || SURVEY_FAILED_SUBHEADER}
                       onChange={(e) => handleCustomFailureCardMessageChange({ subheader: e.target.value })}
                     />
+
+                    <AdvancedOptionToggle
+                      htmlId="redirectOnFailUrl"
+                      isChecked={redirectToggle}
+                      onToggle={handleRedirectCheckMark}
+                      title="Redirect on failure"
+                      description="Redirect user to specified link on survey failure"
+                      childBorder={true}>
+                      <div className="w-full p-4">
+                        <div className="flex w-full cursor-pointer items-center">
+                          <p className="mr-2 w-[400px] text-sm font-semibold text-slate-700">
+                            Redirect here:
+                          </p>
+                          <Input
+                            autoFocus
+                            className="w-full bg-white"
+                            type="url"
+                            placeholder="https://www.example.com"
+                            value={redirectOnFailUrl ? redirectOnFailUrl : ""}
+                            onChange={(e) => handleRedirectUrlChange(e.target.value)}
+                            onBlur={validateUrl}
+                          />
+                        </div>
+                        {urlError && <p className="mt-2 text-sm text-red-500">Please enter a valid URL.</p>}
+                      </div>
+                    </AdvancedOptionToggle>
                   </div>
                 </div>
               </AdvancedOptionToggle>
             )}
+          </div>
+          <div className="p-3">
+            <div className="ml-2 flex items-center space-x-1">
+              <Switch
+                id="limitedToCountries"
+                checked={limitedToCountries}
+                onCheckedChange={toggleLimitedToCountries}
+                className={"mr-2"}
+              />
+              <Label htmlFor="countries" className="cursor-pointer">
+                Limit to Countries
+              </Label>
+
+              {limitedToCountries && (
+                <Select
+                  options={countries.map((country) => ({
+                    value: country.isoCode,
+                    label: country.name,
+                  }))}
+                  isMulti
+                  isSearchable
+                  onChange={handleCountryChange}
+                  value={localSurvey.countries.map((country) => ({
+                    value: country.isoCode,
+                    label: country.name,
+                  }))}
+                />
+              )}
+            </div>
           </div>
         </div>
       </Collapsible.CollapsibleContent>

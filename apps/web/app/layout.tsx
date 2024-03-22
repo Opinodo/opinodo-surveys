@@ -1,3 +1,4 @@
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Metadata } from "next";
 
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       {process.env.VERCEL === "1" && <SpeedInsights sampleRate={0.1} />}
       <body className="flex h-screen flex-col">{children}</body>
+      <GoogleAnalytics gaId="G-R7W0H3MQ42" />
     </html>
   );
 }

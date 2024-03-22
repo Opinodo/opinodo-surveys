@@ -58,6 +58,7 @@ export const ZResponse = z.object({
   person: ZPerson.nullable(),
   personAttributes: ZResponsePersonAttributes,
   finished: z.boolean(),
+  failed: z.boolean(),
   data: ZResponseData,
   ttc: ZResponseTtc.optional(),
   notes: z.array(ZResponseNote),
@@ -74,6 +75,7 @@ export const ZResponseInput = z.object({
   userId: z.string().nullish(),
   singleUseId: z.string().nullable().optional(),
   finished: z.boolean(),
+  failed: z.boolean(),
   data: ZResponseData,
   ttc: ZResponseTtc.optional(),
   meta: z
@@ -102,6 +104,7 @@ export type TResponseLegacyInput = z.infer<typeof ZResponseLegacyInput>;
 
 export const ZResponseUpdateInput = z.object({
   finished: z.boolean(),
+  failed: z.boolean(),
   data: ZResponseData,
   ttc: ZResponseTtc.optional(),
 });
@@ -116,6 +119,7 @@ export type TResponseWithSurvey = z.infer<typeof ZResponseWithSurvey>;
 
 export const ZResponseUpdate = z.object({
   finished: z.boolean(),
+  failed: z.boolean(),
   data: ZResponseData,
   ttc: ZResponseTtc.optional(),
   meta: z

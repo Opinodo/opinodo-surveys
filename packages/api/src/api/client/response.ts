@@ -24,6 +24,7 @@ export class ResponseAPI {
   async update({
     responseId,
     finished,
+    failed,
     data,
     ttc,
   }: TResponseUpdateInputWithResponseId): Promise<Result<{}, NetworkError | Error>> {
@@ -31,6 +32,7 @@ export class ResponseAPI {
       finished,
       data,
       ttc,
+      failed,
     });
   }
 }

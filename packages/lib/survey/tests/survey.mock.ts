@@ -39,7 +39,7 @@ export const mockProduct: TProduct = {
   brandColor: "#000000",
   highlightBorderColor: "#000000",
   recontactDays: 0,
-  defaultRewardInEuros: 5,
+  defaultRewardInUSD: 5,
   linkSurveyBranding: false,
   inAppSurveyBranding: false,
   placement: "bottomRight",
@@ -112,6 +112,7 @@ const baseSurveyProperties = {
   autoComplete: 7,
   closeOnDate: currentDate,
   redirectUrl: "http://github.com/formbricks/formbricks",
+  redirectOnFailUrl: "http://github.com/formbricks/formbricks",
   recontactDays: 3,
   welcomeCard: mockWelcomeCard,
   questions: [mockQuestion],
@@ -128,6 +129,8 @@ const baseSurveyProperties = {
   attributeFilters: [],
   reward: 5,
   failureChance: 0,
+  countries: [],
+  limitedCountries: false,
   ...commonMockProperties,
 };
 
@@ -142,7 +145,6 @@ export const mockSurveyOutput: SurveyMock = {
   pin: null,
   resultShareKey: null,
   language: "en",
-  countries: [],
   ...baseSurveyProperties,
 };
 
@@ -166,7 +168,6 @@ export const updateSurveyInput: TSurvey = {
   pin: null,
   resultShareKey: null,
   language: "en",
-  countries: [],
   ...commonMockProperties,
   ...baseSurveyProperties,
   attributeFilters: [mockAttributeFilter],
