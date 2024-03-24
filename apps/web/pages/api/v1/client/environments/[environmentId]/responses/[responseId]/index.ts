@@ -130,7 +130,6 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
       ...responsePrisma,
       person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
       tags: responsePrisma.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
-      failed: false,
     };
 
     // send response update to pipeline
