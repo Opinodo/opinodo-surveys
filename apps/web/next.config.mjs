@@ -37,6 +37,18 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "surveys.opinodo.com"
+      },
+      {
+        protocol: "https",
+        hostname: "staging.surveys.digiopinion.com"
+      },
+      {
+        protocol: "https",
+        hostname: "surveys.digiopinion.com"
+      },
+      {
+        protocol: "https",
         hostname: "app.formbricks.com",
       },
       {
