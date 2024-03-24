@@ -125,6 +125,7 @@ const getProductsByTeamId = async (teamId: string): Promise<ProductData[]> => {
                   createdAt: true,
                   updatedAt: true,
                   finished: true,
+                  failed: true,
                   data: true,
                 },
                 orderBy: {

@@ -300,6 +300,7 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
           },
         },
         finished: responseInput.finished,
+        failed: responseInput.failed,
         data: responseInput.data,
         ttc,
         ...(responseInput.personId && {
@@ -507,6 +508,7 @@ export const updateResponse = async (
   responseId: string,
   responseInput: TResponseUpdateInput
 ): Promise<TResponse> => {
+  console.log("asdsadssdasdasdassd");
   validateInputs([responseId, ZId], [responseInput, ZResponseUpdateInput]);
   try {
     // const currentResponse = await getResponse(responseId);
@@ -537,12 +539,14 @@ export const updateResponse = async (
         : responseInput.ttc
       : {};
 
+    console.log(responseInput.failed);
     const responsePrisma = await prisma.response.update({
       where: {
         id: responseId,
       },
       data: {
         finished: responseInput.finished,
+        failed: responseInput.failed,
         data,
         ttc,
       },
