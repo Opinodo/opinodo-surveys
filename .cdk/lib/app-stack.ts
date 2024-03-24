@@ -131,9 +131,9 @@ export class AppStack extends Stack {
             file: './apps/web/Dockerfile',
             ignoreMode: IgnoreMode.DOCKER,
             buildArgs: {
-                "ENCRYPTION_KEY":"8eadb525897fe0d962b9f2e8063069a31acaa441a3badf35344e04736f8de77a",
-                "NEXTAUTH_SECRET":"e68372f606edd33c92c04091c753fd3332c5210d5572d903b5310c777821e207",
-                "DATABASE_URL":"postgresql://postgres:TUTaiGB%5EfjXf2M19wgLEk2_V%3Df3UgA@opinodo-surveys-db.cfx5x0nxveqd.eu-central-1.rds.amazonaws.com/OpinodoSurveysDB"
+                "ENCRYPTION_KEY": "8eadb525897fe0d962b9f2e8063069a31acaa441a3badf35344e04736f8de77a",
+                "NEXTAUTH_SECRET": "e68372f606edd33c92c04091c753fd3332c5210d5572d903b5310c777821e207",
+                "DATABASE_URL": "postgresql://postgres:TUTaiGB%5EfjXf2M19wgLEk2_V%3Df3UgA@opinodo-surveys-db.cfx5x0nxveqd.eu-central-1.rds.amazonaws.com/OpinodoSurveysDB"
             },
 
         });
@@ -146,7 +146,7 @@ export class AppStack extends Stack {
                 ecs.EnvironmentFile.fromBucket(props.bucket, 'production.env'),
             ],
             logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs`, logGroup: webLogGroup}),
-            portMappings: [{ containerPort: 3000}],
+            portMappings: [{containerPort: 3000}],
         });
 
         webContainer.addMountPoints({

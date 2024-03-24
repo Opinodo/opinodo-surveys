@@ -41,7 +41,7 @@ export class BaseStack extends Stack {
         }
 
         const repository = new ecr.Repository(this, `Ecr`, {
-            lifecycleRules: [{ maxImageCount: 50 }],
+            lifecycleRules: [{maxImageCount: 50}],
         });
 
         if (props.environmentName === 'sandbox') {

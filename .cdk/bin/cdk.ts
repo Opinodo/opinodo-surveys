@@ -53,5 +53,3 @@ new CdkPipelineStack(app, 'OpinodoSurveysPipeline', {
         region: Params.AWS_REGION
     }
 });
-
-app.synth();

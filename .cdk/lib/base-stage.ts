@@ -1,7 +1,6 @@
-import{ CfnOutput, Stage, StageProps } from 'aws-cdk-lib';
-// import { AppStack } from './app-stack';
-import { BaseStack } from './base-stack';
-import { Construct } from 'constructs';
+import {CfnOutput, Stage, StageProps} from 'aws-cdk-lib';
+import {BaseStack} from './base-stack';
+import {Construct} from 'constructs';
 import {AppStack} from "./app-stack";
 
 export interface baseStageProps extends StageProps {
@@ -15,6 +14,7 @@ export interface baseStageProps extends StageProps {
 
 export class BaseStage extends Stage {
     public readonly albAddress: CfnOutput
+
     constructor(scope: Construct, id: string, props: baseStageProps) {
         super(scope, id, props);
 
