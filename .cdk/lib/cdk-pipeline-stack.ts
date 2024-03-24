@@ -54,6 +54,5 @@ export class CdkPipelineStack extends Stack {
         // const pipelineProdStage = pipeline.addStage(prodStage);
         //
         // pipelineProdStage.addPre(new ManualApprovalStep('ManualApproval', {}));
-
     }
 }
