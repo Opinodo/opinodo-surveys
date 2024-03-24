@@ -10,11 +10,6 @@ export class CdkPipelineStack extends Stack {
 
         const pipeline = new CodePipeline(this, 'Pipeline', {
             crossAccountKeys: true,
-            codeBuildDefaults: {
-              buildEnvironment: {
-                  computeType: ComputeType.LAMBDA_4GB,
-              }
-            },
             synth: new ShellStep('Synth', {
                 primaryOutputDirectory: './.cdk/cdk.out',
                 input: CodePipelineSource.gitHub(Params.GITHUB_REPO, Params.BRANCH_NAME, {
