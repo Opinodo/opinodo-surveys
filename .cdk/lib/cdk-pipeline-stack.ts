@@ -3,7 +3,6 @@ import {CodePipeline, CodePipelineSource, ShellStep, ManualApprovalStep} from 'a
 import {Construct} from 'constructs';
 import {BaseStage} from './base-stage';
 import {Params} from './params';
-import {BuildSpec} from "aws-cdk-lib/aws-codebuild";
 
 export class CdkPipelineStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
@@ -12,31 +11,12 @@ export class CdkPipelineStack extends Stack {
         const pipeline = new CodePipeline(this, 'Pipeline', {
             crossAccountKeys: true,
             synth: new ShellStep('Synth', {
-                primaryOutputDirectory: './.cdk',
+                primaryOutputDirectory: './.cdk/cdk.out',
                 input: CodePipelineSource.gitHub(Params.GITHUB_REPO, Params.BRANCH_NAME, {
                     authentication: SecretValue.secretsManager(Params.GITHUB_TOKEN)
                 }),
                 commands: ['cd .cdk', 'npm install', 'npx cdk synth'],
             }),
-            selfMutationCodeBuildDefaults: {
-                partialBuildSpec: BuildSpec.fromObject({
-                    "version": "0.2",
-                    "phases": {
-                        "install": {
-                            "commands": [
-                                "npm install -g aws-cdk@2"
-                            ]
-                        },
-                        "build": {
-                            "commands": [
-                                "cd .cdk",
-                                "cdk -a . deploy OpinodoSurveysPipeline --require-approval=never --verbose"
-                            ]
-                        }
-                    }
-                })
-            }
-
         });
 
         // const stagingStage = new BaseStage(this, 'StagingStage', {
