@@ -63,6 +63,7 @@ export default async function handle(req: NextApiRequest, res: NextApiResponse) 
         updatedAt: true,
         surveyId: true,
         finished: true,
+        failed: true,
         data: true,
         ttc: true,
         meta: true,
