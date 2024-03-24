@@ -38,6 +38,20 @@ export class AppStack extends Stack {
             removalPolicy: RemovalPolicy.DESTROY,
         });
 
+        const accessPoint = new AccessPoint(this, 'AccessPoint', {
+            fileSystem: fileSystem,
+            path: "/data",
+            createAcl: {
+                ownerGid: "1001",
+                ownerUid: "1001",
+                permissions: "755"
+            },
+            posixUser: {
+                uid: "1001",
+                gid: "1001"
+            }
+        });
+
         const taskRole = new iam.Role(this, `${projectName}-task-role`, {
             assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
             description: "Role that the task definitions when running the code",
@@ -59,27 +73,11 @@ export class AppStack extends Stack {
                             'elasticfilesystem:DescribeFileSystems',
                             'elasticfilesystem:DescribeMountTargets',
                         ],
-                        resources: [
-                            fileSystem.fileSystemArn
-                        ],
+                        resources: [fileSystem.fileSystemArn],
                     })
                 ],
             })
         );
-
-        const accessPoint = new AccessPoint(this, 'AccessPoint', {
-            fileSystem: fileSystem,
-            path: "/data",
-            createAcl: {
-                ownerGid: "1001",
-                ownerUid: "1001",
-                permissions: "755"
-            },
-            posixUser: {
-                uid: "1001",
-                gid: "1001"
-            }
-        });
 
         const webTask = new ecs.FargateTaskDefinition(this, `${projectName}-web`, {
             family: `${projectName}-web`,
@@ -110,6 +108,7 @@ export class AppStack extends Stack {
             actions: ["S3:GetObject"],
             resources: [props.bucket.bucketArn + "/production.env"],
         }));
+
         webTask.addToExecutionRolePolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ["S3:GetBucketLocation"],
@@ -131,9 +130,9 @@ export class AppStack extends Stack {
             file: './apps/web/Dockerfile',
             ignoreMode: IgnoreMode.DOCKER,
             buildArgs: {
-                "ENCRYPTION_KEY": "8eadb525897fe0d962b9f2e8063069a31acaa441a3badf35344e04736f8de77a",
-                "NEXTAUTH_SECRET": "e68372f606edd33c92c04091c753fd3332c5210d5572d903b5310c777821e207",
-                "DATABASE_URL": "postgresql://postgres:TUTaiGB%5EfjXf2M19wgLEk2_V%3Df3UgA@opinodo-surveys-db.cfx5x0nxveqd.eu-central-1.rds.amazonaws.com/OpinodoSurveysDB"
+                // "ENCRYPTION_KEY": "8eadb525897fe0d962b9f2e8063069a31acaa441a3badf35344e04736f8de77a",
+                // "NEXTAUTH_SECRET": "e68372f606edd33c92c04091c753fd3332c5210d5572d903b5310c777821e207",
+                // "DATABASE_URL": "postgresql://postgres:TUTaiGB%5EfjXf2M19wgLEk2_V%3Df3UgA@opinodo-surveys-db.cfx5x0nxveqd.eu-central-1.rds.amazonaws.com/OpinodoSurveysDB"
             },
 
         });

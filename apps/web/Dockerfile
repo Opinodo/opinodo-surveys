@@ -13,15 +13,15 @@ RUN apk add --no-cache curl \
        "https://github.com/aptible/supercronic/releases/download/v0.2.27/supercronic-linux-amd64" \
     && chmod +x /tmp/supercronic
 
-# Set environment variables
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-
-ARG NEXTAUTH_SECRET
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
-
-ARG ENCRYPTION_KEY
-ENV ENCRYPTION_KEY=$ENCRYPTION_KEY
+## Set environment variables
+#ARG DATABASE_URL
+#ENV DATABASE_URL=$DATABASE_URL
+#
+#ARG NEXTAUTH_SECRET
+#ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+#
+#ARG ENCRYPTION_KEY
+#ENV ENCRYPTION_KEY=$ENCRYPTION_KEY
 
 # Set the working directory
 WORKDIR /app
