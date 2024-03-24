@@ -2,7 +2,6 @@ import {SecretValue, Stack, StackProps} from 'aws-cdk-lib';
 import {CodePipeline, CodePipelineSource, ShellStep} from 'aws-cdk-lib/pipelines';
 import {Construct} from 'constructs';
 import {Params} from './params';
-import {ComputeType} from "aws-cdk-lib/aws-codebuild";
 
 export class CdkPipelineStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
