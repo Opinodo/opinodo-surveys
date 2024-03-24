@@ -1,8 +1,8 @@
-import {Stack, StackProps, SecretValue} from 'aws-cdk-lib';
-import {CodePipeline, CodePipelineSource, ShellStep, ManualApprovalStep} from 'aws-cdk-lib/pipelines';
+import {SecretValue, Stack, StackProps} from 'aws-cdk-lib';
+import {CodePipeline, CodePipelineSource, ShellStep} from 'aws-cdk-lib/pipelines';
 import {Construct} from 'constructs';
-import {BaseStage} from './base-stage';
 import {Params} from './params';
+import {ComputeType} from "aws-cdk-lib/aws-codebuild";
 
 export class CdkPipelineStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
@@ -10,6 +10,11 @@ export class CdkPipelineStack extends Stack {
 
         const pipeline = new CodePipeline(this, 'Pipeline', {
             crossAccountKeys: true,
+            codeBuildDefaults: {
+              buildEnvironment: {
+                  computeType: ComputeType.LAMBDA_4GB,
+              }
+            },
             synth: new ShellStep('Synth', {
                 primaryOutputDirectory: './.cdk/cdk.out',
                 input: CodePipelineSource.gitHub(Params.GITHUB_REPO, Params.BRANCH_NAME, {
@@ -17,6 +22,7 @@ export class CdkPipelineStack extends Stack {
                 }),
                 commands: ['cd .cdk', 'npm ci', 'npx cdk synth'],
             }),
+
         });
 
         // const stagingStage = new BaseStage(this, 'StagingStage', {
