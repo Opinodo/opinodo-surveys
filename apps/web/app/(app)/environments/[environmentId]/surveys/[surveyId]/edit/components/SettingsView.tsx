@@ -1,18 +1,20 @@
 import SurveyGeneralSettings from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/edit/components/SurveyGeneralSettings";
+import SurveyPlacementCard from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/edit/components/SurveyPlacementCard";
 
+import { AdvancedTargetingCard } from "@formbricks/ee/advancedTargeting/components/AdvancedTargetingCard";
 import { TActionClass } from "@formbricks/types/actionClasses";
 import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TMembershipRole } from "@formbricks/types/memberships";
 import { TProduct } from "@formbricks/types/product";
+import { TSegment } from "@formbricks/types/segment";
 import { TSurvey } from "@formbricks/types/surveys";
 
 // import HowToSendCard from "./HowToSendCard";
 import RecontactOptionsCard from "./RecontactOptionsCard";
 import ResponseOptionsCard from "./ResponseOptionsCard";
-import StylingCard from "./StylingCard";
+import TargetingCard from "./TargetingCard";
 import WhenToSendCard from "./WhenToSendCard";
-import WhoToSendCard from "./WhoToSendCard";
 
 interface SettingsViewProps {
   environment: TEnvironment;
@@ -20,9 +22,11 @@ interface SettingsViewProps {
   setLocalSurvey: (survey: TSurvey) => void;
   actionClasses: TActionClass[];
   attributeClasses: TAttributeClass[];
+  segments: TSegment[];
   responseCount: number;
   membershipRole?: TMembershipRole;
-  colours: string[];
+  isUserTargetingAllowed?: boolean;
+  isFormbricksCloud: boolean;
   product: TProduct;
 }
 
@@ -32,9 +36,11 @@ export default function SettingsView({
   setLocalSurvey,
   actionClasses,
   attributeClasses,
+  segments,
   responseCount,
   membershipRole,
-  colours,
+  isUserTargetingAllowed = false,
+  isFormbricksCloud,
   product,
 }: SettingsViewProps) {
   return (
@@ -48,12 +54,31 @@ export default function SettingsView({
 
       {/*<HowToSendCard localSurvey={localSurvey} setLocalSurvey={setLocalSurvey} environment={environment} />*/}
 
-      <WhoToSendCard
-        localSurvey={localSurvey}
-        setLocalSurvey={setLocalSurvey}
-        environmentId={environment.id}
-        attributeClasses={attributeClasses}
-      />
+      {localSurvey.type === "web" ? (
+        !isUserTargetingAllowed ? (
+          <TargetingCard
+            key={localSurvey.segment?.id}
+            localSurvey={localSurvey}
+            setLocalSurvey={setLocalSurvey}
+            environmentId={environment.id}
+            attributeClasses={attributeClasses}
+            segments={segments}
+            initialSegment={segments.find((segment) => segment.id === localSurvey.segment?.id)}
+            isFormbricksCloud={isFormbricksCloud}
+          />
+        ) : (
+          <AdvancedTargetingCard
+            key={localSurvey.segment?.id}
+            localSurvey={localSurvey}
+            setLocalSurvey={setLocalSurvey}
+            environmentId={environment.id}
+            attributeClasses={attributeClasses}
+            actionClasses={actionClasses}
+            segments={segments}
+            initialSegment={segments.find((segment) => segment.id === localSurvey.segment?.id)}
+          />
+        )
+      ) : null}
 
       <WhenToSendCard
         localSurvey={localSurvey}
@@ -75,12 +100,13 @@ export default function SettingsView({
         environmentId={environment.id}
       />
 
-      <StylingCard
-        localSurvey={localSurvey}
-        setLocalSurvey={setLocalSurvey}
-        colours={colours}
-        environmentId={environment.id}
-      />
+      {localSurvey.type === "web" && (
+        <SurveyPlacementCard
+          localSurvey={localSurvey}
+          setLocalSurvey={setLocalSurvey}
+          environmentId={environment.id}
+        />
+      )}
     </div>
   );
 }

@@ -56,4 +56,10 @@ Zone.Identifier
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# uploads
+packages/lib/uploads
+
+# Pino Logs
+formbricks.log
 .idea/

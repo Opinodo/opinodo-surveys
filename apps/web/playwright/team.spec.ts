@@ -1,6 +1,6 @@
 import { expect, test } from "playwright/test";
 
-import { login, signUpAndLogin, signupUsingInviteToken, skipOnboarding } from "./utils/helper";
+import { finishOnboarding, login, signUpAndLogin, signupUsingInviteToken } from "./utils/helper";
 import { invites, users } from "./utils/mock";
 
 test.describe("Invite, accept and remove team member", async () => {
@@ -10,7 +10,7 @@ test.describe("Invite, accept and remove team member", async () => {
 
   test("Invite team member", async ({ page }) => {
     await signUpAndLogin(page, name, email, password);
-    await skipOnboarding(page);
+    await finishOnboarding(page);
 
     const dropdownTrigger = page.locator("#userDropdownTrigger");
     await expect(dropdownTrigger).toBeVisible();
@@ -34,10 +34,14 @@ test.describe("Invite, accept and remove team member", async () => {
     await page.getByLabel("Email Address").fill(invites.addMember.email);
 
     await page.getByRole("button", { name: "Send Invitation", exact: true }).click();
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(500);
   });
 
-  test("Copy Invite Link", async ({ page }) => {
+  test("Copy invite Link", async ({ page }) => {
     await login(page, email, password);
+    await page.waitForURL(/\/environments\/[^/]+\/surveys/);
+    await expect(page.getByText("My Product")).toBeVisible();
 
     const dropdownTrigger = page.locator("#userDropdownTrigger");
     await expect(dropdownTrigger).toBeVisible();
@@ -56,7 +60,7 @@ test.describe("Invite, accept and remove team member", async () => {
     const pendingSpan = lastMemberInfo.locator("span").filter({ hasText: "Pending" });
     await expect(pendingSpan).toBeVisible();
 
-    const shareInviteButton = page.locator("#shareInviteButton");
+    const shareInviteButton = page.locator(".shareInviteButton").last();
     await expect(shareInviteButton).toBeVisible();
 
     await shareInviteButton.click();
@@ -71,7 +75,7 @@ test.describe("Invite, accept and remove team member", async () => {
     }
   });
 
-  test("Accept Invite", async ({ page }) => {
+  test("Accept invite", async ({ page }) => {
     const { email, name, password } = users.team[1];
     page.goto(inviteLink);
 
@@ -82,10 +86,10 @@ test.describe("Invite, accept and remove team member", async () => {
     await page.getByRole("link", { name: "Create account" }).click();
 
     await signupUsingInviteToken(page, name, email, password);
-    await skipOnboarding(page);
+    await finishOnboarding(page, false);
   });
 
-  test("Remove Member", async ({ page }) => {
+  test("Remove member", async ({ page }) => {
     await login(page, email, password);
 
     const dropdownTrigger = page.locator("#userDropdownTrigger");

@@ -1,16 +1,14 @@
 "use client";
 
-import { EnvelopeIcon, TrashIcon } from "@heroicons/react/24/outline";
-import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import clsx from "clsx";
+import { CheckCircle2Icon, LanguagesIcon, MailIcon, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ReactNode, useState } from "react";
 import toast from "react-hot-toast";
 
 import { cn } from "@formbricks/lib/cn";
-import { useMembershipRole } from "@formbricks/lib/membership/hooks/useMembershipRole";
-import { getAccessFlags } from "@formbricks/lib/membership/utils";
+import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
 import { getPersonIdentifier } from "@formbricks/lib/person/util";
 import { timeSince } from "@formbricks/lib/time";
 import { formatDateWithOrdinal } from "@formbricks/lib/utils/datetime";
@@ -20,15 +18,15 @@ import { TSurvey, TSurveyQuestionType } from "@formbricks/types/surveys";
 import { TTag } from "@formbricks/types/tags";
 import { TUser } from "@formbricks/types/user";
 
+import { getLanguageLabel } from "../../ee/multiLanguage/lib/isoLanguages";
 import { PersonAvatar } from "../Avatars";
 import { DeleteDialog } from "../DeleteDialog";
 import { FileUploadResponse } from "../FileUploadResponse";
-import { LoadingWrapper } from "../LoadingWrapper";
 import { PictureSelectionResponse } from "../PictureSelectionResponse";
 import { RatingResponse } from "../RatingResponse";
 import { SurveyStatusIndicator } from "../SurveyStatusIndicator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../Tooltip";
-import { deleteResponseAction } from "./actions";
+import { deleteResponseAction, getResponseAction } from "./actions";
 import QuestionSkip from "./components/QuestionSkip";
 import ResponseNotes from "./components/ResponseNote";
 import ResponseTagsWrapper from "./components/ResponseTagsWrapper";
@@ -37,9 +35,12 @@ export interface SingleResponseCardProps {
   survey: TSurvey;
   response: TResponse;
   user?: TUser;
-  pageType: string;
+  pageType: "people" | "response";
   environmentTags: TTag[];
   environment: TEnvironment;
+  updateResponse?: (responseId: string, responses: TResponse) => void;
+  deleteResponse?: (responseId: string) => void;
+  isViewer: boolean;
 }
 
 interface TooltipRendererProps {
@@ -78,6 +79,9 @@ export default function SingleResponseCard({
   pageType,
   environmentTags,
   environment,
+  updateResponse,
+  deleteResponse,
+  isViewer,
 }: SingleResponseCardProps) {
   const environmentId = survey.environmentId;
   const router = useRouter();
@@ -90,8 +94,7 @@ export default function SingleResponseCard({
     : isSubmissionTimeMoreThan5Minutes(response.updatedAt);
   let skippedQuestions: string[][] = [];
   let temp: string[] = [];
-  const { membershipRole, isLoading, error } = useMembershipRole(environmentId);
-  const { isViewer } = getAccessFlags(membershipRole);
+
   const isFirstQuestionAnswered = response.data[survey.questions[0].id] ? true : false;
 
   function isValidValue(value: any) {
@@ -144,15 +147,17 @@ export default function SingleResponseCard({
     }
   }
 
-  const handleDeleteSubmission = async () => {
+  const handleDeleteResponse = async () => {
     setIsDeleting(true);
     try {
       if (isViewer) {
         throw new Error("You are not authorized to perform this action.");
       }
       await deleteResponseAction(response.id);
+      deleteResponse?.(response.id);
+
       router.refresh();
-      toast.success("Submission deleted successfully.");
+      toast.success("Response deleted successfully.");
       setDeleteDialogOpen(false);
     } catch (error) {
       if (error instanceof Error) toast.error(error.message);
@@ -163,7 +168,7 @@ export default function SingleResponseCard({
 
   const renderTooltip = Boolean(
     (response.personAttributes && Object.keys(response.personAttributes).length > 0) ||
-      (response.meta?.userAgent && Object.keys(response.meta.userAgent).length > 0)
+      (response.meta.userAgent && Object.keys(response.meta.userAgent).length > 0)
   );
 
   function isSubmissionTimeMoreThan5Minutes(submissionTimeISOString: Date) {
@@ -193,22 +198,22 @@ export default function SingleResponseCard({
         </div>
       )}
 
-      {response.meta?.userAgent && Object.keys(response.meta.userAgent).length > 0 && (
+      {response.meta.userAgent && Object.keys(response.meta.userAgent).length > 0 && (
         <div className="text-slate-600">
           {response.personAttributes && Object.keys(response.personAttributes).length > 0 && (
             <hr className="my-2 border-slate-200" />
           )}
           <p className="py-1 font-bold text-slate-700">Device info:</p>
-          {response.meta?.userAgent?.browser && <p>Browser: {response.meta.userAgent.browser}</p>}
-          {response.meta?.userAgent?.os && <p>OS: {response.meta.userAgent.os}</p>}
-          {response.meta?.userAgent && (
+          {response.meta.userAgent?.browser && <p>Browser: {response.meta.userAgent.browser}</p>}
+          {response.meta.userAgent?.os && <p>OS: {response.meta.userAgent.os}</p>}
+          {response.meta.userAgent && (
             <p>
               Device:{" "}
               {response.meta.userAgent.device ? response.meta.userAgent.device : "PC / Generic device"}
             </p>
           )}
-          {response.meta?.source && <p>Source: {response.meta.source}</p>}
-          {response.meta?.country && <p>Country: {response.meta.country}</p>}
+          {response.meta.source && <p>Source: {response.meta.source}</p>}
+          {response.meta.country && <p>Country: {response.meta.country}</p>}
         </div>
       )}
     </>
@@ -218,6 +223,13 @@ export default function SingleResponseCard({
   const fieldIds = survey.hiddenFields?.fieldIds || [];
   const hasFieldIds = !!fieldIds.length;
 
+  const updateFetchedResponses = async () => {
+    const updatedResponse = await getResponseAction(response.id);
+    if (updatedResponse !== null && updateResponse) {
+      updateResponse(response.id, updatedResponse);
+    }
+  };
+
   return (
     <div className={clsx("group relative", isOpen && "min-h-[300px]")}>
       <div
@@ -226,61 +238,69 @@ export default function SingleResponseCard({
           pageType === "response" &&
             (isOpen
               ? "w-3/4"
-              : response.notes.length
+              : user && response.notes.length
                 ? "w-[96.5%]"
                 : cn("w-full", user ? "group-hover:w-[96.5%]" : ""))
         )}>
         <div className="space-y-2 px-6 pb-5 pt-6">
           <div className="flex items-center justify-between">
-            {pageType === "response" && (
-              <div>
-                {response.person?.id ? (
-                  user ? (
-                    <Link
-                      className="group flex items-center"
-                      href={`/environments/${environmentId}/people/${response.person.id}`}>
-                      <TooltipRenderer shouldRender={renderTooltip} tooltipContent={tooltipContent}>
-                        <PersonAvatar personId={response.person.id} />
-                      </TooltipRenderer>
-                      <h3 className="ph-no-capture ml-4 pb-1 font-semibold text-slate-600 hover:underline">
-                        {displayIdentifier}
-                      </h3>
-                    </Link>
+            <div className="flex items-center justify-center space-x-4">
+              {pageType === "response" && (
+                <div>
+                  {response.person?.id ? (
+                    user ? (
+                      <Link
+                        className="group flex items-center"
+                        href={`/environments/${environmentId}/people/${response.person.id}`}>
+                        <TooltipRenderer shouldRender={renderTooltip} tooltipContent={tooltipContent}>
+                          <PersonAvatar personId={response.person.id} />
+                        </TooltipRenderer>
+                        <h3 className="ph-no-capture ml-4 pb-1 font-semibold text-slate-600 hover:underline">
+                          {displayIdentifier}
+                        </h3>
+                      </Link>
+                    ) : (
+                      <div className="group flex items-center">
+                        <TooltipRenderer shouldRender={renderTooltip} tooltipContent={tooltipContent}>
+                          <PersonAvatar personId={response.person.id} />
+                        </TooltipRenderer>
+                        <h3 className="ph-no-capture ml-4 pb-1 font-semibold text-slate-600">
+                          {displayIdentifier}
+                        </h3>
+                      </div>
+                    )
                   ) : (
                     <div className="group flex items-center">
                       <TooltipRenderer shouldRender={renderTooltip} tooltipContent={tooltipContent}>
-                        <PersonAvatar personId={response.person.id} />
+                        <PersonAvatar personId="anonymous" />
                       </TooltipRenderer>
-                      <h3 className="ph-no-capture ml-4 pb-1 font-semibold text-slate-600">
-                        {displayIdentifier}
-                      </h3>
+                      <h3 className="ml-4 pb-1 font-semibold text-slate-600">Anonymous</h3>
                     </div>
-                  )
-                ) : (
-                  <div className="group flex items-center">
-                    <TooltipRenderer shouldRender={renderTooltip} tooltipContent={tooltipContent}>
-                      <PersonAvatar personId="anonymous" />
-                    </TooltipRenderer>
-                    <h3 className="ml-4 pb-1 font-semibold text-slate-600">Anonymous</h3>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
 
-            {pageType === "people" && (
-              <div className="flex items-center justify-center space-x-2 rounded-full bg-slate-100 p-1 px-2 text-sm text-slate-600">
-                {(survey.type === "link" || environment.widgetSetupCompleted) && (
-                  <SurveyStatusIndicator status={survey.status} />
-                )}
-                <Link
-                  className="hover:underline"
-                  href={`/environments/${environmentId}/surveys/${survey.id}/summary`}>
-                  {survey.name}
-                </Link>
-              </div>
-            )}
+              {pageType === "people" && (
+                <div className="flex items-center justify-center space-x-2 rounded-full bg-slate-100 p-1 px-2 text-sm text-slate-600">
+                  {(survey.type === "link" || environment.widgetSetupCompleted) && (
+                    <SurveyStatusIndicator status={survey.status} />
+                  )}
+                  <Link
+                    className="hover:underline"
+                    href={`/environments/${environmentId}/surveys/${survey.id}/summary`}>
+                    {survey.name}
+                  </Link>
+                </div>
+              )}
+              {response.language && response.language !== "default" && (
+                <div className="flex space-x-2 rounded-full bg-slate-700 px-2 py-1 text-xs text-white">
+                  <div>{getLanguageLabel(response.language)}</div>
+                  <LanguagesIcon className="h-4 w-4" />
+                </div>
+              )}
+            </div>
 
-            <div className="flex cursor-pointer space-x-4 text-sm">
+            <div className="flex space-x-4 text-sm">
               <time className="text-slate-500" dateTime={timeSince(response.updatedAt.toISOString())}>
                 {timeSince(response.updatedAt.toISOString())}
               </time>
@@ -296,7 +316,7 @@ export default function SingleResponseCard({
                     }}
                     className={`h-4 w-4 ${
                       canResponseBeDeleted
-                        ? "text-slate-500 hover:text-red-700"
+                        ? "cursor-pointer text-slate-500 hover:text-red-700"
                         : "cursor-not-allowed text-slate-400"
                     } `}
                   />
@@ -318,7 +338,7 @@ export default function SingleResponseCard({
             {survey.verifyEmail && response.data["verifiedEmail"] && (
               <div>
                 <p className="flex items-center space-x-2 text-sm text-slate-500">
-                  <EnvelopeIcon className="h-4 w-4" />
+                  <MailIcon className="h-4 w-4" />
 
                   <span>Verified Email</span>
                 </p>
@@ -340,7 +360,9 @@ export default function SingleResponseCard({
               return (
                 <div key={`${question.id}`}>
                   {isValidValue(response.data[question.id]) ? (
-                    <p className="text-sm text-slate-500">{question.headline}</p>
+                    <p className="text-sm text-slate-500">
+                      {getLocalizedValue(question.headline, "default")}
+                    </p>
                   ) : (
                     <QuestionSkip
                       skippedQuestions={skipped}
@@ -370,7 +392,7 @@ export default function SingleResponseCard({
                         {response.data[question.id]}
                       </p>
                     ) : (
-                      <p className="ph-no-capture my-1 font-semibold text-slate-700">
+                      <p className="ph-no-capture my-1 whitespace-pre-line font-semibold text-slate-700">
                         {response.data[question.id]}
                       </p>
                     )
@@ -404,30 +426,27 @@ export default function SingleResponseCard({
           )}
           {response.finished && (
             <div className="mt-4 flex">
-              <CheckCircleIcon className="h-6 w-6 text-slate-400" />
+              <CheckCircle2Icon className="h-6 w-6 text-slate-400" />
               <p className="mx-2 rounded-lg bg-slate-100 px-2 text-slate-700">Completed</p>
             </div>
           )}
         </div>
 
-        {user && (
-          <LoadingWrapper isLoading={isLoading} error={error}>
-            {!isViewer && (
-              <ResponseTagsWrapper
-                environmentId={environmentId}
-                responseId={response.id}
-                tags={response.tags.map((tag) => ({ tagId: tag.id, tagName: tag.name }))}
-                environmentTags={environmentTags}
-              />
-            )}
-          </LoadingWrapper>
+        {user && !isViewer && (
+          <ResponseTagsWrapper
+            environmentId={environmentId}
+            responseId={response.id}
+            tags={response.tags.map((tag) => ({ tagId: tag.id, tagName: tag.name }))}
+            environmentTags={environmentTags}
+            updateFetchedResponses={updateFetchedResponses}
+          />
         )}
 
         <DeleteDialog
           open={deleteDialogOpen}
           setOpen={setDeleteDialogOpen}
           deleteWhat="response"
-          onDelete={handleDeleteSubmission}
+          onDelete={handleDeleteResponse}
           isDeleting={isDeleting}
         />
       </div>
@@ -438,6 +457,7 @@ export default function SingleResponseCard({
           notes={response.notes}
           isOpen={isOpen}
           setIsOpen={setIsOpen}
+          updateFetchedResponses={updateFetchedResponses}
         />
       )}
     </div>

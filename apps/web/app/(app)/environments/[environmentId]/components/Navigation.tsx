@@ -2,23 +2,24 @@
 
 import FaveIcon from "@/app/favicon.ico";
 import { formbricksLogout } from "@/app/lib/formbricks";
+import clsx from "clsx";
 import {
-  AdjustmentsVerticalIcon,
-  ArrowRightOnRectangleIcon,
-  ChatBubbleBottomCenterTextIcon,
+  BrushIcon,
   ChevronDownIcon,
-  CodeBracketIcon,
+  CodeIcon,
   CreditCardIcon,
-  DocumentCheckIcon,
-  EnvelopeIcon,
+  FileCheckIcon,
   HeartIcon,
+  LanguagesIcon,
   LinkIcon,
-  PaintBrushIcon,
+  LogOutIcon,
+  MailIcon,
+  MessageSquareTextIcon,
   PlusIcon,
+  SlidersIcon,
   UserCircleIcon,
   UsersIcon,
-} from "@heroicons/react/24/solid";
-import clsx from "clsx";
+} from "lucide-react";
 import { MenuIcon } from "lucide-react";
 import type { Session } from "next-auth";
 import { signOut } from "next-auth/react";
@@ -69,6 +70,7 @@ interface NavigationProps {
   isFormbricksCloud: boolean;
   webAppUrl: string;
   membershipRole?: TMembershipRole;
+  isMultiLanguageAllowed: boolean;
 }
 
 export default function Navigation({
@@ -81,6 +83,7 @@ export default function Navigation({
   isFormbricksCloud,
   webAppUrl,
   membershipRole,
+  isMultiLanguageAllowed,
 }: NavigationProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -110,6 +113,14 @@ export default function Navigation({
     }
   }, [team]);
 
+  const sortedProducts = useMemo(() => {
+    return [...products].sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
+
+  const sortedTeams = useMemo(() => {
+    return [...teams].sort((a, b) => a.name.localeCompare(b.name));
+  }, [teams]);
+
   const navigation = useMemo(
     () => [
       {
@@ -120,11 +131,10 @@ export default function Navigation({
         hidden: false,
       },
       {
-        name: "People",
+        name: "People & Segments",
         href: `/environments/${environment.id}/people`,
         icon: CustomersIcon,
-        current: pathname?.includes("/people"),
-        hidden: false,
+        current: pathname?.includes("/people") || pathname?.includes("/segments"),
       },
       {
         name: "Actions & Attributes",
@@ -151,21 +161,27 @@ export default function Navigation({
     [environment.id, pathname, isViewer]
   );
 
-  const dropdownnavigation = [
+  const dropdownNavigation = [
     {
       title: "Survey",
       links: [
         {
-          icon: AdjustmentsVerticalIcon,
+          icon: SlidersIcon,
           label: "Product Settings",
           href: `/environments/${environment.id}/settings/product`,
           hidden: false,
         },
         {
-          icon: PaintBrushIcon,
+          icon: BrushIcon,
           label: "Look & Feel",
           href: `/environments/${environment.id}/settings/lookandfeel`,
           hidden: isViewer,
+        },
+        {
+          icon: LanguagesIcon,
+          label: "Survey Languages",
+          href: `/environments/${environment.id}/settings/language`,
+          hidden: !isMultiLanguageAllowed,
         },
       ],
     },
@@ -190,7 +206,7 @@ export default function Navigation({
       title: "Setup",
       links: [
         {
-          icon: DocumentCheckIcon,
+          icon: FileCheckIcon,
           label: "Setup checklist",
           href: `/environments/${environment.id}/settings/setup`,
           hidden: widgetSetupCompleted,
@@ -204,7 +220,7 @@ export default function Navigation({
           },
         },
         {
-          icon: CodeBracketIcon,
+          icon: CodeIcon,
           label: "Developer Docs",
           href: "https://formbricks.com/docs",
           target: "_blank",
@@ -384,7 +400,7 @@ export default function Navigation({
                           <DropdownMenuRadioGroup
                             value={product!.id}
                             onValueChange={(v) => handleEnvironmentChangeByProduct(v)}>
-                            {products.map((product) => (
+                            {sortedProducts.map((product) => (
                               <DropdownMenuRadioItem
                                 value={product.id}
                                 className="cursor-pointer break-all"
@@ -419,7 +435,7 @@ export default function Navigation({
                           <DropdownMenuRadioGroup
                             value={currentTeamId}
                             onValueChange={(teamId) => handleEnvironmentChangeByTeam(teamId)}>
-                            {teams?.map((team) => (
+                            {sortedTeams.map((team) => (
                               <DropdownMenuRadioItem value={team.id} className="cursor-pointer" key={team.id}>
                                 {team.name}
                               </DropdownMenuRadioItem>
@@ -459,7 +475,7 @@ export default function Navigation({
                       </DropdownMenuPortal>
                     </DropdownMenuSub>
 
-                    {dropdownnavigation.map((item) => (
+                    {dropdownNavigation.map((item) => (
                       <DropdownMenuGroup key={item.title}>
                         <DropdownMenuSeparator />
                         {item.links.map(
@@ -484,7 +500,7 @@ export default function Navigation({
                           <DropdownMenuItem>
                             <a href="mailto:johannes@formbricks.com">
                               <div className="flex items-center">
-                                <EnvelopeIcon className="mr-2 h-4 w-4" />
+                                <MailIcon className="mr-2 h-4 w-4" />
                                 <span>Email us!</span>
                               </div>
                             </a>
@@ -495,7 +511,7 @@ export default function Navigation({
                                 formbricks.track("Top Menu: Product Feedback");
                               }}>
                               <div className="flex items-center">
-                                <ChatBubbleBottomCenterTextIcon className="mr-2 h-4 w-4" />
+                                <MessageSquareTextIcon className="mr-2 h-4 w-4" />
                                 <span>Product Feedback</span>
                               </div>
                             </button>
@@ -504,11 +520,11 @@ export default function Navigation({
                       )}
                       <DropdownMenuItem
                         onClick={async () => {
-                          await signOut();
+                          await signOut({ callbackUrl: "/auth/login" });
                           await formbricksLogout();
                         }}>
                         <div className="flex h-full w-full items-center">
-                          <ArrowRightOnRectangleIcon className="mr-2 h-4 w-4" />
+                          <LogOutIcon className="mr-2 h-4 w-4" />
                           Logout
                         </div>
                       </DropdownMenuItem>
