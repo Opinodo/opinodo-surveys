@@ -300,6 +300,7 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
           },
         },
         finished: responseInput.finished,
+        failed: responseInput.failed,
         data: responseInput.data,
         ttc,
         ...(responseInput.personId && {
@@ -543,6 +544,7 @@ export const updateResponse = async (
       },
       data: {
         finished: responseInput.finished,
+        failed: responseInput.failed,
         data,
         ttc,
       },

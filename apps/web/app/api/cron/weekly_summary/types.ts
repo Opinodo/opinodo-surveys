@@ -38,6 +38,7 @@ type ResponseData = {
   createdAt: Date;
   updatedAt: Date;
   finished: boolean;
+  failed: boolean;
   data: TResponseData;
 };
 
