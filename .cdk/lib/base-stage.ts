@@ -6,10 +6,12 @@ import {AppStack} from "./app-stack";
 export interface baseStageProps extends StageProps {
     projectName: string
     environmentName: string,
+    envFileName: string,
     dbMaxAllocatedStorage: number;
     dbAllocatedStorage: number;
     dbInstanceType: string;
     dbName: string;
+    certificateArn: string;
 }
 
 export class BaseStage extends Stage {
@@ -33,7 +35,8 @@ export class BaseStage extends Stage {
             cluster: baseStack.cluster,
             environmentName: props.environmentName,
             projectName: props.projectName,
-            certificateArn: "",
+            certificateArn: props.certificateArn,
+            envFileName: props.envFileName,
         });
 
         // this.albAddress = new CfnOutput(appStack, 'AlbAddress', {

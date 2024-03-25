@@ -23,6 +23,7 @@ interface ECSStackProps extends StackProps {
     projectName: string;
     environmentName: string;
     certificateArn: string;
+    envFileName: string;
 }
 
 export class AppStack extends Stack {
@@ -106,7 +107,7 @@ export class AppStack extends Stack {
         webTask.addToExecutionRolePolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             actions: ["S3:GetObject"],
-            resources: [props.bucket.bucketArn + "/production.env"],
+            resources: [props.bucket.bucketArn + "/" + props.envFileName],
         }));
 
         webTask.addToExecutionRolePolicy(new iam.PolicyStatement({
@@ -120,21 +121,15 @@ export class AppStack extends Stack {
             retention: 60,
             logGroupName: `/ecs/${projectName}/web`
         });
+
         if (props.environmentName === 'sandbox') {
             webLogGroup.applyRemovalPolicy(RemovalPolicy.DESTROY);
         }
-
 
         const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
             directory: '../', // Specify the context directory
             file: './apps/web/Dockerfile',
             ignoreMode: IgnoreMode.DOCKER,
-            buildArgs: {
-                // "ENCRYPTION_KEY": "8eadb525897fe0d962b9f2e8063069a31acaa441a3badf35344e04736f8de77a",
-                // "NEXTAUTH_SECRET": "e68372f606edd33c92c04091c753fd3332c5210d5572d903b5310c777821e207",
-                // "DATABASE_URL": "postgresql://postgres:TUTaiGB%5EfjXf2M19wgLEk2_V%3Df3UgA@opinodo-surveys-db.cfx5x0nxveqd.eu-central-1.rds.amazonaws.com/OpinodoSurveysDB"
-            },
-
         });
 
         const webContainer = webTask.addContainer('web', {
@@ -142,7 +137,7 @@ export class AppStack extends Stack {
             essential: true,
             containerName: 'web',
             environmentFiles: [
-                ecs.EnvironmentFile.fromBucket(props.bucket, 'production.env'),
+                ecs.EnvironmentFile.fromBucket(props.bucket, props.envFileName),
             ],
             logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs`, logGroup: webLogGroup}),
             portMappings: [{containerPort: 3000}],
