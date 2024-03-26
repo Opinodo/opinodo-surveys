@@ -10,10 +10,14 @@ import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbr
 import { TPerson } from "@formbricks/types/people";
 import {
   TResponse,
+  TResponseFilterCriteria,
   TResponseInput,
   TResponseLegacyInput,
   TResponseUpdateInput,
+  TSurveyPersonAttributes,
+  TSurveySummary,
   ZResponse,
+  ZResponseFilterCriteria,
   ZResponseInput,
   ZResponseLegacyInput,
   ZResponseNote,
@@ -21,14 +25,27 @@ import {
 } from "@formbricks/types/responses";
 import { TTag } from "@formbricks/types/tags";
 
-import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL } from "../constants";
-import { deleteDisplayByResponseId } from "../display/service";
+import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL, WEBAPP_URL } from "../constants";
+import { deleteDisplayByResponseId, getDisplayCountBySurveyId } from "../display/service";
 import { createPerson, getPerson, getPersonByUserId, transformPrismaPerson } from "../person/service";
-import { calculateTtcTotal } from "../response/util";
+import {
+  buildWhereClause,
+  calculateTtcTotal,
+  extractSurveyDetails,
+  getQuestionWiseSummary,
+  getResponsesFileName,
+  getResponsesJson,
+  getSurveySummaryDropOff,
+  getSurveySummaryMeta,
+} from "../response/util";
 import { responseNoteCache } from "../responseNote/cache";
 import { getResponseNotes } from "../responseNote/service";
+import { putFile } from "../storage/service";
+import { getSurvey } from "../survey/service";
 import { captureTelemetry } from "../telemetry";
 import { formatDateFields } from "../utils/datetime";
+import { convertToCsv, convertToXlsxBuffer } from "../utils/fileConversion";
+import { checkForRecallInHeadline } from "../utils/recall";
 import { validateInputs } from "../utils/validate";
 import { responseCache } from "./cache";
 
@@ -46,6 +63,7 @@ export const responseSelection = {
   ttc: true,
   personAttributes: true,
   singleUseId: true,
+  language: true,
   person: {
     select: {
       id: true,
@@ -113,6 +131,9 @@ export const getResponsesByPersonId = async (
           select: responseSelection,
           take: page ? ITEMS_PER_PAGE : undefined,
           skip: page ? ITEMS_PER_PAGE * (page - 1) : undefined,
+          orderBy: {
+            updatedAt: "asc",
+          },
         });
 
         if (!responsePrisma) {
@@ -209,8 +230,8 @@ export const createResponse = async (responseInput: TResponseInput): Promise<TRe
   validateInputs([responseInput, ZResponseInput]);
   captureTelemetry("response created");
 
-  const { environmentId, userId, surveyId, finished, failed, data, meta, singleUseId } = responseInput;
-
+  const { environmentId, language, userId, surveyId, finished, failed, data, meta, singleUseId } =
+    responseInput;
   try {
     let person: TPerson | null = null;
 
@@ -232,6 +253,7 @@ export const createResponse = async (responseInput: TResponseInput): Promise<TRe
         finished: finished,
         failed: failed,
         data: data,
+        language: language,
         ...(person?.id && {
           person: {
             connect: {
@@ -253,10 +275,11 @@ export const createResponse = async (responseInput: TResponseInput): Promise<TRe
     };
 
     responseCache.revalidate({
+      environmentId: environmentId,
       id: response.id,
       personId: response.person?.id,
       surveyId: response.surveyId,
-      ...(response.singleUseId && { singleUseId: response.singleUseId }),
+      singleUseId: singleUseId ? singleUseId : undefined,
     });
 
     responseNoteCache.revalidate({
@@ -314,10 +337,10 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
 
         ...(responseInput.meta && ({ meta: responseInput?.meta } as Prisma.JsonObject)),
         singleUseId: responseInput.singleUseId,
+        language: responseInput.language,
       },
       select: responseSelection,
     });
-
     const response: TResponse = {
       ...responsePrisma,
       person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
@@ -333,7 +356,6 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
     responseNoteCache.revalidate({
       responseId: response.id,
     });
-
     return response;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -358,7 +380,7 @@ export const getResponse = async (responseId: string): Promise<TResponse | null>
         });
 
         if (!responsePrisma) {
-          throw new ResourceNotFoundError("Response", responseId);
+          return null;
         }
 
         const response: TResponse = {
@@ -383,26 +405,85 @@ export const getResponse = async (responseId: string): Promise<TResponse | null>
     }
   )();
 
-  return {
-    ...formatDateFields(response, ZResponse),
-    notes: response.notes.map((note) => formatDateFields(note, ZResponseNote)),
-  } as TResponse;
+  return response
+    ? ({
+        ...formatDateFields(response, ZResponse),
+        notes: response.notes.map((note) => formatDateFields(note, ZResponseNote)),
+      } as TResponse)
+    : null;
+};
+
+export const getResponsePersonAttributes = async (surveyId: string): Promise<TSurveyPersonAttributes> => {
+  const responses = await unstable_cache(
+    async () => {
+      validateInputs([surveyId, ZId]);
+
+      try {
+        let attributes: TSurveyPersonAttributes = {};
+        const responseAttributes = await prisma.response.findMany({
+          where: {
+            surveyId: surveyId,
+          },
+          select: {
+            personAttributes: true,
+          },
+        });
+
+        responseAttributes.forEach((response) => {
+          Object.keys(response.personAttributes ?? {}).forEach((key) => {
+            if (response.personAttributes && attributes[key]) {
+              attributes[key].push(response.personAttributes[key].toString());
+            } else if (response.personAttributes) {
+              attributes[key] = [response.personAttributes[key].toString()];
+            }
+          });
+        });
+
+        Object.keys(attributes).forEach((key) => {
+          attributes[key] = Array.from(new Set(attributes[key]));
+        });
+
+        return attributes;
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new DatabaseError(error.message);
+        }
+
+        throw error;
+      }
+    },
+    [`getAttributesFromResponses-${surveyId}`],
+    {
+      tags: [responseCache.tag.bySurveyId(surveyId)],
+      revalidate: SERVICES_REVALIDATION_INTERVAL,
+    }
+  )();
+
+  return responses;
 };
 
 export const getResponses = async (
   surveyId: string,
   page?: number,
-  batchSize?: number
+  batchSize?: number,
+  filterCriteria?: TResponseFilterCriteria
 ): Promise<TResponse[]> => {
   const responses = await unstable_cache(
     async () => {
-      validateInputs([surveyId, ZId], [page, ZOptionalNumber]);
+      validateInputs(
+        [surveyId, ZId],
+        [page, ZOptionalNumber],
+        [batchSize, ZOptionalNumber],
+        [filterCriteria, ZResponseFilterCriteria.optional()]
+      );
       batchSize = batchSize ?? RESPONSES_PER_PAGE;
+
       try {
         const responses = await prisma.response.findMany({
           where: {
             surveyId,
             failed: false,
+            ...buildWhereClause(filterCriteria),
           },
           select: responseSelection,
           orderBy: [
@@ -415,7 +496,7 @@ export const getResponses = async (
         });
 
         const transformedResponses: TResponse[] = await Promise.all(
-          responses.map(async (responsePrisma) => {
+          responses.map((responsePrisma) => {
             return {
               ...responsePrisma,
               person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
@@ -433,17 +514,135 @@ export const getResponses = async (
         throw error;
       }
     },
-    [`getResponses-${surveyId}-${page}-${batchSize}`],
+    [`getResponses-${surveyId}-${page}-${batchSize}-${JSON.stringify(filterCriteria)}`],
+    {
+      tags: [responseCache.tag.bySurveyId(surveyId)],
+      revalidate: SERVICES_REVALIDATION_INTERVAL,
+    }
+  )();
+  return responses.map((response) => ({
+    ...formatDateFields(response, ZResponse),
+    notes: response.notes.map((note) => formatDateFields(note, ZResponseNote)),
+  }));
+};
+
+export const getSurveySummary = (
+  surveyId: string,
+  filterCriteria?: TResponseFilterCriteria
+): Promise<TSurveySummary> => {
+  const summary = unstable_cache(
+    async () => {
+      validateInputs([surveyId, ZId], [filterCriteria, ZResponseFilterCriteria.optional()]);
+
+      const survey = await getSurvey(surveyId);
+
+      if (!survey) {
+        throw new ResourceNotFoundError("Survey", surveyId);
+      }
+
+      const batchSize = 3000;
+      const responseCount = await getResponseCountBySurveyId(surveyId, filterCriteria);
+      const pages = Math.ceil(responseCount / batchSize);
+
+      const responsesArray = await Promise.all(
+        Array.from({ length: pages }, (_, i) => {
+          return getResponses(surveyId, i + 1, batchSize, filterCriteria);
+        })
+      );
+      const responses = responsesArray.flat();
+
+      const displayCount = await getDisplayCountBySurveyId(surveyId, {
+        createdAt: filterCriteria?.createdAt,
+      });
+
+      const meta = getSurveySummaryMeta(responses, displayCount);
+      const dropOff = getSurveySummaryDropOff(survey, responses, displayCount);
+      const questionWiseSummary = getQuestionWiseSummary(
+        checkForRecallInHeadline(survey, "default"),
+        responses
+      );
+
+      return { meta, dropOff, summary: questionWiseSummary };
+    },
+    [`getSurveySummary-${surveyId}-${JSON.stringify(filterCriteria)}`],
     {
       tags: [responseCache.tag.bySurveyId(surveyId)],
       revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
 
-  return responses.map((response) => ({
-    ...formatDateFields(response, ZResponse),
-    notes: response.notes.map((note) => formatDateFields(note, ZResponseNote)),
-  }));
+  return summary;
+};
+
+export const getResponseDownloadUrl = async (
+  surveyId: string,
+  format: "csv" | "xlsx",
+  filterCriteria?: TResponseFilterCriteria
+): Promise<string> => {
+  try {
+    validateInputs([surveyId, ZId], [format, ZString], [filterCriteria, ZResponseFilterCriteria.optional()]);
+    const survey = await getSurvey(surveyId);
+
+    if (!survey) {
+      throw new ResourceNotFoundError("Survey", surveyId);
+    }
+
+    const environmentId = survey.environmentId as string;
+
+    const accessType = "private";
+    const batchSize = 3000;
+    const responseCount = await getResponseCountBySurveyId(surveyId, filterCriteria);
+    const pages = Math.ceil(responseCount / batchSize);
+
+    const responsesArray = await Promise.all(
+      Array.from({ length: pages }, (_, i) => {
+        return getResponses(surveyId, i + 1, batchSize, filterCriteria);
+      })
+    );
+    const responses = responsesArray.flat();
+
+    const { metaDataFields, questions, hiddenFields, userAttributes } = extractSurveyDetails(
+      survey,
+      responses
+    );
+
+    const headers = [
+      "No.",
+      "Response ID",
+      "Timestamp",
+      "Finished",
+      "Survey ID",
+      "User ID",
+      "Notes",
+      "Tags",
+      ...metaDataFields,
+      ...questions,
+      ...hiddenFields,
+      ...userAttributes,
+    ];
+
+    const jsonData = getResponsesJson(survey, responses, questions, userAttributes, hiddenFields);
+
+    const fileName = getResponsesFileName(survey?.name || "", format);
+    let fileBuffer: Buffer;
+
+    if (format === "xlsx") {
+      fileBuffer = convertToXlsxBuffer(headers, jsonData);
+    } else {
+      const csvFile = await convertToCsv(headers, jsonData);
+      fileBuffer = Buffer.from(csvFile);
+    }
+
+    await putFile(fileName, fileBuffer, accessType, environmentId);
+
+    return `${WEBAPP_URL}/storage/${environmentId}/${accessType}/${fileName}`;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      throw new DatabaseError(error.message);
+    }
+
+    throw error;
+  }
 };
 
 export const getResponsesByEnvironmentId = async (
@@ -537,6 +736,7 @@ export const updateResponse = async (
         ? calculateTtcTotal(responseInput.ttc)
         : responseInput.ttc
       : {};
+    const language = responseInput.language;
 
     const responsePrisma = await prisma.response.update({
       where: {
@@ -544,9 +744,9 @@ export const updateResponse = async (
       },
       data: {
         finished: responseInput.finished,
-        failed: responseInput.failed,
         data,
         ttc,
+        language,
       },
       select: responseSelection,
     });
@@ -597,7 +797,10 @@ export const deleteResponse = async (responseId: string): Promise<TResponse> => 
 
     deleteDisplayByResponseId(responseId, response.surveyId);
 
+    const survey = await getSurvey(response.surveyId);
+
     responseCache.revalidate({
+      environmentId: survey?.environmentId,
       id: response.id,
       personId: response.person?.id,
       surveyId: response.surveyId,
@@ -617,15 +820,19 @@ export const deleteResponse = async (responseId: string): Promise<TResponse> => 
   }
 };
 
-export const getResponseCountBySurveyId = async (surveyId: string): Promise<number> =>
+export const getResponseCountBySurveyId = async (
+  surveyId: string,
+  filterCriteria?: TResponseFilterCriteria
+): Promise<number> =>
   unstable_cache(
     async () => {
-      validateInputs([surveyId, ZId]);
+      validateInputs([surveyId, ZId], [filterCriteria, ZResponseFilterCriteria.optional()]);
 
       try {
         const responseCount = await prisma.response.count({
           where: {
             surveyId: surveyId,
+            ...buildWhereClause(filterCriteria),
           },
         });
         return responseCount;
@@ -633,7 +840,7 @@ export const getResponseCountBySurveyId = async (surveyId: string): Promise<numb
         throw error;
       }
     },
-    [`getResponseCountBySurveyId-${surveyId}`],
+    [`getResponseCountBySurveyId-${surveyId}-${JSON.stringify(filterCriteria)}`],
     {
       tags: [responseCache.tag.bySurveyId(surveyId)],
       revalidate: SERVICES_REVALIDATION_INTERVAL,

@@ -1,8 +1,7 @@
 "use client";
 
 import { replacePresetPlaceholders } from "@/app/lib/templates";
-import { PlusCircleIcon } from "@heroicons/react/24/outline";
-import { SparklesIcon } from "@heroicons/react/24/solid";
+import { PlusCircleIcon, SparklesIcon } from "lucide-react";
 import { SplitIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -71,11 +70,12 @@ export default function TemplateList({
     const surveyType = environment?.widgetSetupCompleted ? "web" : "link";
     const autoComplete = surveyType === "web" ? 50 : null;
     activeTemplate.preset.reward = product.defaultRewardInUSD;
-    const augmentedTemplate = {
+    const augmentedTemplate: TSurveyInput = {
       ...activeTemplate.preset,
       type: surveyType,
       autoComplete,
-    } as TSurveyInput;
+      createdBy: user.id,
+    };
     const survey = await createSurveyAction(environmentId, augmentedTemplate);
     router.push(`/environments/${environmentId}/surveys/${survey.id}/edit`);
   };
@@ -154,7 +154,7 @@ export default function TemplateList({
           ? [...filteredTemplates, testTemplate]
           : filteredTemplates
         ).map((template: TTemplate) => (
-          <button
+          <div
             onClick={() => {
               const newTemplate = replacePresetPlaceholders(template, product);
               onTemplateClick(newTemplate);
@@ -209,7 +209,7 @@ export default function TemplateList({
                 </Button>
               </div>
             )}
-          </button>
+          </div>
         ))}
       </div>
     </main>

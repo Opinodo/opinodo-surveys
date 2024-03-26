@@ -202,8 +202,8 @@ export default function FileInput({
   }, [allowMultipleFiles, fileUrls, isUploading]);
 
   return (
-    <div className="items-left relative mt-3 flex w-full cursor-pointer flex-col justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-700 dark:hover:border-slate-500 dark:hover:bg-slate-800">
-      <div>
+    <div className="items-left bg-input-bg hover:bg-input-bg-selected border-border relative mt-3 flex w-full flex-col justify-center rounded-lg border-2 border-dashed dark:border-slate-600 dark:bg-slate-700 dark:hover:border-slate-500 dark:hover:bg-slate-800">
+      <div className="max-h-[30vh] overflow-auto">
         {fileUrls &&
           fileUrls?.map((file, index) => {
             const fileName = getOriginalFileNameFromUrl(file);
@@ -241,7 +241,9 @@ export default function FileInput({
                     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
                     <polyline points="14 2 14 8 20 8" />
                   </svg>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{fileName}</p>
+                  <p className="mt-1 w-full overflow-hidden overflow-ellipsis whitespace-nowrap px-2 text-center text-sm text-slate-600 dark:text-slate-400">
+                    {fileName}
+                  </p>
                 </div>
               </div>
             );
@@ -250,7 +252,7 @@ export default function FileInput({
 
       <div>
         {isUploading && (
-          <div className="inset-0 flex animate-pulse items-center justify-center rounded-lg bg-slate-100 py-4">
+          <div className="inset-0 flex animate-pulse items-center justify-center rounded-lg py-4">
             <label htmlFor="selectedFile" className="text-sm font-medium text-slate-500">
               Uploading...
             </label>
@@ -259,14 +261,14 @@ export default function FileInput({
 
         <label htmlFor="selectedFile" onDragOver={(e) => handleDragOver(e)} onDrop={(e) => handleDrop(e)}>
           {showUploader && (
-            <div className="flex flex-col items-center justify-center py-6">
+            <div className="flex flex-col items-center justify-center py-6 hover:cursor-pointer">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="h-6 text-slate-500">
+                className="text-placeholder h-6">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -274,7 +276,7 @@ export default function FileInput({
                 />
               </svg>
 
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-placeholder mt-2 text-sm dark:text-slate-400">
                 <span className="font-medium">Click or drag to upload files.</span>
               </p>
               <input

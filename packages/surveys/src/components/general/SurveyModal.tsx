@@ -1,6 +1,7 @@
 import Modal from "@/components/wrappers/Modal";
-import { SurveyModalProps } from "@/types/props";
 import { useState } from "preact/hooks";
+
+import { SurveyModalProps } from "@formbricks/types/formbricksSurveys";
 
 import { Survey } from "./Survey";
 
@@ -12,8 +13,8 @@ export function SurveyModal({
   placement,
   clickOutside,
   darkOverlay,
-  highlightBorderColor,
   onDisplay,
+  getSetIsResponseSendingFinished,
   onActiveQuestionChange,
   onResponse,
   onClose,
@@ -21,7 +22,9 @@ export function SurveyModal({
   onFileUpload,
   onRetry,
   isRedirectDisabled = false,
+  languageCode,
   responseCount,
+  styling,
 }: SurveyModalProps) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -33,6 +36,8 @@ export function SurveyModal({
       }
     }, 1000); // wait for animation to finish}
   };
+
+  const highlightBorderColor = styling?.highlightBorderColor?.light || null;
 
   return (
     <div id="fbjs" className="formbricks-form">
@@ -48,8 +53,10 @@ export function SurveyModal({
           isBrandingEnabled={isBrandingEnabled}
           activeQuestionId={activeQuestionId}
           onDisplay={onDisplay}
+          getSetIsResponseSendingFinished={getSetIsResponseSendingFinished}
           onActiveQuestionChange={onActiveQuestionChange}
           onResponse={onResponse}
+          languageCode={languageCode}
           onClose={close}
           onFinished={() => {
             onFinished();
@@ -64,6 +71,8 @@ export function SurveyModal({
           onFileUpload={onFileUpload}
           isRedirectDisabled={isRedirectDisabled}
           responseCount={responseCount}
+          styling={styling}
+          isCardBorderVisible={!highlightBorderColor}
         />
       </Modal>
     </div>

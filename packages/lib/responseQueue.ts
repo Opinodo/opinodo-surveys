@@ -9,6 +9,7 @@ interface QueueConfig {
   environmentId: string;
   retryAttempts: number;
   onResponseSendingFailed?: (responseUpdate: TResponseUpdate) => void;
+  onResponseSendingFinished?: () => void;
   setSurveyState?: (state: SurveyState) => void;
 }
 
@@ -54,7 +55,7 @@ export class ResponseQueue {
         this.queue.shift(); // remove the successfully sent response from the queue
         break; // exit the retry loop
       }
-      console.error("Formbricks: Failed to send response. Retrying...", attempts);
+      console.error(`Formbricks: Failed to send response. Retrying... ${attempts}`);
       await delay(1000); // wait for 1 second before retrying
       attempts++;
     }
@@ -68,6 +69,9 @@ export class ResponseQueue {
       }
       this.isRequestInProgress = false;
     } else {
+      if (responseUpdate.finished && this.config.onResponseSendingFinished) {
+        this.config.onResponseSendingFinished();
+      }
       this.isRequestInProgress = false;
       this.processQueue(); // process the next item in the queue if any
     }
@@ -88,7 +92,13 @@ export class ResponseQueue {
           throw new Error("Could not create response");
         }
         if (this.surveyState.displayId) {
-          await this.api.client.display.update(this.surveyState.displayId, { responseId: response.data.id });
+          try {
+            await this.api.client.display.update(this.surveyState.displayId, {
+              responseId: response.data.id,
+            });
+          } catch (error) {
+            console.error(`Failed to update display, proceeding with the response. ${error}`);
+          }
         }
         this.surveyState.updateResponseId(response.data.id);
         if (this.config.setSurveyState) {

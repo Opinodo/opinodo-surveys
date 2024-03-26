@@ -8,7 +8,7 @@ export default function FormbricksBranding() {
       <p className="text-signature text-xs">
         Powered by{" "}
         <b>
-          <span className="text-info-text hover:text-heading">Opinodo Surveys</span>
+          <span className="text-branding-text hover:text-signature">DigiOpinion Surveys</span>
         </b>
       </p>
     </a>
