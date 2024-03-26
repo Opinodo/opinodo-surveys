@@ -1,11 +1,11 @@
 "use client";
 
-import SurveyDropDownMenu from "@/app/(app)/environments/[environmentId]/surveys/components/SurveyDropDownMenu";
 import { useRouter } from "next/navigation";
 
 import { TEnvironment } from "@formbricks/types/environment";
 import { TSurvey } from "@formbricks/types/surveys";
 import { SurveyStatusIndicator } from "@formbricks/ui/SurveyStatusIndicator";
+import SurveyDropDownMenu from "@formbricks/ui/SurveysList/components/SurveyDropdownMenu";
 
 interface SurveyRowProps {
   survey: TSurvey;
@@ -15,6 +15,8 @@ interface SurveyRowProps {
   otherEnvironment: TEnvironment;
   isSurveyCreationDeletionDisabled?: boolean;
   webAppUrl: string;
+  duplicateSurvey: (survey: TSurvey) => void;
+  deleteSurvey: (surveyId: string) => void;
 }
 
 export default function SurveyRow({
@@ -25,6 +27,8 @@ export default function SurveyRow({
   otherEnvironment,
   isSurveyCreationDeletionDisabled,
   webAppUrl,
+  deleteSurvey,
+  duplicateSurvey,
 }: SurveyRowProps) {
   const router = useRouter();
 
@@ -68,6 +72,8 @@ export default function SurveyRow({
           webAppUrl={webAppUrl}
           singleUseId={singleUseId}
           isSurveyCreationDeletionDisabled={isSurveyCreationDeletionDisabled}
+          deleteSurvey={deleteSurvey}
+          duplicateSurvey={duplicateSurvey}
         />
       </td>
     </tr>

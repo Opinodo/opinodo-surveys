@@ -4,7 +4,7 @@ import { getAdvancedTargetingPermission, getMultiLanguagePermission } from "@for
 import { getActionClasses } from "@formbricks/lib/actionClass/service";
 import { getAttributeClasses } from "@formbricks/lib/attributeClass/service";
 import { authOptions } from "@formbricks/lib/authOptions";
-import { IS_FORMBRICKS_CLOUD, SURVEY_BG_COLORS } from "@formbricks/lib/constants";
+import { SURVEY_BG_COLORS } from "@formbricks/lib/constants";
 import { getEnvironment } from "@formbricks/lib/environment/service";
 import { getMembershipByUserIdTeamId } from "@formbricks/lib/membership/service";
 import { getAccessFlags } from "@formbricks/lib/membership/utils";
@@ -86,7 +86,6 @@ export default async function SurveysEditPage({ params }) {
       segments={segments}
       isUserTargetingAllowed={isUserTargetingAllowed}
       isMultiLanguageAllowed={isMultiLanguageAllowed}
-      isFormbricksCloud={IS_FORMBRICKS_CLOUD}
     />
   );
 }

@@ -34,7 +34,6 @@ interface SurveyEditorProps {
   colors: string[];
   isUserTargetingAllowed?: boolean;
   isMultiLanguageAllowed?: boolean;
-  isFormbricksCloud: boolean;
 }
 
 export default function SurveyEditor({
@@ -49,7 +48,6 @@ export default function SurveyEditor({
   colors,
   isMultiLanguageAllowed,
   isUserTargetingAllowed = false,
-  isFormbricksCloud,
 }: SurveyEditorProps): JSX.Element {
   const [activeView, setActiveView] = useState<TSurveyEditorTabs>("questions");
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
@@ -195,7 +193,6 @@ export default function SurveyEditor({
                 selectedLanguageCode={selectedLanguageCode ? selectedLanguageCode : "default"}
                 setSelectedLanguageCode={setSelectedLanguageCode}
                 isMultiLanguageAllowed={isMultiLanguageAllowed}
-                isFormbricksCloud={isFormbricksCloud}
               />
             )}
 
@@ -225,7 +222,6 @@ export default function SurveyEditor({
                 membershipRole={membershipRole}
                 product={product}
                 isUserTargetingAllowed={isUserTargetingAllowed}
-                isFormbricksCloud={isFormbricksCloud}
               />
             )}
           </main>

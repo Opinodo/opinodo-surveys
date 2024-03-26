@@ -1,4 +1,3 @@
-import SurveyDropDownMenu from "@/app/(app)/environments/[environmentId]/surveys/components/SurveyDropDownMenu";
 import SurveyStarter from "@/app/(app)/environments/[environmentId]/surveys/components/SurveyStarter";
 import { generateSurveySingleUseId } from "@/app/lib/singleUseSurveys";
 import { MagnifyingGlassIcon } from "@heroicons/react/16/solid";
@@ -15,16 +14,25 @@ import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
 import { getSurveys, getSurveysCount } from "@formbricks/lib/survey/service";
 import { getTeamByEnvironmentId } from "@formbricks/lib/team/service";
 import type { TEnvironment } from "@formbricks/types/environment";
+import type { TSurvey } from "@formbricks/types/surveys";
 import { Button } from "@formbricks/ui/Button";
 import { Pagination } from "@formbricks/ui/Pagination";
 import { SurveyStatusIndicator } from "@formbricks/ui/SurveyStatusIndicator";
+import SurveyDropDownMenu from "@formbricks/ui/SurveysList/components/SurveyDropdownMenu";
 
 interface SurveysPageParams {
   environmentId: string;
   searchParams: { [key: string]: string | undefined };
+  duplicateSurvey: (survey: TSurvey) => void;
+  deleteSurvey: (surveyId: string) => void;
 }
 
-export default async function SurveyTable({ environmentId, searchParams }: SurveysPageParams) {
+export default async function SurveyTable({
+  environmentId,
+  searchParams,
+  duplicateSurvey,
+  deleteSurvey,
+}: SurveysPageParams) {
   const pageNumber = searchParams.page ? parseInt(searchParams.page as string) : 1;
 
   const totalSurveys = await getSurveysCount(environmentId);
@@ -160,6 +168,8 @@ export default async function SurveyTable({ environmentId, searchParams }: Surve
                         webAppUrl={WEBAPP_URL}
                         singleUseId={singleUseId}
                         isSurveyCreationDeletionDisabled={isSurveyCreationDeletionDisabled}
+                        deleteSurvey={deleteSurvey}
+                        duplicateSurvey={duplicateSurvey}
                       />
                     </div>
                   </div>
