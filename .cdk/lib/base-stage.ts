@@ -20,7 +20,7 @@ export class BaseStage extends Stage {
     constructor(scope: Construct, id: string, props: baseStageProps) {
         super(scope, id, props);
 
-        const baseStack = new BaseStack(this, 'BaseStack', {
+        const baseStack = new BaseStack(this, 'Base', {
             projectName: props.projectName,
             environmentName: props.environmentName,
             dbMaxAllocatedStorage: props.dbMaxAllocatedStorage,
@@ -29,7 +29,7 @@ export class BaseStage extends Stage {
             dbName: props.dbName
         });
 
-        const appStack = new AppStack(this, 'AppStack', {
+        const appStack = new AppStack(this, 'App', {
             bucket: baseStack.bucket,
             vpc: baseStack.vpc,
             cluster: baseStack.cluster,

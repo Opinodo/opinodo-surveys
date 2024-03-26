@@ -19,7 +19,7 @@ export class CdkPipelineStack extends Stack {
             }),
         });
 
-        const stagingStage = new BaseStage(this, 'StagingStage', {
+        const stagingStage = new BaseStage(this, Params.PROJECT_NAME + '-Staging', {
             projectName: Params.PROJECT_NAME,
             environmentName: 'staging',
             envFileName: 'staging.env',
@@ -34,7 +34,7 @@ export class CdkPipelineStack extends Stack {
             }
         });
         //
-        const prodStage = new BaseStage(this, 'ProdStage', {
+        const prodStage = new BaseStage(this, Params.PROJECT_NAME + `-Prod`, {
             projectName: Params.PROJECT_NAME,
             environmentName: 'production',
             envFileName: 'production.env',
