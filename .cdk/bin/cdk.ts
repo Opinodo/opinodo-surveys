@@ -17,7 +17,7 @@ const app = new cdk.App();
 //     dbInstanceType: 't4g.micro',
 //     dbName: 'OpinodoSurveysDB'
 // });
-//
+
 // new AppStack(app, 'OpinodoSurveysApp', {
 //     bucket: baseStack.bucket,
 //     cluster: baseStack.cluster,
