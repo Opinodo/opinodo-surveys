@@ -78,7 +78,7 @@ export async function GET(request: Request) {
         return survey.status === "inProgress" && survey.type === "link";
       })
       .filter((survey) => {
-        if (survey.countries) {
+        if (survey.countries.length > 0) {
           const found = survey.countries.find((country) => {
             return country.isoCode === searchParams.get("country");
           });
