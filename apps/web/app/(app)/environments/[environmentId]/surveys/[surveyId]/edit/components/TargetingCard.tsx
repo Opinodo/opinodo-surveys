@@ -20,7 +20,6 @@ import LoadSegmentModal from "@formbricks/ui/Targeting/LoadSegmentModal";
 import SaveAsNewSegmentModal from "@formbricks/ui/Targeting/SaveAsNewSegmentModal";
 import SegmentTitle from "@formbricks/ui/Targeting/SegmentTitle";
 import TargetingIndicator from "@formbricks/ui/Targeting/TargetingIndicator";
-import { UpgradePlanNotice } from "@formbricks/ui/UpgradePlanNotice";
 
 import {
   cloneBasicSegmentAction,
@@ -37,7 +36,6 @@ interface TargetingCardProps {
   attributeClasses: TAttributeClass[];
   segments: TSegment[];
   initialSegment?: TSegment;
-  isFormbricksCloud: boolean;
 }
 
 export default function TargetingCard({
@@ -47,7 +45,6 @@ export default function TargetingCard({
   attributeClasses,
   segments,
   initialSegment,
-  isFormbricksCloud,
 }: TargetingCardProps) {
   const router = useRouter();
   const [segment, setSegment] = useState<TSegment | null>(localSurvey.segment);
@@ -356,21 +353,6 @@ export default function TargetingCard({
                 onClick={() => setSaveAsNewSegmentModalOpen(true)}>
                 Save as new Segment
               </Button>
-            )}
-          </div>
-          <div className="-mt-1.5">
-            {isFormbricksCloud ? (
-              <UpgradePlanNotice
-                message="For advanced targeting, please"
-                textForUrl="upgrade to the User Identification plan."
-                url={`/environments/${environmentId}/settings/billing`}
-              />
-            ) : (
-              <UpgradePlanNotice
-                message="For advanced targeting, please"
-                textForUrl="request an Enterprise license."
-                url="https://formbricks.com/docs/self-hosting/enterprise"
-              />
             )}
           </div>
         </div>

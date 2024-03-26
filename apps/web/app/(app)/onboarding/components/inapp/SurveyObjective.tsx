@@ -79,7 +79,8 @@ export const Objective: React.FC<ObjectiveProps> = ({ formbricksResponseId, user
             {
               objective: selectedObjective.id === "other" ? otherValue : selectedObjective.label,
             },
-            true
+            true,
+            false
           );
           if (!res.ok) {
             console.error("Error updating response", res.error);

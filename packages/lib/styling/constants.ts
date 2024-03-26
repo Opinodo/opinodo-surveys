@@ -107,6 +107,15 @@ export const PREVIEW_SURVEY = {
       default: "We appreciate your feedback.",
     },
   },
+  failureCard: {
+    enabled: false,
+  },
+  failureChance: 0,
+  redirectOnFailUrl: null,
+  countries: [],
+  limitedCountries: false,
+  reward: 0,
+  language: "en",
   hiddenFields: {
     enabled: true,
     fieldIds: [],

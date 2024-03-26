@@ -26,7 +26,6 @@ interface SettingsViewProps {
   responseCount: number;
   membershipRole?: TMembershipRole;
   isUserTargetingAllowed?: boolean;
-  isFormbricksCloud: boolean;
   product: TProduct;
 }
 
@@ -40,7 +39,6 @@ export default function SettingsView({
   responseCount,
   membershipRole,
   isUserTargetingAllowed = false,
-  isFormbricksCloud,
   product,
 }: SettingsViewProps) {
   return (
@@ -64,7 +62,6 @@ export default function SettingsView({
             attributeClasses={attributeClasses}
             segments={segments}
             initialSegment={segments.find((segment) => segment.id === localSurvey.segment?.id)}
-            isFormbricksCloud={isFormbricksCloud}
           />
         ) : (
           <AdvancedTargetingCard

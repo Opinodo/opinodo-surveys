@@ -441,8 +441,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
     throw new ResourceNotFoundError("Survey", surveyId);
   }
 
-  const { countries, triggers, attributeFilters, environmentId, segment, languages, ...surveyData } =
-    updatedSurvey;
+  const { countries, triggers, environmentId, segment, languages, ...surveyData } = updatedSurvey;
 
   if (countries) {
     data.countries = {
