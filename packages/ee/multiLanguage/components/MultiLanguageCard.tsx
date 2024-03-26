@@ -12,7 +12,6 @@ import { Button } from "@formbricks/ui/Button";
 import { ConfirmationModal } from "@formbricks/ui/ConfirmationModal";
 import { Label } from "@formbricks/ui/Label";
 import { Switch } from "@formbricks/ui/Switch";
-import { UpgradePlanNotice } from "@formbricks/ui/UpgradePlanNotice";
 
 import { DefaultLanguageSelect } from "./DefaultLanguageSelect";
 import { SecondaryLanguageSelect } from "./SecondaryLanguageSelect";
@@ -24,7 +23,6 @@ interface MultiLanguageCardProps {
   activeQuestionId: string | null;
   setActiveQuestionId: (questionId: string | null) => void;
   isMultiLanguageAllowed?: boolean;
-  isFormbricksCloud: boolean;
   setSelectedLanguageCode: (language: string) => void;
 }
 
@@ -44,7 +42,6 @@ export const MultiLanguageCard: FC<MultiLanguageCardProps> = ({
   setActiveQuestionId,
   setLocalSurvey,
   isMultiLanguageAllowed,
-  isFormbricksCloud,
   setSelectedLanguageCode,
 }) => {
   const environmentId = localSurvey.environmentId;
@@ -190,19 +187,7 @@ export const MultiLanguageCard: FC<MultiLanguageCardProps> = ({
         </Collapsible.CollapsibleTrigger>
         <Collapsible.CollapsibleContent className="px-4 pb-6">
           <div className="space-y-4">
-            {!isMultiLanguageAllowed && !isFormbricksCloud && !isMultiLanguageActivated ? (
-              <UpgradePlanNotice
-                message="To enable multi-language surveys, you need an active"
-                url={`/environments/${environmentId}/settings/enterprise`}
-                textForUrl="enterprise license."
-              />
-            ) : !isMultiLanguageAllowed && isFormbricksCloud && !isMultiLanguageActivated ? (
-              <UpgradePlanNotice
-                message="To enable multi-language surveys,"
-                url={`/environments/${environmentId}/settings/billing`}
-                textForUrl="please add your credit card."
-              />
-            ) : (
+            {
               <>
                 {product.languages.length <= 1 && (
                   <div className="mb-4 text-sm italic text-slate-500">
@@ -250,7 +235,7 @@ export const MultiLanguageCard: FC<MultiLanguageCardProps> = ({
                   </Button>
                 </Link>
               </>
-            )}
+            }
 
             <ConfirmationModal
               title={confirmationModalInfo.title}

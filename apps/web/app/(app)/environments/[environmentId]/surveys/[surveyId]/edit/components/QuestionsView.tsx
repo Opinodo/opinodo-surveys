@@ -354,7 +354,6 @@ export default function QuestionsView({
           setActiveQuestionId={setActiveQuestionId}
           activeQuestionId={activeQuestionId}
           isMultiLanguageAllowed={isMultiLanguageAllowed}
-          isFormbricksCloud={isFormbricksCloud}
           setSelectedLanguageCode={setSelectedLanguageCode}
         />
       </div>
