@@ -15,7 +15,6 @@ import {LogGroup} from "aws-cdk-lib/aws-logs";
 import {DockerImageAsset} from "aws-cdk-lib/aws-ecr-assets";
 import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
 import {AccessPoint} from "aws-cdk-lib/aws-efs";
-import {Platform} from "aws-cdk-lib/aws-ecr-assets/lib/image-asset";
 
 interface ECSStackProps extends StackProps {
     cluster: ecs.Cluster,
@@ -130,7 +129,6 @@ export class AppStack extends Stack {
         const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
             directory: '../', // Specify the context directory
             file: './apps/web/Dockerfile',
-            platform: Platform.LINUX_ARM64,
             ignoreMode: IgnoreMode.DOCKER,
         });
 
