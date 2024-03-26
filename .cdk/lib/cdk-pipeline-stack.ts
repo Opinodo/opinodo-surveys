@@ -3,6 +3,7 @@ import {CodePipeline, CodePipelineSource, ManualApprovalStep, ShellStep} from 'a
 import {Construct} from 'constructs';
 import {Params} from './params';
 import {BaseStage} from "./base-stage";
+import {ComputeType, LinuxArmBuildImage} from "aws-cdk-lib/aws-codebuild";
 
 export class CdkPipelineStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
@@ -17,6 +18,12 @@ export class CdkPipelineStack extends Stack {
                 }),
                 commands: ['cd .cdk', 'npm ci', 'npx cdk synth'],
             }),
+            assetPublishingCodeBuildDefaults: {
+                buildEnvironment: {
+                    buildImage:  LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
+                    computeType: ComputeType.LARGE
+                }
+            }
         });
 
         const stagingStage = new BaseStage(this, Params.PROJECT_NAME + '-Staging', {
@@ -33,7 +40,7 @@ export class CdkPipelineStack extends Stack {
                 region: Params.AWS_REGION
             }
         });
-        //
+
         const prodStage = new BaseStage(this, Params.PROJECT_NAME + `-Prod`, {
             projectName: Params.PROJECT_NAME,
             environmentName: 'production',
