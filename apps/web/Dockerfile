@@ -23,14 +23,6 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Install necessary build tools and compilers
 RUN apk update && apk add --no-cache g++ cmake make gcc python3 openssl-dev jq
 
-
-# Install Supercronic (cron for containers without super user privileges)
-# Latest releases available at https://github.com/aptible/supercronic/releases
-ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.2.29/supercronic-linux-arm64
-RUN apk add --no-cache curl \
-    && curl -fsSLo /tmp/supercronic "$SUPERCRONIC_URL" \
-    && chmod +x /tmp/supercronic
-
 # Set hardcoded environment variables
 ENV DATABASE_URL="postgresql://placeholder:for@build:5432/gets_overwritten_at_runtime?schema=public"
 ENV NEXTAUTH_SECRET="placeholder_for_next_auth_of_64_chars_get_overwritten_at_runtime"
