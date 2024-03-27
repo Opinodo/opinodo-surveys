@@ -7,6 +7,7 @@ import { prisma } from "@formbricks/database";
 import { INTERNAL_SECRET, WEBHOOK_SECRET } from "@formbricks/lib/constants";
 import { sendResponseFinishedEmail } from "@formbricks/lib/emails/emails";
 import { getIntegrations } from "@formbricks/lib/integration/service";
+import { Log } from "@formbricks/lib/log";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
 import { getResponseCountBySurveyId } from "@formbricks/lib/response/service";
 import { getSurvey, updateSurvey } from "@formbricks/lib/survey/service";
@@ -73,6 +74,11 @@ export async function POST(request: Request) {
       };
 
       body["hash"] = createHmac("sha256", WEBHOOK_SECRET).update(JSON.stringify(body)).digest("hex");
+
+      Log.info("Send Webhook", {
+        webhookUrl: webhook.url,
+        body: body,
+      });
 
       await fetch(webhook.url, {
         method: "POST",

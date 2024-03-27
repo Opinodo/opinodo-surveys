@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 
 import { getMultiLanguagePermission } from "@formbricks/ee/lib/service";
 import { IMPRINT_URL, IS_FORMBRICKS_CLOUD, PRIVACY_URL, WEBAPP_URL } from "@formbricks/lib/constants";
+import { Log } from "@formbricks/lib/log";
 import { createPerson, getPersonByUserId, updatePerson } from "@formbricks/lib/person/service";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
 import { getResponseBySingleUseId, getResponseCountBySurveyId } from "@formbricks/lib/response/service";
@@ -235,6 +236,15 @@ export default async function LinkSurveyPage({ params, searchParams }: LinkSurve
         languageCode={languageCode}
       />
     );
+  }
+
+  if (survey) {
+    Log.info("Start survey", {
+      surveyId: survey.id,
+      surveyName: survey.name,
+      userId: userId,
+      product: product.name,
+    });
   }
 
   return survey ? (
