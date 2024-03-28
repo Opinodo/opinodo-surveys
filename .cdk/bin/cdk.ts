@@ -29,7 +29,7 @@ const app = new cdk.App();
 //     env: {account: '599781234736', region: 'eu-central-1'}
 // });
 
-new CdkPipelineStack(app, 'OpinodoSurveysPipeline', {
+new CdkPipelineStack(app, 'DigiopinionSurveys', {
     env: {
         account: Params.TOOLING_ACCOUNT_ID,
         region: Params.AWS_REGION
