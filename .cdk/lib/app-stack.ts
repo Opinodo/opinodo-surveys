@@ -126,7 +126,7 @@ export class AppStack extends Stack {
             webLogGroup.applyRemovalPolicy(RemovalPolicy.DESTROY);
         }
 
-        const dockerImageAsset = new DockerImageAsset(this, 'DockerImage', {
+        const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
             directory: '../', // Specify the context directory
             file: './apps/web/Dockerfile',
             ignoreMode: IgnoreMode.DOCKER,
