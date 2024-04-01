@@ -28,7 +28,6 @@ const app = new cdk.App();
 //     certificateArn: "arn:aws:acm:eu-central-1:599781234736:certificate/0f801ab4-cd43-4b53-92c3-79e88b032dc4",
 //     env: {account: '599781234736', region: 'eu-central-1'}
 // });
-
 new CdkPipelineStack(app, 'OpinodoSurveysPipeline', {
     env: {
         account: Params.TOOLING_ACCOUNT_ID,

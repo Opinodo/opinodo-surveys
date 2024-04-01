@@ -1,5 +1,5 @@
 export const Params = {
-    PROJECT_NAME: "opinodo-surveys",
+    PROJECT_NAME: "digiopinion-surveys",
     GITHUB_REPO: "Opinodo/opinodo-surveys",
     BRANCH_NAME: "master",
     GITHUB_TOKEN: "github/todor/token",

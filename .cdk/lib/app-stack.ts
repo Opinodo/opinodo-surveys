@@ -8,7 +8,7 @@ import {
     CfnOutput, IgnoreMode,
     RemovalPolicy,
     Stack,
-    StackProps
+    StackProps, Duration
 } from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {LogGroup} from "aws-cdk-lib/aws-logs";
@@ -155,6 +155,8 @@ export class AppStack extends Stack {
             taskDefinition: webTask,
             serviceName: 'web',
             assignPublicIp: true,
+            minHealthyPercent: 100,
+            maxHealthyPercent: 400,
             loadBalancerName: `${projectName}-LB`,
             taskSubnets: {
                 subnetType: ec2.SubnetType.PUBLIC,
@@ -166,7 +168,9 @@ export class AppStack extends Stack {
         webService.targetGroup.configureHealthCheck({
             path: "/auth/login",
             healthyThresholdCount: 3,
-            healthyHttpCodes: '200'
+            healthyHttpCodes: '200',
+            interval: Duration.seconds(10),
+            timeout: Duration.seconds(5),
         });
 
         // Allow access to EFS from Fargate ECS
