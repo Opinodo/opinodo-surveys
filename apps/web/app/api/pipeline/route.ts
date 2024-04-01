@@ -78,6 +78,7 @@ export async function POST(request: Request) {
       Log.info("Send Webhook", {
         webhookUrl: webhook.url,
         body: body,
+        secret: WEBHOOK_SECRET,
       });
 
       await fetch(webhook.url, {
