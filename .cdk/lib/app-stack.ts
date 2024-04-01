@@ -170,7 +170,7 @@ export class AppStack extends Stack {
             healthyThresholdCount: 3,
             healthyHttpCodes: '200',
             interval: Duration.seconds(10),
-            timeout: Duration.seconds(10),
+            timeout: Duration.seconds(5),
         });
 
         // Allow access to EFS from Fargate ECS
