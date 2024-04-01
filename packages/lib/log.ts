@@ -2,9 +2,7 @@ type LogLevel = "error" | "warning" | "info";
 
 export class Log {
   private static logger(message: string, context: object, level: LogLevel): void {
-    const timestamp = new Date().toISOString();
-
-    const logMessage = `[${timestamp}] ${level.toUpperCase()}: ${message} ${JSON.stringify(context)}`;
+    const logMessage = `${message} ${JSON.stringify(context)}`;
     if (level === "error") {
       console.error(logMessage);
     } else if (level === "warning") {
