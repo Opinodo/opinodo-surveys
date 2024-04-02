@@ -34,6 +34,8 @@ export class CdkPipelineStack extends Stack {
             dbInstanceType: 't4g.micro',
             dbAllocatedStorage: 50,
             dbMaxAllocatedStorage: 512,
+            taskMemory: 512,
+            taskCPU: 256,
             certificateArn: Params.STAGING_CERTIFICATE_ARN,
             env: {
                 account: Params.STAGING_ACCOUNT_ID,
@@ -47,6 +49,8 @@ export class CdkPipelineStack extends Stack {
             envFileName: 'production.env',
             dbName: 'DigiopinionSurveysDB',
             dbInstanceType: 't4g.medium',
+            taskMemory: 2048,
+            taskCPU: 1024,
             dbAllocatedStorage: 200,
             dbMaxAllocatedStorage: 1024,
             certificateArn: Params.PROD_CERTIFICATE_ARN,

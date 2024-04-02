@@ -20,6 +20,8 @@ interface ECSStackProps extends StackProps {
     cluster: ecs.Cluster,
     bucket: s3.Bucket;
     vpc: ec2.IVpc;
+    taskCPU: number;
+    taskMemory: number;
     projectName: string;
     environmentName: string;
     certificateArn: string;
