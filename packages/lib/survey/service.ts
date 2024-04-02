@@ -19,6 +19,7 @@ import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL } from "../constants";
 import { displayCache } from "../display/cache";
 import { getDisplaysByPersonId } from "../display/service";
 import { reverseTranslateSurvey } from "../i18n/reverseTranslation";
+import { Log } from "../log";
 import { personCache } from "../person/cache";
 import { getPerson } from "../person/service";
 import { productCache } from "../product/cache";
@@ -547,6 +548,8 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       segment: surveySegment,
     };
 
+    Log.info("Survey updated", { modifiedSurvey: modifiedSurvey });
+
     surveyCache.revalidate({
       id: modifiedSurvey.id,
       environmentId: modifiedSurvey.environmentId,
@@ -555,6 +558,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
     return modifiedSurvey;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      Log.error("Failed to update survey", error);
       console.error(error);
       throw new DatabaseError(error.message);
     }
@@ -572,6 +576,8 @@ export async function deleteSurvey(surveyId: string) {
     },
     select: selectSurvey,
   });
+
+  Log.info("Survey deleted", { surveyId: surveyId });
 
   responseCache.revalidate({
     surveyId,
@@ -647,6 +653,8 @@ export const createSurvey = async (environmentId: string, surveyBody: TSurveyInp
     },
     select: selectSurvey,
   });
+
+  Log.info("New Survey Created", survey);
 
   const transformedSurvey: TSurvey = {
     ...survey,
