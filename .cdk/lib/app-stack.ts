@@ -20,6 +20,8 @@ interface ECSStackProps extends StackProps {
     cluster: ecs.Cluster,
     bucket: s3.Bucket;
     vpc: ec2.IVpc;
+    taskCPU: number;
+    taskMemory: number;
     projectName: string;
     environmentName: string;
     certificateArn: string;
@@ -82,8 +84,8 @@ export class AppStack extends Stack {
 
         const webTask = new ecs.FargateTaskDefinition(this, `${projectName}-web`, {
             family: `${projectName}-web`,
-            memoryLimitMiB: 512,
-            cpu: 256,
+            memoryLimitMiB: 2048,
+            cpu: 1024,
             taskRole: taskRole,
             runtimePlatform: {
                 operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
