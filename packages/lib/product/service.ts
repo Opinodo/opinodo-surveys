@@ -28,6 +28,8 @@ const selectProduct = {
   languages: true,
   recontactDays: true,
   defaultRewardInUSD: true,
+  defaultRedirectOnCompleteUrl: true,
+  defaultRedirectOnFailUrl: true,
   linkSurveyBranding: true,
   inAppSurveyBranding: true,
   placement: true,

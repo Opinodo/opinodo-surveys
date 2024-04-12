@@ -70,6 +70,8 @@ export default function TemplateList({
     const surveyType = environment?.widgetSetupCompleted ? "web" : "link";
     const autoComplete = surveyType === "web" ? 50 : null;
     activeTemplate.preset.reward = product.defaultRewardInUSD;
+    activeTemplate.preset.redirectOnFailUrl = product.defaultRedirectOnFailUrl;
+    activeTemplate.preset.redirectUrl = product.defaultRedirectOnCompleteUrl;
     const augmentedTemplate: TSurveyInput = {
       ...activeTemplate.preset,
       type: surveyType,

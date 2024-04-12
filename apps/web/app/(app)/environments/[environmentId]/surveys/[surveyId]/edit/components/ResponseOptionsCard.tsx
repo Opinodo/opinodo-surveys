@@ -6,6 +6,7 @@ import { KeyboardEventHandler, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 import { cn } from "@formbricks/lib/cn";
+import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
 import { AdvancedOptionToggle } from "@formbricks/ui/AdvancedOptionToggle";
 import { DatePicker } from "@formbricks/ui/DatePicker";
@@ -16,19 +17,23 @@ interface ResponseOptionsCardProps {
   localSurvey: TSurvey;
   setLocalSurvey: (survey: TSurvey | ((TSurvey) => TSurvey)) => void;
   responseCount: number;
+  product: TProduct;
 }
 
 export default function ResponseOptionsCard({
   localSurvey,
   setLocalSurvey,
   responseCount,
+  product,
 }: ResponseOptionsCardProps) {
   const [open, setOpen] = useState(localSurvey.type === "link" ? true : false);
   const autoComplete = localSurvey.autoComplete !== null;
   const [redirectToggle, setRedirectToggle] = useState(false);
   const [surveyCloseOnDateToggle, setSurveyCloseOnDateToggle] = useState(false);
   useState;
-  const [redirectUrl, setRedirectUrl] = useState<string | null>("");
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(
+    localSurvey.redirectUrl ? localSurvey.redirectUrl : product.defaultRedirectOnCompleteUrl
+  );
   const [surveyClosedMessageToggle, setSurveyClosedMessageToggle] = useState(false);
   const [surveyLinkUsedMessageToggle, setSurveyLinkUsedMessageToggle] = useState(false);
   const [verifyEmailToggle, setVerifyEmailToggle] = useState(false);
@@ -223,7 +228,9 @@ export default function ResponseOptionsCard({
 
   useEffect(() => {
     if (localSurvey.redirectUrl) {
-      setRedirectUrl(localSurvey.redirectUrl);
+      setRedirectUrl(
+        localSurvey.redirectUrl ? localSurvey.redirectUrl : product.defaultRedirectOnCompleteUrl
+      );
       setRedirectToggle(true);
     }
 

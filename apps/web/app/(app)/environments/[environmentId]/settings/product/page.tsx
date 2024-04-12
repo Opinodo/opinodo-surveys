@@ -14,6 +14,7 @@ import SettingsTitle from "../components/SettingsTitle";
 import DeleteProduct from "./components/DeleteProduct";
 import EditDefaultReward from "./components/EditDefaultReward";
 import EditProductName from "./components/EditProductName";
+import EditRedirects from "./components/EditRedirects";
 import EditWaitingTime from "./components/EditWaitingTime";
 
 export default async function ProfileSettingsPage({ params }: { params: { environmentId: string } }) {
@@ -59,6 +60,11 @@ export default async function ProfileSettingsPage({ params }: { params: { enviro
       </SettingsCard>
       <SettingsCard title="Default Reward" description="Define the default reward for a survey in dollars.">
         <EditDefaultReward environmentId={params.environmentId} product={product} />
+      </SettingsCard>
+      <SettingsCard
+        title="Callback and Redirect URLs"
+        description="Define the default redirect and callback url">
+        <EditRedirects environmentId={params.environmentId} product={product} />
       </SettingsCard>
       <SettingsCard
         title="Delete Product"

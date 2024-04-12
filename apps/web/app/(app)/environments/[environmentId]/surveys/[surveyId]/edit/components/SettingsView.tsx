@@ -89,6 +89,7 @@ export default function SettingsView({
         localSurvey={localSurvey}
         setLocalSurvey={setLocalSurvey}
         responseCount={responseCount}
+        product={product}
       />
 
       <RecontactOptionsCard

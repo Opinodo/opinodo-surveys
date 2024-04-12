@@ -430,26 +430,28 @@ enum WidgetPlacement {
 }
 
 model Product {
-  id                   String          @id @default(cuid())
-  createdAt            DateTime        @default(now()) @map(name: "created_at")
-  updatedAt            DateTime        @updatedAt @map(name: "updated_at")
-  name                 String
-  team                 Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  teamId               String
-  environments         Environment[]
-  brandColor           String?
-  highlightBorderColor String?
+  id                           String          @id @default(cuid())
+  createdAt                    DateTime        @default(now()) @map(name: "created_at")
+  updatedAt                    DateTime        @updatedAt @map(name: "updated_at")
+  name                         String
+  team                         Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId                       String
+  environments                 Environment[]
+  brandColor                   String?
+  highlightBorderColor         String?
   /// @zod.custom(imports.ZProductStyling)
   /// [Styling]
-  styling              Json            @default("{\"allowStyleOverwrite\":true}")
-  recontactDays        Int             @default(7)
-  linkSurveyBranding   Boolean         @default(true) // Determines if the survey branding should be displayed in link surveys
-  inAppSurveyBranding  Boolean         @default(true) // Determines if the survey branding should be displayed in in-app surveys
-  placement            WidgetPlacement @default(bottomRight)
-  clickOutsideClose    Boolean         @default(true)
-  darkOverlay          Boolean         @default(false)
-  languages            Language[]
-  defaultRewardInUSD   Float           @default(0)
+  styling                      Json            @default("{\"allowStyleOverwrite\":true}")
+  recontactDays                Int             @default(7)
+  linkSurveyBranding           Boolean         @default(true) // Determines if the survey branding should be displayed in link surveys
+  inAppSurveyBranding          Boolean         @default(true) // Determines if the survey branding should be displayed in in-app surveys
+  placement                    WidgetPlacement @default(bottomRight)
+  clickOutsideClose            Boolean         @default(true)
+  darkOverlay                  Boolean         @default(false)
+  languages                    Language[]
+  defaultRewardInUSD           Float           @default(0)
+  defaultRedirectOnCompleteUrl String?
+  defaultRedirectOnFailUrl     String?
 
   @@unique([teamId, name])
   @@index([teamId])
