@@ -188,7 +188,7 @@ export default function SurveyGeneralSettings({
   );
   const [urlError, setUrlError] = useState(localSurvey.redirectOnFailUrl == null);
   const [redirectOnFailUrl, setRedirectOnFailUrl] = useState<string | null>(
-    localSurvey.redirectOnFailUrl ? localSurvey.redirectOnFailUrl : product.defaultRedirectOnFailUrl
+    localSurvey.redirectOnFailUrl ? localSurvey.redirectOnFailUrl : product.defaultRedirectOnFailUrl ?? null
   );
 
   const handleRedirectCheckMark = () => {

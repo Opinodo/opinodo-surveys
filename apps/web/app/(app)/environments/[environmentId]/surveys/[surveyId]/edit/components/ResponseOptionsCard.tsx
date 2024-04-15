@@ -32,7 +32,7 @@ export default function ResponseOptionsCard({
   const [surveyCloseOnDateToggle, setSurveyCloseOnDateToggle] = useState(false);
   useState;
   const [redirectUrl, setRedirectUrl] = useState<string | null>(
-    localSurvey.redirectUrl ? localSurvey.redirectUrl : product.defaultRedirectOnCompleteUrl
+    localSurvey.redirectUrl ? localSurvey.redirectUrl : product.defaultRedirectOnCompleteUrl ?? null
   );
   const [surveyClosedMessageToggle, setSurveyClosedMessageToggle] = useState(false);
   const [surveyLinkUsedMessageToggle, setSurveyLinkUsedMessageToggle] = useState(false);
@@ -229,7 +229,7 @@ export default function ResponseOptionsCard({
   useEffect(() => {
     if (localSurvey.redirectUrl) {
       setRedirectUrl(
-        localSurvey.redirectUrl ? localSurvey.redirectUrl : product.defaultRedirectOnCompleteUrl
+        localSurvey.redirectUrl ? localSurvey.redirectUrl : product.defaultRedirectOnCompleteUrl ?? null
       );
       setRedirectToggle(true);
     }

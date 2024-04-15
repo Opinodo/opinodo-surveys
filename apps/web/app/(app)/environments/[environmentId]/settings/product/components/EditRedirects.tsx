@@ -11,8 +11,8 @@ import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
 
 type EditDefaultRedirectValues = {
-  defaultRedirectOnCompleteUrl: string;
-  defaultRedirectOnFailUrl: string;
+  defaultRedirectOnCompleteUrl: string | null;
+  defaultRedirectOnFailUrl: string | null;
 };
 
 type EditRedirectsProps = {
@@ -28,8 +28,8 @@ const EditRedirects: React.FC<EditRedirectsProps> = ({ product, environmentId })
     formState: { errors },
   } = useForm<EditDefaultRedirectValues>({
     defaultValues: {
-      defaultRedirectOnCompleteUrl: product.defaultRedirectOnCompleteUrl,
-      defaultRedirectOnFailUrl: product.defaultRedirectOnFailUrl,
+      defaultRedirectOnCompleteUrl: product.defaultRedirectOnCompleteUrl ?? null,
+      defaultRedirectOnFailUrl: product.defaultRedirectOnFailUrl ?? null,
     },
   });
 
@@ -52,7 +52,7 @@ const EditRedirects: React.FC<EditRedirectsProps> = ({ product, environmentId })
         type="url"
         id="defaultRedirectOnCompleteUrl"
         placeholder="https://client-web.com/redirect/complete"
-        defaultValue={product.defaultRedirectOnCompleteUrl}
+        defaultValue={product.defaultRedirectOnCompleteUrl ?? ""}
         {...register("defaultRedirectOnCompleteUrl", {
           required: {
             value: true,
@@ -71,7 +71,7 @@ const EditRedirects: React.FC<EditRedirectsProps> = ({ product, environmentId })
         type="url"
         id="defaultRedirectOnFailUrl"
         placeholder="https://client-web.com/redirect/failed"
-        defaultValue={product.defaultRedirectOnFailUrl}
+        defaultValue={product.defaultRedirectOnFailUrl ?? ""}
         {...register("defaultRedirectOnFailUrl", {
           required: {
             value: true,
