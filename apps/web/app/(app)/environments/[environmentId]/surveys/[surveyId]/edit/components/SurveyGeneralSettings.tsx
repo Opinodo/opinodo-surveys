@@ -194,6 +194,11 @@ export default function SurveyGeneralSettings({
   const handleRedirectCheckMark = () => {
     setRedirectToggle((prev) => !prev);
 
+    if (!localSurvey.redirectOnFailUrl) {
+      setRedirectOnFailUrl(product.defaultRedirectOnFailUrl ?? null);
+      setLocalSurvey({ ...localSurvey, redirectOnFailUrl: redirectOnFailUrl });
+    }
+
     if (redirectToggle && localSurvey.redirectOnFailUrl) {
       setRedirectOnFailUrl(null);
       setLocalSurvey({ ...localSurvey, redirectOnFailUrl: null });

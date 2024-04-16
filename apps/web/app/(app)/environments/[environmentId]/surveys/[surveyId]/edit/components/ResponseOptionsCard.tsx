@@ -61,6 +61,10 @@ export default function ResponseOptionsCard({
 
   const handleRedirectCheckMark = () => {
     setRedirectToggle((prev) => !prev);
+    if (!localSurvey.redirectUrl) {
+      setRedirectUrl(product.defaultRedirectOnCompleteUrl ?? null);
+      setLocalSurvey({ ...localSurvey, redirectUrl: redirectUrl });
+    }
 
     if (redirectToggle && localSurvey.redirectUrl) {
       setRedirectUrl(null);
@@ -227,6 +231,8 @@ export default function ResponseOptionsCard({
   };
 
   useEffect(() => {
+    console.log(product.defaultRedirectOnCompleteUrl);
+    console.log(localSurvey.redirectUrl);
     if (localSurvey.redirectUrl) {
       setRedirectUrl(
         localSurvey.redirectUrl ? localSurvey.redirectUrl : product.defaultRedirectOnCompleteUrl ?? null
