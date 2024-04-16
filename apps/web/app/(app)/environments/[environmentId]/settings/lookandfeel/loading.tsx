@@ -139,7 +139,7 @@ export default function Loading() {
         <div className="w-full items-center">
           <div className="pointer-events-none flex cursor-not-allowed select-none items-center space-x-2">
             <Switch id="signature" checked={false} />
-            <Label htmlFor="signature">Show &apos;Powered by Formbricks&apos; Signature</Label>
+            <Label htmlFor="signature">Show &apos;Powered by DigiOpinion&apos; Signature</Label>
           </div>
         </div>
       </SettingsCard>

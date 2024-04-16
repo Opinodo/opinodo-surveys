@@ -282,6 +282,15 @@ export const mockSurvey: TSurvey = {
     buttonLink: "https://formbricks.com/signup",
     buttonLabel: { default: "Create your own Survey" },
   },
+  failureCard: {
+    enabled: false,
+  },
+  failureChance: 0,
+  language: "en",
+  countries: [],
+  limitedCountries: false,
+  reward: 0,
+  redirectOnFailUrl: null,
   hiddenFields: {
     enabled: true,
     fieldIds: [],

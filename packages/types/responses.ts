@@ -104,6 +104,7 @@ const ZResponseFilterCriteriaDataBooked = z.object({
 
 export const ZResponseFilterCriteria = z.object({
   finished: z.boolean().optional(),
+  failed: z.boolean().optional(),
   createdAt: z
     .object({
       min: z.date().optional(),

@@ -14,8 +14,8 @@ export default function NotFound() {
         <HelpCircleIcon className="h-20 w-20" />,
         <h1 className="text-4xl font-bold text-slate-800">Survey not found.</h1>
         <p className="text-lg leading-10 text-slate-500">There is no survey with this ID.</p>
-        <Button variant="darkCTA" className="mt-2" href="https://formbricks.com">
-          Create your own
+        <Button variant="darkCTA" className="mt-2" href="https://digiopinion.com">
+          Join DigiOpinion
         </Button>
       </div>
       <div>

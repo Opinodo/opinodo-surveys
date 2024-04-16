@@ -121,6 +121,11 @@ export const mockResponse: ResponseMock = {
   ttc: {},
 };
 
+export const mockFinishedResponse: ResponseMock = {
+  ...mockResponse,
+  finished: true,
+};
+
 export const mockResponsePersonAttributes: ResponseMock[] = [
   {
     id: mockResponseId,

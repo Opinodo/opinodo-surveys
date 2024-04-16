@@ -222,6 +222,10 @@ export default function SurveyEditor({
                 membershipRole={membershipRole}
                 product={product}
                 isUserTargetingAllowed={isUserTargetingAllowed}
+                invalidQuestions={invalidQuestions}
+                setInvalidQuestions={setInvalidQuestions}
+                selectedLanguageCode={selectedLanguageCode ? selectedLanguageCode : "default"}
+                setSelectedLanguageCode={setSelectedLanguageCode}
               />
             )}
           </main>
