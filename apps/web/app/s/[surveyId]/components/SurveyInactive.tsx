@@ -1,6 +1,11 @@
 import { CheckCircle2Icon, HelpCircleIcon, PauseCircleIcon } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 import { TSurveyClosedMessage } from "@formbricks/types/surveys";
+import { Button } from "@formbricks/ui/Button";
+
+import footerLogo from "../lib/footerlogo.svg";
 
 const SurveyInactive = ({
   status,
@@ -34,6 +39,16 @@ const SurveyInactive = ({
             ? surveyClosedMessage.subheading
             : descriptions[status]}
         </p>
+        {!(status === "completed" && surveyClosedMessage) && status !== "link invalid" && (
+          <Button variant="darkCTA" className="mt-2" href="https://formbricks.com">
+            Create your own
+          </Button>
+        )}
+      </div>
+      <div>
+        <Link href="https://formbricks.com">
+          <Image src={footerLogo} alt="Brand logo" className="mx-auto w-40" />
+        </Link>
       </div>
     </div>
   );
