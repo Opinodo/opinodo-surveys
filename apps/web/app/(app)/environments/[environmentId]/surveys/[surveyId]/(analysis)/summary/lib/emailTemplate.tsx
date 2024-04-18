@@ -367,8 +367,8 @@ const EmailTemplateWrapper = ({ children, surveyUrl, brandColor }) => {
 const EmailFooter = () => {
   return (
     <Container className="m-auto mt-8 text-center ">
-      <Link href="https://digiopinion.com/" target="_blank" className="text-xs text-slate-400">
-        Powered by DigiOpinion
+      <Link href="https://formbricks.com/" target="_blank" className="text-xs text-slate-400">
+        Powered by Formbricks
       </Link>
     </Container>
   );

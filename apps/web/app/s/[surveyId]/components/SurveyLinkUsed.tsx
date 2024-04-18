@@ -25,7 +25,7 @@ const SurveyLinkUsed = ({ singleUseMessage }: SurveyLinkUsedProps) => {
         </p>
       </div>
       <div>
-        <Link href="https://digiopinion.com">
+        <Link href="https://formbricks.com">
           <Image src={OpinodoLogo} alt="Brand logo" className="mx-auto w-40" />
         </Link>
       </div>
