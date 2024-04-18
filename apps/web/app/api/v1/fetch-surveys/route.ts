@@ -88,6 +88,9 @@ export async function GET(request: Request) {
         }
 
         const requestedLanguage = searchParams.get("language");
+        if (requestedLanguage == "en" && survey.languages.length === 0) {
+          return true;
+        }
         return survey.languages.some((lang) => {
           return lang.language.code === requestedLanguage && lang.enabled;
         });
