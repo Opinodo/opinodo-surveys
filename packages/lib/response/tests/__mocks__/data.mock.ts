@@ -110,7 +110,7 @@ export const mockResponse: ResponseMock = {
   person: null,
   personAttributes: {},
   createdAt: new Date(),
-  finished: constantsForTests.boolean,
+  finished: false,
   failed: false,
   meta: mockMeta,
   notes: [mockResponseNote],
