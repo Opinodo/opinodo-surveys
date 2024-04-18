@@ -103,7 +103,7 @@ export async function GET(request: Request) {
           url += `&email=${encodeURIComponent(searchParams.get("email") ?? "")}`;
           url += `&userId=${searchParams.get("panelist_id")}`;
           url += `&country=${searchParams.get("country")}`;
-          url += `&language=${searchParams.get("language")}`;
+          url += `&lang=${searchParams.get("language")}`;
           url += `&source=[SOURCE]`;
         }
 
