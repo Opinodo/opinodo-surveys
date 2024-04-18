@@ -482,8 +482,8 @@ export const getResponses = async (
         const responses = await prisma.response.findMany({
           where: {
             surveyId,
-            ...buildWhereClause(filterCriteria),
             failed: false,
+            ...buildWhereClause(filterCriteria),
           },
           select: responseSelection,
           orderBy: [
