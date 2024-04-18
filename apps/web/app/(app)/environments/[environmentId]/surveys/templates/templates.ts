@@ -2681,7 +2681,6 @@ export const minimalSurvey: TSurvey = {
   resultShareKey: null,
   reward: 0,
   failureChance: 0,
-  language: "en",
   countries: [],
   limitedCountries: false,
   segment: null,

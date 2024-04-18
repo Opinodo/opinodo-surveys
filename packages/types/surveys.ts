@@ -473,7 +473,6 @@ export const ZSurvey = z.object({
   resultShareKey: z.string().nullable(),
   reward: z.number(),
   failureChance: z.number(),
-  language: z.string(),
   countries: z.array(ZCountry),
   limitedCountries: z.boolean(),
   displayPercentage: z.number().min(1).max(100).nullable(),

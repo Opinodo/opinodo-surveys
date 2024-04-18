@@ -65,6 +65,8 @@ export const mockProduct: TProduct = {
   teamId: mockId,
   brandColor: "#000000",
   highlightBorderColor: "#000000",
+  defaultRedirectOnCompleteUrl: "",
+  defaultRedirectOnFailUrl: "",
   recontactDays: 0,
   defaultRewardInUSD: 5,
   linkSurveyBranding: false,
@@ -74,6 +76,7 @@ export const mockProduct: TProduct = {
   darkOverlay: false,
   environments: [],
   languages: [],
+  styling: { allowStyleOverwrite: false },
 };
 
 export const mockDisplay = {
@@ -103,6 +106,7 @@ export const mockUser: TUser = {
     weeklySummary: {},
     unsubscribedTeamIds: [],
   },
+  role: null,
 };
 
 export const mockPrismaPerson: Prisma.PersonGetPayload<{
@@ -227,7 +231,6 @@ export const mockSurveyOutput: SurveyMock = {
   segment: null,
   segmentId: null,
   resultShareKey: null,
-  language: "en",
   inlineTriggers: null,
   languages: mockSurveyLanguages,
   ...baseSurveyProperties,
@@ -253,7 +256,6 @@ export const updateSurveyInput: TSurvey = {
   createdBy: null,
   pin: null,
   resultShareKey: null,
-  language: "en",
   segment: null,
   inlineTriggers: null,
   languages: [],

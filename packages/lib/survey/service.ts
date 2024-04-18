@@ -75,7 +75,6 @@ export const selectSurvey = {
   resultShareKey: true,
   reward: true,
   failureChance: true,
-  language: true,
   countries: true,
   limitedCountries: true,
   languages: {

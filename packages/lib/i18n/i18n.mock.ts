@@ -286,7 +286,6 @@ export const mockSurvey: TSurvey = {
     enabled: false,
   },
   failureChance: 0,
-  language: "en",
   countries: [],
   limitedCountries: false,
   reward: 0,
