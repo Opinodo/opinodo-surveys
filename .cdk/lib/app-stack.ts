@@ -84,8 +84,8 @@ export class AppStack extends Stack {
 
         const webTask = new ecs.FargateTaskDefinition(this, `${projectName}-web`, {
             family: `${projectName}-web`,
-            memoryLimitMiB: 2048,
-            cpu: 1024,
+            memoryLimitMiB: props.taskMemory,
+            cpu: props.taskCPU,
             taskRole: taskRole,
             runtimePlatform: {
                 operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
