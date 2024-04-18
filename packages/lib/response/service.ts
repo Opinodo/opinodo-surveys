@@ -126,6 +126,7 @@ export const getResponsesByPersonId = async (
         const responsePrisma = await prisma.response.findMany({
           where: {
             personId,
+            failed: false,
           },
           select: responseSelection,
           take: page ? ITEMS_PER_PAGE : undefined,
@@ -482,6 +483,7 @@ export const getResponses = async (
           where: {
             surveyId,
             ...buildWhereClause(filterCriteria),
+            failed: false,
           },
           select: responseSelection,
           orderBy: [
