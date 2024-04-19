@@ -87,7 +87,13 @@ export async function GET(request: Request) {
           if (!found) return false;
         }
 
-        return survey.language === searchParams.get("language");
+        const requestedLanguage = searchParams.get("language");
+        if (requestedLanguage == "en" && survey.languages.length === 0) {
+          return true;
+        }
+        return survey.languages.some((lang) => {
+          return lang.language.code === requestedLanguage && lang.enabled;
+        });
       })
       .map((survey) => {
         let url = WEBAPP_URL + "/s/" + survey.id;
@@ -97,7 +103,7 @@ export async function GET(request: Request) {
           url += `&email=${encodeURIComponent(searchParams.get("email") ?? "")}`;
           url += `&userId=${searchParams.get("panelist_id")}`;
           url += `&country=${searchParams.get("country")}`;
-          url += `&language=${searchParams.get("language")}`;
+          url += `&lang=${searchParams.get("language")}`;
           url += `&source=[SOURCE]`;
         }
 
@@ -106,9 +112,7 @@ export async function GET(request: Request) {
           name: survey.name,
           created_at: survey.createdAt,
           updated_at: survey.updatedAt,
-          language: survey.language,
           reward: survey.reward,
-          redirect_url: survey.redirectUrl,
           survey_url: url,
           loi: calculateTimeToComplete(survey),
           country: survey.countries.reduce((acc, country) => {

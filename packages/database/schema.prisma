@@ -318,7 +318,6 @@ model Survey {
   languages         SurveyLanguage[]
   resultShareKey    String?          @unique
   reward            Float            @default(0)
-  language          String           @default("en")
   failureChance     Float            @default(0)
 
   countries        Country[] @relation("SurveyCountries")

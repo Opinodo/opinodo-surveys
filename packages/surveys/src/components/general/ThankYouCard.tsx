@@ -19,6 +19,7 @@ interface ThankYouCardProps {
   imageUrl?: string;
   replaceRecallInfo: (text: string) => string;
   isResponseSendingFinished: boolean;
+  failed: boolean;
 }
 
 export default function ThankYouCard({
@@ -32,6 +33,7 @@ export default function ThankYouCard({
   imageUrl,
   replaceRecallInfo,
   isResponseSendingFinished,
+  failed,
 }: ThankYouCardProps) {
   useEffect(() => {
     if (!buttonLink || !isResponseSendingFinished) return;
@@ -50,6 +52,10 @@ export default function ThankYouCard({
     <div className="text-center">
       {imageUrl ? (
         <QuestionImage imgUrl={imageUrl} />
+      ) : failed ? (
+        <div className="text-brand mb-4 flex items-center justify-center">
+          <div className="text-brand text-6xl font-bold">Ughh</div>
+        </div>
       ) : (
         <div>
           <div className="text-brand flex items-center justify-center">

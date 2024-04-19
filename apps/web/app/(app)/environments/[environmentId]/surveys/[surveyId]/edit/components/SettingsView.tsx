@@ -27,6 +27,10 @@ interface SettingsViewProps {
   membershipRole?: TMembershipRole;
   isUserTargetingAllowed?: boolean;
   product: TProduct;
+  invalidQuestions: string[] | null;
+  setInvalidQuestions: (invalidQuestions: string[] | null) => void;
+  selectedLanguageCode: string;
+  setSelectedLanguageCode: (languageCode: string) => void;
 }
 
 export default function SettingsView({
@@ -40,6 +44,9 @@ export default function SettingsView({
   membershipRole,
   isUserTargetingAllowed = false,
   product,
+  invalidQuestions,
+  setSelectedLanguageCode,
+  selectedLanguageCode,
 }: SettingsViewProps) {
   return (
     <div className="mt-12 space-y-3 p-5">
@@ -48,6 +55,9 @@ export default function SettingsView({
         setLocalSurvey={setLocalSurvey}
         environment={environment}
         product={product}
+        isInvalid={invalidQuestions ? invalidQuestions.includes("end") : false}
+        setSelectedLanguageCode={setSelectedLanguageCode}
+        selectedLanguageCode={selectedLanguageCode}
       />
 
       {/*<HowToSendCard localSurvey={localSurvey} setLocalSurvey={setLocalSurvey} environment={environment} />*/}

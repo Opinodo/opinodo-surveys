@@ -1,23 +1,17 @@
-import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import * as Collapsible from "@radix-ui/react-collapsible";
-import iso6391 from "iso-639-1";
+import { CheckIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import Select from "react-select";
 
 import { cn } from "@formbricks/lib/cn";
+import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
 import { AdvancedOptionToggle } from "@formbricks/ui/AdvancedOptionToggle";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
-import {
-  Select as FormbricksSelect,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@formbricks/ui/Select";
+import { QuestionFormInput } from "@formbricks/ui/QuestionFormInput";
 import { Switch } from "@formbricks/ui/Switch";
 
 import { getAllCountries } from "../../../../actions";
@@ -27,6 +21,9 @@ interface SurveyGeneralSettingsProps {
   setLocalSurvey: (survey: TSurvey | ((s: TSurvey) => TSurvey)) => void;
   environment: TEnvironment;
   product: TProduct;
+  isInvalid: boolean;
+  selectedLanguageCode: string;
+  setSelectedLanguageCode: (languageCode: string) => void;
 }
 
 const SURVEY_FAILED_HEADLINE = "Survey Failed";
@@ -36,6 +33,9 @@ export default function SurveyGeneralSettings({
   localSurvey,
   setLocalSurvey,
   product,
+  isInvalid,
+  selectedLanguageCode,
+  setSelectedLanguageCode,
 }: SurveyGeneralSettingsProps) {
   const [open, setOpen] = useState(true);
   const [customReward, setCustomReward] = useState(localSurvey.reward);
@@ -44,7 +44,6 @@ export default function SurveyGeneralSettings({
   );
   const [failureChance, setFailureChance] = useState(localSurvey.failureChance);
   const [hasFailureChance, setHasFailureChance] = useState(localSurvey.failureChance > 0);
-  const [selectedLanguage, setSelectedLanguage] = useState(localSurvey.language);
 
   const toggleUsingDefaultReward = (isChecked: boolean) => {
     setUsingCustomReward(isChecked);
@@ -87,17 +86,6 @@ export default function SurveyGeneralSettings({
     });
   };
 
-  const handleLanguageChange = (selectedLanguage) => {
-    setSelectedLanguage(selectedLanguage);
-    const isoCode = iso6391.getCode(selectedLanguage);
-    setLocalSurvey({
-      ...localSurvey,
-      language: isoCode,
-    });
-  };
-
-  const languages = iso6391.getAllNames();
-
   interface Country {
     name: string;
     isoCode: string;
@@ -112,9 +100,7 @@ export default function SurveyGeneralSettings({
     };
 
     fetchCountries();
-    const languageName = iso6391.getName(localSurvey.language);
-    setSelectedLanguage(languageName);
-  }, [localSurvey.language]);
+  }, []);
 
   const handleCountryChange = (selectedCountries) => {
     const updatedCountries = selectedCountries.map((country) => ({
@@ -141,10 +127,10 @@ export default function SurveyGeneralSettings({
     }));
   };
 
-  const [failureCardMessage, setFailureCardMessage] = useState({
-    headline: SURVEY_FAILED_HEADLINE,
-    subheader: SURVEY_FAILED_SUBHEADER,
-  });
+  // const [failureCardMessage, setFailureCardMessage] = useState({
+  //   headline: SURVEY_FAILED_HEADLINE,
+  //   subheader: SURVEY_FAILED_SUBHEADER,
+  // });
   const [failureCardMessageToggle, setFailureCardMessageToggle] = useState(localSurvey.failureCard.enabled);
 
   const toggleCustomFailureScreen = () => {
@@ -156,40 +142,45 @@ export default function SurveyGeneralSettings({
       ...localSurvey,
       failureCard: {
         enabled: !failureCardMessageToggle,
-        headline: !failureCardMessageToggle
-          ? defaultHeadline
-          : localSurvey.failureCard.headline || defaultHeadline,
-        subheader: !failureCardMessageToggle
-          ? defaultSubheader
-          : localSurvey.failureCard.subheader || defaultSubheader,
+        headline: localSurvey?.failureCard?.headline
+          ? {
+              default: !failureCardMessageToggle ? defaultHeadline : localSurvey.failureCard.headline.default,
+            }
+          : { default: defaultHeadline },
+        subheader: localSurvey?.failureCard?.subheader
+          ? {
+              default: !failureCardMessageToggle
+                ? defaultSubheader
+                : localSurvey.failureCard.subheader.default,
+            }
+          : { default: defaultSubheader },
       },
     });
   };
 
-  const handleCustomFailureCardMessageChange = ({
-    headline,
-    subheader,
-  }: {
-    headline?: string;
-    subheader?: string;
-  }) => {
-    const message = {
-      enabled: true,
-      headline: headline ?? failureCardMessage.headline,
-      subheader: subheader ?? failureCardMessage.subheader,
-    };
+  const [showFailureCardCTA, setshowFailureCardCTA] = useState<boolean>(
+    getLocalizedValue(localSurvey.failureCard.buttonLabel, "default") || localSurvey.failureCard.buttonLink
+      ? true
+      : false
+  );
 
-    setFailureCardMessage(message);
-    setLocalSurvey({ ...localSurvey, failureCard: message });
+  const updateSurvey = (data) => {
+    const updatedSurvey = {
+      ...localSurvey,
+      failureCard: {
+        ...localSurvey.failureCard,
+        ...data,
+      },
+    };
+    console.log(updatedSurvey);
+    setLocalSurvey(updatedSurvey);
   };
 
   const [redirectToggle, setRedirectToggle] = useState(
     localSurvey.redirectOnFailUrl != null && localSurvey.redirectOnFailUrl != ""
   );
   const [urlError, setUrlError] = useState(localSurvey.redirectOnFailUrl == null);
-  const [redirectOnFailUrl, setRedirectOnFailUrl] = useState<string | null>(
-    localSurvey.redirectOnFailUrl ? localSurvey.redirectOnFailUrl : product.defaultRedirectOnFailUrl ?? null
-  );
+  const [redirectOnFailUrl, setRedirectOnFailUrl] = useState<string | null>(localSurvey.redirectOnFailUrl);
 
   const handleRedirectCheckMark = () => {
     setRedirectToggle((prev) => !prev);
@@ -232,7 +223,10 @@ export default function SurveyGeneralSettings({
       <Collapsible.CollapsibleTrigger asChild className="h-full w-full cursor-pointer">
         <div className="inline-flex px-4 py-4">
           <div className="flex items-center pl-2 pr-5">
-            <CheckCircleIcon className="h-8 w-8 text-green-400" />
+            <CheckIcon
+              strokeWidth={3}
+              className="h-7 w-7 rounded-full border border-green-300 bg-green-100 p-1.5 text-green-600"
+            />{" "}
           </div>
           <div>
             <p className="font-semibold text-slate-800">Survey General Settings</p>
@@ -243,25 +237,6 @@ export default function SurveyGeneralSettings({
       <Collapsible.CollapsibleContent>
         <hr className="py-1 text-slate-600" />
         <div className="p-3">
-          <div className="p-3">
-            <div className="ml-2 flex items-center space-x-1">
-              <Label htmlFor="language" className="cursor-pointer">
-                Select Survey Language:
-              </Label>
-              <FormbricksSelect value={selectedLanguage} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="w-[240px]">
-                  <SelectValue>{selectedLanguage}</SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {languages.map((language) => (
-                    <SelectItem key={language} value={language}>
-                      {language}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </FormbricksSelect>
-            </div>
-          </div>
           <div className="p-3">
             <div className="ml-2 flex items-center space-x-1">
               <Switch
@@ -336,60 +311,123 @@ export default function SurveyGeneralSettings({
 
             {hasFailureChance && (
               <AdvancedOptionToggle
+                htmlId="redirectOnFailUrl"
+                isChecked={redirectToggle}
+                onToggle={handleRedirectCheckMark}
+                title="Redirect on failure"
+                description="Redirect user to specified link on survey failure"
+                childBorder={true}>
+                <div className="w-full p-4">
+                  <div className="flex w-full cursor-pointer items-center">
+                    <p className="mr-2 w-[400px] text-sm font-semibold text-slate-700">Redirect here:</p>
+                    <Input
+                      autoFocus
+                      className="w-full bg-white"
+                      type="url"
+                      placeholder="https://www.example.com"
+                      value={redirectOnFailUrl ? redirectOnFailUrl : ""}
+                      onChange={(e) => handleRedirectUrlChange(e.target.value)}
+                      onBlur={validateUrl}
+                    />
+                  </div>
+                  {urlError && <p className="mt-2 text-sm text-red-500">Please enter a valid URL.</p>}
+                </div>
+              </AdvancedOptionToggle>
+            )}
+
+            {hasFailureChance && (
+              <AdvancedOptionToggle
                 htmlId="failureRateToggle"
                 isChecked={failureCardMessageToggle}
                 onToggle={toggleCustomFailureScreen}
                 title="Use custom fail screen text"
                 description="Customise the text on the fail screen."
                 childBorder={true}>
-                <div className="flex w-full items-center space-x-1 p-4 pb-4">
-                  <div className="w-full cursor-pointer items-center  bg-slate-50">
-                    <Label htmlFor="headline">Heading</Label>
-                    <Input
-                      autoFocus
-                      id="heading"
-                      className="mb-4 mt-2 bg-white"
-                      name="heading"
-                      defaultValue={localSurvey.failureCard.headline || SURVEY_FAILED_HEADLINE}
-                      onChange={(e) => handleCustomFailureCardMessageChange({ headline: e.target.value })}
-                    />
+                <form className="px-4 pb-6">
+                  <QuestionFormInput
+                    id="headline"
+                    label="Headline"
+                    value={localSurvey?.failureCard?.headline}
+                    localSurvey={localSurvey}
+                    questionIdx={localSurvey.questions.length}
+                    isInvalid={isInvalid}
+                    updateSurvey={updateSurvey}
+                    selectedLanguageCode={selectedLanguageCode}
+                    setSelectedLanguageCode={setSelectedLanguageCode}
+                    fail={true}
+                  />
 
-                    <Label htmlFor="headline">Subheading</Label>
-                    <Input
-                      className="mb-4 mt-2 bg-white"
-                      id="subheading"
-                      name="subheading"
-                      defaultValue={localSurvey.failureCard.subheader || SURVEY_FAILED_SUBHEADER}
-                      onChange={(e) => handleCustomFailureCardMessageChange({ subheader: e.target.value })}
-                    />
-
-                    <AdvancedOptionToggle
-                      htmlId="redirectOnFailUrl"
-                      isChecked={redirectToggle}
-                      onToggle={handleRedirectCheckMark}
-                      title="Redirect on failure"
-                      description="Redirect user to specified link on survey failure"
-                      childBorder={true}>
-                      <div className="w-full p-4">
-                        <div className="flex w-full cursor-pointer items-center">
-                          <p className="mr-2 w-[400px] text-sm font-semibold text-slate-700">
-                            Redirect here:
+                  <QuestionFormInput
+                    id="subheader"
+                    label="Subheader"
+                    value={localSurvey?.failureCard?.subheader}
+                    localSurvey={localSurvey}
+                    questionIdx={localSurvey.questions.length}
+                    isInvalid={isInvalid}
+                    updateSurvey={updateSurvey}
+                    selectedLanguageCode={selectedLanguageCode}
+                    setSelectedLanguageCode={setSelectedLanguageCode}
+                    fail={true}
+                  />
+                  <div className="mt-4">
+                    <div className="flex items-center space-x-1">
+                      <Switch
+                        id="showButton"
+                        checked={showFailureCardCTA}
+                        onCheckedChange={() => {
+                          if (showFailureCardCTA) {
+                            updateSurvey({ buttonLabel: undefined, buttonLink: undefined });
+                          } else {
+                            updateSurvey({
+                              buttonLabel: { default: "Join DigiOpinion" },
+                              buttonLink: "https://digiopinion.com",
+                            });
+                          }
+                          setshowFailureCardCTA(!showFailureCardCTA);
+                        }}
+                      />
+                      <Label htmlFor="showButton" className="cursor-pointer">
+                        <div className="ml-2">
+                          <h3 className="text-sm font-semibold text-slate-700">Show Button</h3>
+                          <p className="text-xs font-normal text-slate-500">
+                            Send your respondents to a page of your choice.
                           </p>
-                          <Input
-                            autoFocus
-                            className="w-full bg-white"
-                            type="url"
-                            placeholder="https://www.example.com"
-                            value={redirectOnFailUrl ? redirectOnFailUrl : ""}
-                            onChange={(e) => handleRedirectUrlChange(e.target.value)}
-                            onBlur={validateUrl}
+                        </div>
+                      </Label>
+                    </div>
+                    {showFailureCardCTA && (
+                      <div className="border-1 mt-4 space-y-4 rounded-md border bg-slate-100 p-4 pt-2">
+                        <div className="space-y-2">
+                          <QuestionFormInput
+                            id="buttonLabel"
+                            label="Button Label"
+                            placeholder="Join DigiOpinion"
+                            className="bg-white"
+                            value={localSurvey.failureCard.buttonLabel}
+                            localSurvey={localSurvey}
+                            questionIdx={localSurvey.questions.length}
+                            isInvalid={isInvalid}
+                            updateSurvey={updateSurvey}
+                            selectedLanguageCode={selectedLanguageCode}
+                            setSelectedLanguageCode={setSelectedLanguageCode}
+                            fail={true}
                           />
                         </div>
-                        {urlError && <p className="mt-2 text-sm text-red-500">Please enter a valid URL.</p>}
+                        <div className="space-y-2">
+                          <Label>Button Link</Label>
+                          <Input
+                            id="buttonLink"
+                            name="buttonLink"
+                            className="bg-white"
+                            placeholder="https://digiopinion.com"
+                            value={localSurvey.failureCard.buttonLink}
+                            onChange={(e) => updateSurvey({ buttonLink: e.target.value })}
+                          />
+                        </div>
                       </div>
-                    </AdvancedOptionToggle>
+                    )}
                   </div>
-                </div>
+                </form>
               </AdvancedOptionToggle>
             )}
           </div>
@@ -402,7 +440,12 @@ export default function SurveyGeneralSettings({
                 className={"mr-2"}
               />
               <Label htmlFor="countries" className="cursor-pointer">
-                Limit to Countries
+                <div className="ml-2">
+                  <h3 className="text-sm font-semibold text-slate-700">Limit to Countries</h3>
+                  <p className="text-xs font-normal text-slate-500">
+                    Make the survey available only to certain countries.
+                  </p>
+                </div>
               </Label>
 
               {limitedToCountries && (

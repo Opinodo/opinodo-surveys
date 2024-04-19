@@ -13,7 +13,6 @@ import { SurveyBaseProps } from "@formbricks/types/formbricksSurveys";
 import type { TResponseData, TResponseTtc } from "@formbricks/types/responses";
 import { TSurveyQuestion } from "@formbricks/types/surveys";
 
-import FailureCard from "./FailureCard";
 import QuestionConditional from "./QuestionConditional";
 import ThankYouCard from "./ThankYouCard";
 import WelcomeCard from "./WelcomeCard";
@@ -282,11 +281,18 @@ export function Survey({
     } else if (questionId === "end" && survey.thankYouCard.enabled) {
       if (survey.failureCard.enabled && failed) {
         return (
-          <FailureCard
-            headline={replaceRecallInfo(survey.failureCard.headline ? survey.failureCard.headline : "")}
-            subheader={replaceRecallInfo(survey.failureCard.subheader ? survey.failureCard.subheader : "")}
+          <ThankYouCard
+            headline={survey.failureCard.headline}
+            subheader={survey.failureCard.subheader}
+            isResponseSendingFinished={isResponseSendingFinished}
+            buttonLabel={survey.failureCard.buttonLabel}
+            buttonLink={survey.failureCard.buttonLink}
+            imageUrl={survey.failureCard.imageUrl}
             redirectUrl={survey.redirectOnFailUrl}
             isRedirectDisabled={isRedirectDisabled}
+            languageCode={languageCode}
+            replaceRecallInfo={replaceRecallInfo}
+            failed={true}
           />
         );
       }
@@ -302,6 +308,7 @@ export function Survey({
           isRedirectDisabled={isRedirectDisabled}
           languageCode={languageCode}
           replaceRecallInfo={replaceRecallInfo}
+          failed={false}
         />
       );
     } else {

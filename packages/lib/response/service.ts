@@ -744,6 +744,7 @@ export const updateResponse = async (
       },
       data: {
         finished: responseInput.finished,
+        failed: responseInput.failed,
         data,
         ttc,
         language,

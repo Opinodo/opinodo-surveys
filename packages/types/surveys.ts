@@ -22,8 +22,11 @@ export const ZSurveyThankYouCard = z.object({
 
 export const ZSurveyFailureCard = z.object({
   enabled: z.boolean(),
-  headline: z.optional(z.string()),
-  subheader: z.optional(z.string()),
+  headline: ZI18nString.optional(),
+  subheader: ZI18nString.optional(),
+  buttonLabel: ZI18nString.optional(),
+  buttonLink: z.optional(z.string()),
+  imageUrl: z.string().optional(),
 });
 
 export enum TSurveyQuestionType {
@@ -470,7 +473,6 @@ export const ZSurvey = z.object({
   resultShareKey: z.string().nullable(),
   reward: z.number(),
   failureChance: z.number(),
-  language: z.string(),
   countries: z.array(ZCountry),
   limitedCountries: z.boolean(),
   displayPercentage: z.number().min(1).max(100).nullable(),

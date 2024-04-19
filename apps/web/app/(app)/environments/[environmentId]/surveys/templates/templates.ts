@@ -20,8 +20,8 @@ const thankYouCardDefault = {
 
 const failureCardDefault = {
   enabled: false,
-  headline: "Survey failed",
-  subheader: "Your submission was not successful.",
+  headline: { default: "Survey failed" },
+  subheader: { default: "Your submission was not successful." },
 };
 
 const hiddenFieldsDefault: TSurveyHiddenFields = {
@@ -2681,7 +2681,6 @@ export const minimalSurvey: TSurvey = {
   resultShareKey: null,
   reward: 0,
   failureChance: 0,
-  language: "en",
   countries: [],
   limitedCountries: false,
   segment: null,

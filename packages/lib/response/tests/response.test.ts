@@ -4,6 +4,7 @@ import {
   getMockUpdateResponseInput,
   mockDisplay,
   mockEnvironmentId,
+  mockFinishedResponse,
   mockMeta,
   mockPerson,
   mockPersonAttributesData,
@@ -476,7 +477,7 @@ describe("Tests for getSurveySummary service", () => {
   describe("Happy Path", () => {
     it("Returns a summary of the survey responses", async () => {
       prisma.survey.findUnique.mockResolvedValue(mockSurveyOutput);
-      prisma.response.findMany.mockResolvedValue([mockResponse]);
+      prisma.response.findMany.mockResolvedValue([mockFinishedResponse]);
 
       const summary = await getSurveySummary(mockSurveyId);
       expect(summary).toEqual(mockSurveySummaryOutput);
@@ -621,6 +622,7 @@ describe("Tests for updateResponse Service", () => {
       const response = await updateResponse(mockResponse.id, getMockUpdateResponseInput(true));
       expect(response).toEqual({
         ...expectedResponseWithoutPerson,
+        finished: true,
         data: mockResponseData,
       });
     });

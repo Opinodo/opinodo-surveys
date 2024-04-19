@@ -115,7 +115,6 @@ export const PREVIEW_SURVEY = {
   countries: [],
   limitedCountries: false,
   reward: 0,
-  language: "en",
   hiddenFields: {
     enabled: true,
     fieldIds: [],
