@@ -153,7 +153,7 @@ export class AppStack extends Stack {
 
         const webService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${projectName}-web-service`, {
             cluster: props.cluster,
-            desiredCount: 2,
+            desiredCount: 1,
             taskDefinition: webTask,
             serviceName: 'web',
             assignPublicIp: true,
