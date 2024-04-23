@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 
 import { canUserAccessAttributeClass } from "@formbricks/lib/attributeClass/auth";
 import { authOptions } from "@formbricks/lib/authOptions";
+import logger from "@formbricks/lib/log";
 import { getSegmentsByAttributeClassName } from "@formbricks/lib/segment/service";
 import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { AuthorizationError } from "@formbricks/types/errors";
@@ -36,7 +37,7 @@ export const getSegmentsByAttributeClassAction = async (
 
     return { activeSurveys, inactiveSurveys };
   } catch (err) {
-    console.error(`Error getting segments by attribute class: ${err}`);
+    logger.error(`Error getting segments by attribute class`, err);
     throw err;
   }
 };

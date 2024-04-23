@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
+import logger from "@formbricks/lib/log";
 import { TInvite } from "@formbricks/types/invites";
 import { TMember } from "@formbricks/types/memberships";
 import { TTeam } from "@formbricks/types/teams";
@@ -54,7 +55,7 @@ export default function MemberActions({ team, member, invite, showDeleteButton }
       setIsDeleting(false);
       router.refresh();
     } catch (err) {
-      console.log({ err });
+      logger.error("Error deleting member", err);
       setIsDeleting(false);
       toast.error("Something went wrong");
     }

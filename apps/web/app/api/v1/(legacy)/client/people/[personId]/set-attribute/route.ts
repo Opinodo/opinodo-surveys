@@ -3,6 +3,7 @@ import { transformErrorToDetails } from "@/app/lib/api/validator";
 
 import { getActionClasses } from "@formbricks/lib/actionClass/service";
 import { createAttributeClass, getAttributeClassByName } from "@formbricks/lib/attributeClass/service";
+import logger from "@formbricks/lib/log";
 import { personCache } from "@formbricks/lib/person/cache";
 import { getPerson, updatePersonAttribute } from "@formbricks/lib/person/service";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
@@ -95,7 +96,7 @@ export async function POST(req: Request, context: Context): Promise<Response> {
 
     return responses.successResponse({ ...state }, true);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return responses.internalServerErrorResponse(`Unable to complete request: ${error.message}`, true);
   }
 }

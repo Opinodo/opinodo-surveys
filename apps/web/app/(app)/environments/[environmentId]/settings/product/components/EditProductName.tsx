@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
+import logger from "@formbricks/lib/log";
 import { TProduct } from "@formbricks/types/product";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
@@ -62,7 +63,7 @@ const EditProductName: React.FC<EditProductNameProps> = ({
         router.refresh();
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       toast.error(`Error: Unable to save product information`);
     }
   };

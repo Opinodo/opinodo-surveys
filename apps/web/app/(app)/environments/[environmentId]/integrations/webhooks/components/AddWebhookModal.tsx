@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
+import logger from "@formbricks/lib/log";
 import { TPipelineTrigger } from "@formbricks/types/pipelines";
 import { TSurvey } from "@formbricks/types/surveys";
 import { TWebhookInput } from "@formbricks/types/webhooks";
@@ -54,7 +55,7 @@ export default function AddWebhookModal({ environmentId, surveys, open, setOpen 
     } catch (err) {
       setHittingEndpoint(false);
       toast.error("Unable to ping the webhook! Please check browser console for logs");
-      console.error("Webhook Test Failed due to: ", err.message);
+      logger.error("Webhook Test Failed due to: ", err.message);
       setEndpointAccessible(false);
       return false;
     }

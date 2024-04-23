@@ -8,6 +8,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
+import logger from "@formbricks/lib/log";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
 
@@ -35,7 +36,7 @@ export default function CreateFirstTeam() {
       toast.success("Team created successfully!");
       router.push(`/teams/${newTeam.id}`);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       toast.error(`Unable to create team`);
     } finally {
       setLoading(false);

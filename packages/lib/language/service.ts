@@ -11,6 +11,7 @@ import {
   ZLanguageUpdate,
 } from "@formbricks/types/product";
 
+import logger from "../log";
 import { productCache } from "../product/cache";
 import { surveyCache } from "../survey/cache";
 import { validateInputs } from "../utils/validate";
@@ -53,7 +54,7 @@ export const createLanguage = async (
     return language;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(error);
+      logger.error(error.message, error);
       throw new DatabaseError(error.message);
     }
     throw error;
@@ -81,7 +82,7 @@ export const getSurveysUsingGivenLanguage = async (languageId: string): Promise<
     return surveyNames;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(error);
+      logger.error(error);
       throw new DatabaseError(error.message);
     }
     throw error;
@@ -116,7 +117,7 @@ export const deleteLanguage = async (environmentId: string, languageId: string):
     return language;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(error);
+      logger.error(error);
       throw new DatabaseError(error.message);
     }
     throw error;
@@ -156,7 +157,7 @@ export const updateLanguage = async (
     return language;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(error);
+      logger.error(error);
       throw new DatabaseError(error.message);
     }
     throw error;

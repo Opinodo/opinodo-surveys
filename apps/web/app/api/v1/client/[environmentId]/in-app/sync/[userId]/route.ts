@@ -10,6 +10,7 @@ import {
   PRICING_USERTARGETING_FREE_MTU,
 } from "@formbricks/lib/constants";
 import { getEnvironment, updateEnvironment } from "@formbricks/lib/environment/service";
+import logger from "@formbricks/lib/log";
 import { createPerson, getIsPersonMonthlyActive, getPersonByUserId } from "@formbricks/lib/person/service";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
 import { COLOR_DEFAULTS } from "@formbricks/lib/styling/constants";
@@ -197,7 +198,7 @@ export async function GET(
       "public, s-maxage=100, max-age=110, stale-while-revalidate=100, stale-if-error=100"
     );
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return responses.internalServerErrorResponse("Unable to handle the request: " + error.message, true);
   }
 }

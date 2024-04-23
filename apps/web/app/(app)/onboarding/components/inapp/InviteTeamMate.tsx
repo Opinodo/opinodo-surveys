@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 
+import logger from "@formbricks/lib/log";
 import { TTeam } from "@formbricks/types/teams";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
@@ -74,7 +75,7 @@ export function InviteTeamMate({ team, environmentId, setCurrentStep }: InviteTe
       router.push(`/environments/${environmentId}/surveys`);
     } catch (error) {
       toast.error("An error occurred saving your settings.");
-      console.error(error);
+      logger.error(error);
     }
   };
 

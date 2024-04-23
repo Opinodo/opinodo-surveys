@@ -1,4 +1,5 @@
 import { INTERNAL_SECRET, WEBAPP_URL } from "@formbricks/lib/constants";
+import logger from "@formbricks/lib/log";
 import { TPipelineInput } from "@formbricks/types/pipelines";
 
 export async function sendToPipeline({ event, surveyId, environmentId, response }: TPipelineInput) {
@@ -15,6 +16,6 @@ export async function sendToPipeline({ event, surveyId, environmentId, response 
       response,
     }),
   }).catch((error) => {
-    console.error(`Error sending event to pipeline: ${error}`);
+    logger.error(`Error sending event to pipeline: ${error}`);
   });
 }

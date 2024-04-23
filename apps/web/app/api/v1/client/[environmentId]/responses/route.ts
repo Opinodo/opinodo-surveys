@@ -4,6 +4,7 @@ import { sendToPipeline } from "@/app/lib/pipelines";
 import { headers } from "next/headers";
 import { UAParser } from "ua-parser-js";
 
+import logger from "@formbricks/lib/log";
 import { getPerson } from "@formbricks/lib/person/service";
 import { capturePosthogEnvironmentEvent } from "@formbricks/lib/posthogServer";
 import { createResponse } from "@formbricks/lib/response/service";
@@ -96,7 +97,7 @@ export async function POST(request: Request, context: Context): Promise<Response
     if (error instanceof InvalidInputError) {
       return responses.badRequestResponse(error.message);
     } else {
-      console.error(error);
+      logger.error(error);
       return responses.internalServerErrorResponse(error.message);
     }
   }

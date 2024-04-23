@@ -10,6 +10,7 @@ import { DownloadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
+import logger from "@formbricks/lib/log";
 import { TSurvey } from "@formbricks/types/surveys";
 import { TUser } from "@formbricks/types/user";
 import {
@@ -80,11 +81,11 @@ export default function ResultsShareButton({ survey, webAppUrl, user }: ResultsS
           toast.success("Link to results copied to clipboard.");
         })
         .catch((err) => {
-          console.error("Failed to copy: ", err);
+          logger.error("Failed to copy: ", err);
           toast.error("Failed to copy link to results to clipboard.");
         });
     } else {
-      console.error("Cannot copy URL: not running in a browser environment.");
+      logger.error("Cannot copy URL: not running in a browser environment.");
       toast.error("Failed to copy URL: not in a browser environment.");
     }
   };

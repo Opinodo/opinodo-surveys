@@ -11,6 +11,7 @@ import {
   WEBAPP_URL,
 } from "@formbricks/lib/constants";
 import { getEnvironment, updateEnvironment } from "@formbricks/lib/environment/service";
+import logger from "@formbricks/lib/log";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
 import { COLOR_DEFAULTS } from "@formbricks/lib/styling/constants";
 import { createSurvey, getSurveys, transformToLegacySurvey } from "@formbricks/lib/survey/service";
@@ -141,7 +142,7 @@ export async function GET(
       "public, s-maxage=600, max-age=840, stale-while-revalidate=600, stale-if-error=600"
     );
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return responses.internalServerErrorResponse(`Unable to complete response: ${error.message}`, true);
   }
 }

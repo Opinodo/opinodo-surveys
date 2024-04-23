@@ -23,6 +23,7 @@ import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TPerson } from "@formbricks/types/people";
 
 import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL } from "../constants";
+import logger from "../log";
 import { createPerson, getPersonByUserId } from "../person/service";
 import { formatDateFields } from "../utils/datetime";
 import { validateInputs } from "../utils/validate";
@@ -111,7 +112,7 @@ export const updateDisplay = async (
 
     return display;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       throw new DatabaseError(error.message);
     }
@@ -152,7 +153,7 @@ export const updateDisplayLegacy = async (
 
     return display;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       throw new DatabaseError(error.message);
     }

@@ -231,8 +231,6 @@ export default function ResponseOptionsCard({
   };
 
   useEffect(() => {
-    console.log(product.defaultRedirectOnCompleteUrl);
-    console.log(localSurvey.redirectUrl);
     if (localSurvey.redirectUrl) {
       setRedirectUrl(
         localSurvey.redirectUrl ? localSurvey.redirectUrl : product.defaultRedirectOnCompleteUrl ?? null

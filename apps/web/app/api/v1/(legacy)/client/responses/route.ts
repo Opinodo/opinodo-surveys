@@ -4,6 +4,7 @@ import { sendToPipeline } from "@/app/lib/pipelines";
 import { headers } from "next/headers";
 import { UAParser } from "ua-parser-js";
 
+import logger from "@formbricks/lib/log";
 import { capturePosthogEnvironmentEvent } from "@formbricks/lib/posthogServer";
 import { createResponseLegacy } from "@formbricks/lib/response/service";
 import { getSurvey } from "@formbricks/lib/survey/service";
@@ -47,7 +48,7 @@ export async function POST(request: Request): Promise<Response> {
     if (error instanceof InvalidInputError) {
       return responses.badRequestResponse(error.message);
     } else {
-      console.error(error);
+      logger.error(error);
       return responses.internalServerErrorResponse(error.message);
     }
   }
@@ -79,7 +80,7 @@ export async function POST(request: Request): Promise<Response> {
     if (error instanceof InvalidInputError) {
       return responses.badRequestResponse(error.message);
     } else {
-      console.error(error);
+      logger.error(error);
       return responses.internalServerErrorResponse(error.message);
     }
   }

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
+import logger from "@formbricks/lib/log";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
@@ -37,7 +38,7 @@ export default function AddProductModal({ environmentId, open, setOpen }: AddPro
       router.push(`/environments/${newEnv.id}/`);
       setOpen(false);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       toast.error(`Error: Unable to save product information`);
     } finally {
       setLoading(false);

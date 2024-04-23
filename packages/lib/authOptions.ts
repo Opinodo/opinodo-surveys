@@ -27,6 +27,7 @@ import {
   OIDC_SIGNING_ALGORITHM,
 } from "./constants";
 import { verifyToken } from "./jwt";
+import logger from "./log";
 import { createMembership } from "./membership/service";
 import { createProduct } from "./product/service";
 import { createTeam, getTeam } from "./team/service";
@@ -63,7 +64,7 @@ export const authOptions: NextAuthOptions = {
             },
           });
         } catch (e) {
-          console.error(e);
+          logger.error(e);
           throw Error("Internal server error. Please try again later");
         }
 
@@ -115,7 +116,7 @@ export const authOptions: NextAuthOptions = {
             },
           });
         } catch (e) {
-          console.error(e);
+          logger.error(e);
           throw new Error("Either a user does not match the provided token or the token is invalid");
         }
 

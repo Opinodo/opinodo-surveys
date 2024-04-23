@@ -10,6 +10,7 @@ import { authOptions } from "@formbricks/lib/authOptions";
 import { ENCRYPTION_KEY, UPLOADS_DIR } from "@formbricks/lib/constants";
 import { validateLocalSignedUrl } from "@formbricks/lib/crypto";
 import { hasUserEnvironmentAccess } from "@formbricks/lib/environment/auth";
+import logger from "@formbricks/lib/log";
 import { putFileToLocalStorage } from "@formbricks/lib/storage/service";
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     if (err.name === "FileTooLargeError") {
       return responses.badRequestResponse(err.message);
     }
-    console.log(err);
+    logger.error("File upload failed", err);
     return responses.internalServerErrorResponse("File upload failed");
   }
 }

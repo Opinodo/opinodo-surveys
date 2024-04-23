@@ -5,6 +5,7 @@ import Select from "react-select";
 
 import { cn } from "@formbricks/lib/cn";
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
+import logger from "@formbricks/lib/log";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
@@ -172,7 +173,7 @@ export default function SurveyGeneralSettings({
         ...data,
       },
     };
-    console.log(updatedSurvey);
+    logger.info("Updated Survey", updatedSurvey);
     setLocalSurvey(updatedSurvey);
   };
 

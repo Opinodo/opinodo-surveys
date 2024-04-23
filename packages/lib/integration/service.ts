@@ -15,6 +15,7 @@ import {
 } from "@formbricks/types/integration";
 
 import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL } from "../constants";
+import logger from "../log";
 import { formatDateFields } from "../utils/datetime";
 import { validateInputs } from "../utils/validate";
 import { integrationCache } from "./cache";
@@ -50,7 +51,7 @@ export async function createOrUpdateIntegration(
     return integration;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error(error);
+      logger.error(error);
       throw new DatabaseError(error.message);
     }
     throw error;

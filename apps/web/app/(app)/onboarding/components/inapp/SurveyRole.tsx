@@ -10,6 +10,7 @@ import { toast } from "react-hot-toast";
 
 import { cn } from "@formbricks/lib/cn";
 import { env } from "@formbricks/lib/env";
+import logger from "@formbricks/lib/log";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
 
@@ -68,7 +69,7 @@ export const Role: React.FC<RoleProps> = ({ setFormbricksResponseId, session, se
         } catch (e) {
           setIsUpdating(false);
           toast.error("An error occured saving your settings");
-          console.error(e);
+          logger.error(e);
         }
         if (formbricksEnabled && env.NEXT_PUBLIC_FORMBRICKS_ONBOARDING_SURVEY_ID) {
           const res = await createResponse(env.NEXT_PUBLIC_FORMBRICKS_ONBOARDING_SURVEY_ID, session.user.id, {
@@ -78,7 +79,7 @@ export const Role: React.FC<RoleProps> = ({ setFormbricksResponseId, session, se
             const response = res.data;
             setFormbricksResponseId(response.id);
           } else {
-            console.error("Error sending response to Formbricks", res.error);
+            logger.error("Error sending response to Formbricks", res.error);
           }
         }
         next();

@@ -17,6 +17,7 @@ import { ZId } from "@formbricks/types/environment";
 import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 
 import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL } from "../constants";
+import logger from "../log";
 import { formatDateFields } from "../utils/datetime";
 import { validateInputs } from "../utils/validate";
 import { actionClassCache } from "./cache";
@@ -176,7 +177,7 @@ export const createActionClass = async (
 
     return actionClassPrisma;
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     throw new DatabaseError(`Database error when creating an action for environment ${environmentId}`);
   }
 };

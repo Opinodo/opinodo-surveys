@@ -2,6 +2,7 @@ import { responses } from "@/app/lib/api/response";
 import { transformErrorToDetails } from "@/app/lib/api/validator";
 import { sendToPipeline } from "@/app/lib/pipelines";
 
+import logger from "@formbricks/lib/log";
 import { updateResponse } from "@formbricks/lib/response/service";
 import { getSurvey } from "@formbricks/lib/survey/service";
 import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbricks/types/errors";
@@ -45,7 +46,7 @@ export async function PUT(
       return responses.badRequestResponse(error.message);
     }
     if (error instanceof DatabaseError) {
-      console.error(error);
+      logger.error(error);
       return responses.internalServerErrorResponse(error.message);
     }
   }
@@ -59,7 +60,7 @@ export async function PUT(
       return responses.badRequestResponse(error.message);
     }
     if (error instanceof DatabaseError) {
-      console.error(error);
+      logger.error(error);
       return responses.internalServerErrorResponse(error.message);
     }
   }

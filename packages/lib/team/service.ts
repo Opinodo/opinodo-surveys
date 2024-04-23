@@ -19,6 +19,7 @@ import { TUserNotificationSettings } from "@formbricks/types/user";
 
 import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL } from "../constants";
 import { environmentCache } from "../environment/cache";
+import logger from "../log";
 import { getProducts } from "../product/service";
 import { getUsersWithTeam, updateUser } from "../user/service";
 import { formatDateFields } from "../utils/datetime";
@@ -100,7 +101,7 @@ export const getTeamByEnvironmentId = async (environmentId: string): Promise<TTe
         return team;
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          console.error(error);
+          logger.error(error);
           throw new DatabaseError(error.message);
         }
 

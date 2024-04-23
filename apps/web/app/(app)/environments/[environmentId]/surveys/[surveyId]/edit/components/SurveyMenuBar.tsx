@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
+import logger from "@formbricks/lib/log";
 import { checkForEmptyFallBackValue } from "@formbricks/lib/utils/recall";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TProduct } from "@formbricks/types/product";
@@ -326,7 +327,7 @@ export default function SurveyMenuBar({
         router.back();
       }
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       setIsSurveySaving(false);
       toast.error(`Error saving changes`);
       return;

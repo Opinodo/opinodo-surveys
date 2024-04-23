@@ -3,6 +3,7 @@ import { responses } from "@/app/lib/api/response";
 import { transformErrorToDetails } from "@/app/lib/api/validator";
 
 import { createAttributeClass, getAttributeClassByName } from "@formbricks/lib/attributeClass/service";
+import logger from "@formbricks/lib/log";
 import { personCache } from "@formbricks/lib/person/cache";
 import { getPerson, updatePersonAttribute } from "@formbricks/lib/person/service";
 import { surveyCache } from "@formbricks/lib/survey/cache";
@@ -77,7 +78,7 @@ export async function POST(req: Request, { params }): Promise<Response> {
 
     return responses.successResponse({ ...state, person }, true);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return responses.internalServerErrorResponse(`Unable to complete request: ${error.message}`, true);
   }
 }

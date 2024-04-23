@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { ProductFeatureKeys } from "@formbricks/ee/billing/lib/constants";
 import { reportUsageToStripe } from "@formbricks/ee/billing/lib/reportUsage";
 import { CRON_SECRET, IS_FORMBRICKS_CLOUD } from "@formbricks/lib/constants";
+import logger from "@formbricks/lib/log";
 import {
   getMonthlyActiveTeamPeopleCount,
   getMonthlyTeamResponseCount,
@@ -65,7 +66,7 @@ export async function POST(): Promise<Response> {
 
     return responses.successResponse({}, true);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return responses.internalServerErrorResponse("Unable to handle the request: " + error.message, true);
   }
 }

@@ -5,6 +5,7 @@ import { WEBAPP_URL } from "@formbricks/lib/constants";
 import { sendInviteAcceptedEmail } from "@formbricks/lib/emails/emails";
 import { deleteInvite, getInvite } from "@formbricks/lib/invite/service";
 import { verifyInviteToken } from "@formbricks/lib/jwt";
+import logger from "@formbricks/lib/log";
 import { createMembership } from "@formbricks/lib/membership/service";
 import { updateUser } from "@formbricks/lib/user/service";
 
@@ -49,7 +50,7 @@ export default async function InvitePage({ searchParams }) {
       return <RightAccountContent />;
     }
   } catch (e) {
-    console.error(e);
+    logger.error(e);
     return <InvitationNotFound />;
   }
 }

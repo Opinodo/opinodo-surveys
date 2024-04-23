@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@formbricks/lib/authOptions";
 import { ONBOARDING_DISABLED } from "@formbricks/lib/constants";
 import { getFirstEnvironmentByUserId } from "@formbricks/lib/environment/service";
+import logger from "@formbricks/lib/log";
 import { getTeamsByUserId } from "@formbricks/lib/team/service";
 import ClientLogout from "@formbricks/ui/ClientLogout";
 
@@ -21,7 +22,7 @@ export default async function Home() {
 
   const teams = await getTeamsByUserId(session.user.id);
   if (!teams || teams.length === 0) {
-    console.error("Failed to get teams, redirecting to create-first-team");
+    logger.error("Failed to get teams, redirecting to create-first-team");
     return redirect("/create-first-team");
   }
 
@@ -36,11 +37,11 @@ export default async function Home() {
       throw new Error("No environment found");
     }
   } catch (error) {
-    console.error(`error getting environment: ${error}`);
+    logger.error(`error getting environment: ${error}`);
   }
 
   if (!environment) {
-    console.error("Failed to get first environment of user; signing out");
+    logger.error("Failed to get first environment of user; signing out");
     return <ClientLogout />;
   }
 

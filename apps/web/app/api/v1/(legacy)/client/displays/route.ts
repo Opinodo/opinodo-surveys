@@ -2,6 +2,7 @@ import { responses } from "@/app/lib/api/response";
 import { transformErrorToDetails } from "@/app/lib/api/validator";
 
 import { createDisplayLegacy } from "@formbricks/lib/display/service";
+import logger from "@formbricks/lib/log";
 import { capturePosthogEnvironmentEvent } from "@formbricks/lib/posthogServer";
 import { getSurvey } from "@formbricks/lib/survey/service";
 import { TDisplay, ZDisplayLegacyCreateInput } from "@formbricks/types/displays";
@@ -38,7 +39,7 @@ export async function POST(request: Request): Promise<Response> {
     if (error instanceof InvalidInputError) {
       return responses.badRequestResponse(error.message);
     } else {
-      console.error(error);
+      logger.error(error);
       return responses.internalServerErrorResponse(error.message);
     }
   }
@@ -55,7 +56,7 @@ export async function POST(request: Request): Promise<Response> {
     if (error instanceof InvalidInputError) {
       return responses.badRequestResponse(error.message);
     } else {
-      console.error(error);
+      logger.error(error);
       return responses.internalServerErrorResponse(error.message);
     }
   }

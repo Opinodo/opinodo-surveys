@@ -9,6 +9,7 @@ import { toast } from "react-hot-toast";
 
 import { cn } from "@formbricks/lib/cn";
 import { env } from "@formbricks/lib/env";
+import logger from "@formbricks/lib/log";
 import { TUser, TUserObjective } from "@formbricks/types/user";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
@@ -70,7 +71,7 @@ export const Objective: React.FC<ObjectiveProps> = ({ formbricksResponseId, user
           setIsProfileUpdating(false);
         } catch (e) {
           setIsProfileUpdating(false);
-          console.error(e);
+          logger.error(e);
           toast.error("An error occured saving your settings");
         }
         if (formbricksEnabled && env.NEXT_PUBLIC_FORMBRICKS_ONBOARDING_SURVEY_ID && formbricksResponseId) {
@@ -83,7 +84,7 @@ export const Objective: React.FC<ObjectiveProps> = ({ formbricksResponseId, user
             false
           );
           if (!res.ok) {
-            console.error("Error updating response", res.error);
+            logger.error("Error updating response", res.error);
           }
         }
         next();

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const inputValidation = ZPipelineInput.safeParse(jsonInput);
 
   if (!inputValidation.success) {
-    console.error(inputValidation.error);
+    logger.error("Fields are missing or incorrectly formatted", inputValidation.error);
     return responses.badRequestResponse(
       "Fields are missing or incorrectly formatted",
       transformErrorToDetails(inputValidation.error),
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
 
     if (usersWithNotifications.length > 0) {
       if (!survey) {
-        console.error(`Pipeline: Survey with id ${surveyId} not found`);
+        logger.error(`Pipeline: Survey with id ${surveyId} not found`);
         return new Response("Survey not found", {
           status: 404,
         });
