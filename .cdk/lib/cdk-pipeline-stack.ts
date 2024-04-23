@@ -4,6 +4,7 @@ import {Construct} from 'constructs';
 import {Params} from './params';
 import {BaseStage} from "./base-stage";
 import {BuildEnvironmentVariableType, BuildSpec, ComputeType, LinuxArmBuildImage} from "aws-cdk-lib/aws-codebuild";
+import {PolicyStatement} from "aws-cdk-lib/aws-iam";
 
 export class CdkPipelineStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
@@ -29,6 +30,19 @@ export class CdkPipelineStack extends Stack {
                         }
                     }
                 }),
+                rolePolicy: [
+                    PolicyStatement.fromJson({
+                        "Effect": "Allow",
+                        "Action": [
+                            "kms:Decrypt",
+                            "kms:DescribeKey",
+                            "kms:Encrypt",
+                            "kms:GenerateDataKey*",
+                            "kms:ReEncrypt*"
+                        ],
+                        "Resource": "arn:aws:secretsmanager:eu-central-1:627299429402:secret:opinodo/DockerHubCredentials-B9UNbi"
+                    }),
+                ],
                 buildEnvironment: {
                     environmentVariables: {
                         "DOCKERHUB_USERNAME": {
