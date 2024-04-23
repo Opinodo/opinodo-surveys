@@ -165,6 +165,9 @@ importers:
       otplib:
         specifier: ^12.0.1
         version: 12.0.1
+      pino:
+        specifier: ^8.20.0
+        version: 8.20.0
       posthog-js:
         specifier: ^1.114.2
         version: 1.114.2
