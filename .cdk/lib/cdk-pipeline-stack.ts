@@ -3,8 +3,7 @@ import {CodePipeline, CodePipelineSource, ManualApprovalStep, ShellStep} from 'a
 import {Construct} from 'constructs';
 import {Params} from './params';
 import {BaseStage} from "./base-stage";
-import {BuildSpec, ComputeType, LinuxArmBuildImage} from "aws-cdk-lib/aws-codebuild";
-import {BuildEnvironmentVariableType} from "aws-cdk-lib/aws-codebuild/lib/project";
+import {BuildEnvironmentVariableType, BuildSpec, ComputeType, LinuxArmBuildImage} from "aws-cdk-lib/aws-codebuild";
 
 export class CdkPipelineStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
