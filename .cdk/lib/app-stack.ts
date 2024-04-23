@@ -8,13 +8,15 @@ import {
     CfnOutput, IgnoreMode,
     RemovalPolicy,
     Stack,
-    StackProps, Duration
+    StackProps, Duration, aws_lambda, aws_lambda_nodejs, aws_logs_destinations, aws_logs
 } from 'aws-cdk-lib';
 import {Construct} from 'constructs';
-import {LogGroup} from "aws-cdk-lib/aws-logs";
+import {LogGroup, SubscriptionFilter} from "aws-cdk-lib/aws-logs";
 import {DockerImageAsset} from "aws-cdk-lib/aws-ecr-assets";
 import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
 import {AccessPoint} from "aws-cdk-lib/aws-efs";
+import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
+import * as path from "path";
 
 interface ECSStackProps extends StackProps {
     cluster: ecs.Cluster,
@@ -189,6 +191,21 @@ export class AppStack extends Stack {
 
         scalableTarget.scaleOnCpuUtilization(`${projectName}-ScaleUpCPU`, {
             targetUtilizationPercent: 60,
+        });
+
+        const logReceivingLambdaFunction = new NodejsFunction(this, "LogReceivingLambdaFunction", {
+            runtime: aws_lambda.Runtime.NODEJS_20_X,
+            entry: path.join(__dirname, `/../lambda/alerter.ts`),
+            depsLockFilePath: path.join(__dirname, `/../lambda/package-lock.json`),
+            handler: "handler",
+            retryAttempts: 0,
+            timeout: Duration.seconds(30),
+        });
+
+        const logGroupLambdaSubscription = new SubscriptionFilter(this, 'LogGroupLambdaSubscription', {
+            logGroup: webLogGroup,
+            destination: new aws_logs_destinations.LambdaDestination(logReceivingLambdaFunction),
+            filterPattern: aws_logs.FilterPattern.anyTerm("ERROR", "CRITICAL", "Exception"),
         });
 
         // Publish the web service ARN as an output
