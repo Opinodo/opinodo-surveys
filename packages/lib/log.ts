@@ -15,16 +15,17 @@ const pinoConfig = {
   messageKey: "message",
   timestamp: () => `,"time":"${new Date().toISOString()}"`,
   formatters: {
-    level: (label) => {
+    level: (label: string) => {
       return {
         level_name: label.toUpperCase(),
+        // @ts-ignore
         level: levels[label],
       };
     },
     bindings: () => {
       return {};
     },
-    log: (obj) => {
+    log: (obj: any) => {
       return {
         context: { ...obj },
         message: obj.msg,
@@ -34,7 +35,7 @@ const pinoConfig = {
     },
   },
   hooks: {
-    logMethod(inputArgs, method) {
+    logMethod(inputArgs: any, method: any) {
       if (inputArgs.length >= 2) {
         const arg1 = inputArgs.shift();
         const arg2 = inputArgs.shift();
@@ -45,5 +46,5 @@ const pinoConfig = {
   },
 };
 const logger = pino(pinoConfig);
-export const log = (msg) => logger.info(msg);
+export const log = (msg: any) => logger.info(msg);
 export default logger;
