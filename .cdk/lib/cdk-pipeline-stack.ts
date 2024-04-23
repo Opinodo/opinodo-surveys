@@ -3,7 +3,8 @@ import {CodePipeline, CodePipelineSource, ManualApprovalStep, ShellStep} from 'a
 import {Construct} from 'constructs';
 import {Params} from './params';
 import {BaseStage} from "./base-stage";
-import {ComputeType, LinuxArmBuildImage} from "aws-cdk-lib/aws-codebuild";
+import {BuildSpec, ComputeType, LinuxArmBuildImage} from "aws-cdk-lib/aws-codebuild";
+import {BuildEnvironmentVariableType} from "aws-cdk-lib/aws-codebuild/lib/project";
 
 export class CdkPipelineStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
@@ -19,7 +20,27 @@ export class CdkPipelineStack extends Stack {
                 commands: ['cd .cdk', 'npm ci', 'npx cdk synth'],
             }),
             assetPublishingCodeBuildDefaults: {
+                partialBuildSpec: BuildSpec.fromObject({
+                    'phases': {
+                        'install': {
+                            'commands': [
+                                'echo Logging in to Docker...',
+                                'docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD'
+                            ]
+                        }
+                    }
+                }),
                 buildEnvironment: {
+                    environmentVariables: {
+                        "DOCKERHUB_USERNAME": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "opinodo/DockerHubCredentials:username",
+                        },
+                        "DOCKERHUB_PASSWORD": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "opinodo/DockerHubCredentials:password",
+                        },
+                    },
                     buildImage:  LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
                     computeType: ComputeType.LARGE
                 }
