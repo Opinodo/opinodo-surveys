@@ -40,7 +40,7 @@ export class CdkPipelineStack extends Stack {
                             "kms:GenerateDataKey*",
                             "kms:ReEncrypt*"
                         ],
-                        "Resource": "arn:aws:secretsmanager:eu-central-1:627299429402:secret:opinodo/DockerHubCredentials-B9UNbi"
+                        "Resource": "arn:aws:kms:eu-central-1:627299429402:key/0eb3ea93-b6cd-4ee5-9a2a-2bbe30f39ca5"
                     }),
                 ],
                 buildEnvironment: {
