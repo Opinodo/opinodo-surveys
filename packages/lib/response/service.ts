@@ -482,7 +482,6 @@ export const getResponses = async (
         const responses = await prisma.response.findMany({
           where: {
             surveyId,
-            failed: false,
             ...buildWhereClause(filterCriteria),
           },
           select: responseSelection,
