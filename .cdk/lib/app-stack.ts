@@ -17,7 +17,6 @@ import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
 import {AccessPoint} from "aws-cdk-lib/aws-efs";
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
 import * as path from "path";
-import {StringParameter} from "aws-cdk-lib/aws-ssm";
 
 interface ECSStackProps extends StackProps {
     cluster: ecs.Cluster,
@@ -200,9 +199,6 @@ export class AppStack extends Stack {
             depsLockFilePath: path.join(__dirname, `/../lambda/package-lock.json`),
             handler: "handler",
             retryAttempts: 0,
-            environment: {
-                SLACK_WEBHOOK_URL: StringParameter.valueFromLookup(this, '/surveys-digiopinion/slack/webhook/url')
-            },
             timeout: Duration.seconds(30),
         });
 
