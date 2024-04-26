@@ -77,7 +77,8 @@ export async function POST(request: Request) {
 
       logger.info("Send Webhook", {
         webhookUrl: webhook.url,
-        body: body,
+        surveyId: body.data.surveyId,
+        personAttributes: body.data.personAttributes,
         secret: WEBHOOK_SECRET,
       });
 

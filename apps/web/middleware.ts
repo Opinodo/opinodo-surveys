@@ -42,7 +42,6 @@ export async function middleware(request: NextRequest) {
   if (!ip && forwardedFor) {
     ip = forwardedFor.split(",").at(0) ?? null;
   }
-
   if (ip) {
     try {
       if (loginRoute(request.nextUrl.pathname)) {
@@ -62,7 +61,7 @@ export async function middleware(request: NextRequest) {
       }
       return res;
     } catch (_e) {
-      logger.info(`Rate Limiting IP: ${ip}`);
+      logger.error(`Rate Limiting IP: ${ip}`);
 
       return NextResponse.json({ error: "Too many requests, Please try after a while!" }, { status: 429 });
     }
