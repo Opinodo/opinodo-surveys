@@ -1,6 +1,6 @@
 import {CloudWatchLogsEvent, Context} from "aws-lambda";
 import * as zlib from "zlib";
-import { getParameter } from '@aws-lambda-powertools/parameters/ssm';
+import {getParameter} from "@aws-lambda-powertools/parameters/ssm";
 
 export const isValidCwLogEvent = (event: CloudWatchLogsEvent): boolean => {
     return !!(
