@@ -12,6 +12,8 @@
   },
   "private": true,
   "dependencies": {
+    "@aws-lambda-powertools/parameters": "^2.1.0",
+    "@aws-sdk/client-ssm": "^3.563.0",
     "zlib": "^1.0.5"
   }
 }

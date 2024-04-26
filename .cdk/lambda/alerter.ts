@@ -1,5 +1,6 @@
 import {CloudWatchLogsEvent, Context} from "aws-lambda";
 import * as zlib from "zlib";
+import { getParameter } from '@aws-lambda-powertools/parameters/ssm';
 
 export const isValidCwLogEvent = (event: CloudWatchLogsEvent): boolean => {
     return !!(
@@ -30,6 +31,10 @@ export const parseLogs = (event: CloudWatchLogsEvent) : any => {
 export const handler = async (event: CloudWatchLogsEvent, context: Context): Promise<any> => {
     const processedLogs = parseLogs(event);
 
+    const url = await getParameter('/surveys-digiopinion/slack/webhook/url');
+    if (!url) {
+        throw new Error('Slack webhook url not found');
+    }
 
     for (const logEvent of processedLogs.logEvents) {
         let parsedMessage;
@@ -40,13 +45,13 @@ export const handler = async (event: CloudWatchLogsEvent, context: Context): Pro
             parsedMessage = logEvent.message; // the message is not a JSON
         }
         console.log(parsedMessage);
-        await sendToSlack(parsedMessage);
+        await sendToSlack(parsedMessage, url);
     }
 
     return processedLogs;
 };
 
-export const sendToSlack = async (message: any) => {
+export const sendToSlack = async (message: any, url: string) => {
 
     // Send logs to Slack
     const slackMessage = {
@@ -61,11 +66,6 @@ export const sendToSlack = async (message: any) => {
             },
         ],
     };
-
-    const url = process.env.SLACK_WEBHOOK_URL;
-    if (!url) {
-        throw new Error('SLACK_WEBHOOK_URL is not set');
-    }
     await fetch(url, {
         method: 'POST',
         headers: {

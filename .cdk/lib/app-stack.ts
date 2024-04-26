@@ -199,6 +199,12 @@ export class AppStack extends Stack {
             depsLockFilePath: path.join(__dirname, `/../lambda/package-lock.json`),
             handler: "handler",
             retryAttempts: 0,
+            initialPolicy: [
+                new iam.PolicyStatement({
+                    actions: ["ssm:GetParameter", "ssm:GetParametersByPath"],
+                    resources: ["*"]
+                }),
+            ],
             timeout: Duration.seconds(30),
         });
 
