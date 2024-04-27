@@ -199,10 +199,6 @@ export class AppStack extends Stack {
             depsLockFilePath: path.join(__dirname, `/../lambda/package-lock.json`),
             handler: "handler",
             retryAttempts: 0,
-            bundling: {
-                minify: true,
-                nodeModules: ['@aws-lambda-powertools/parameters']
-            },
             initialPolicy: [
                 new iam.PolicyStatement({
                     actions: ["ssm:GetParameter", "ssm:GetParametersByPath"],
