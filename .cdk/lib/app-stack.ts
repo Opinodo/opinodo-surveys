@@ -196,7 +196,7 @@ export class AppStack extends Stack {
         const logReceivingLambdaFunction = new NodejsFunction(this, "LogReceivingLambdaFunction", {
             runtime: aws_lambda.Runtime.NODEJS_20_X,
             entry: path.join(__dirname, `/../lambda/alerter.ts`),
-            depsLockFilePath: path.join(__dirname, `/../lambda/package-lock.json`),
+            depsLockFilePath: path.join(__dirname, `/../package-lock.json`),
             handler: "handler",
             retryAttempts: 0,
             initialPolicy: [
