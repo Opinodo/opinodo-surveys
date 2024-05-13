@@ -37,6 +37,7 @@ yarn-error.log*
 .env.staging
 .env.production.local
 .env.production
+local.env
 staging.env
 production.env
 !packages/database/.env

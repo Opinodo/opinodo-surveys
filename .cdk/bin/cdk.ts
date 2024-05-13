@@ -17,8 +17,9 @@ const app = new cdk.App();
 //     dbInstanceType: 't4g.micro',
 //     dbName: 'OpinodoSurveysDB'
 // });
-
+//
 // new AppStack(app, 'OpinodoSurveysApp', {
+//     taskCPU: 256, taskMemory: 512,
 //     bucket: baseStack.bucket,
 //     cluster: baseStack.cluster,
 //     vpc: baseStack.vpc,

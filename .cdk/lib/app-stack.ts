@@ -215,20 +215,26 @@ export class AppStack extends Stack {
         });
 
 
-        // const redisSecurityGroup = new ec2.SecurityGroup(
-        //     this,
-        //     `${projectName}-redisSecurityGroup`,
-        //     {
-        //         vpc: props.vpc,
-        //         allowAllOutbound: true,
-        //         description: "Security group for the redis cluster",
-        //     }
-        // );
+        const redisSecurityGroup = new ec2.SecurityGroup(
+            this,
+            `${projectName}-redisSecurityGroup`,
+            {
+                vpc: props.vpc,
+                allowAllOutbound: true,
+                description: "Security group for the redis cluster",
+            }
+        );
+        redisSecurityGroup.addIngressRule(
+            webService.service.connections.securityGroups[0],
+            ec2.Port.allTraffic(),
+            "Allow access to redis from the web service"
+        );
 
-        new elasticcache.CfnServerlessCache(this, `${projectName}-redisCache`, {
+        const redis = new elasticcache.CfnServerlessCache(this, `${projectName}-redisCache`, {
             engine: "redis" ,
             serverlessCacheName: `${projectName}-redisCache`,
             subnetIds: props.vpc.publicSubnets.map((ps) => ps.subnetId),
+            securityGroupIds: [redisSecurityGroup.securityGroupId],
         });
 
 
