@@ -10,6 +10,7 @@ import {
     Stack,
     StackProps, Duration, aws_lambda, aws_logs_destinations, aws_logs
 } from 'aws-cdk-lib';
+import * as elasticcache from "aws-cdk-lib/aws-elasticache";
 import {Construct} from 'constructs';
 import {LogGroup, SubscriptionFilter} from "aws-cdk-lib/aws-logs";
 import {DockerImageAsset} from "aws-cdk-lib/aws-ecr-assets";
@@ -212,6 +213,24 @@ export class AppStack extends Stack {
             destination: new aws_logs_destinations.LambdaDestination(logReceivingLambdaFunction),
             filterPattern: aws_logs.FilterPattern.anyTerm("ERROR", "CRITICAL", "Exception"),
         });
+
+
+        // const redisSecurityGroup = new ec2.SecurityGroup(
+        //     this,
+        //     `${projectName}-redisSecurityGroup`,
+        //     {
+        //         vpc: props.vpc,
+        //         allowAllOutbound: true,
+        //         description: "Security group for the redis cluster",
+        //     }
+        // );
+
+        new elasticcache.CfnServerlessCache(this, `${projectName}-redisCache`, {
+            engine: "redis" ,
+            serverlessCacheName: `${projectName}-redisCache`,
+            subnetIds: props.vpc.publicSubnets.map((ps) => ps.subnetId),
+        });
+
 
         // Publish the web service ARN as an output
         new CfnOutput(this, 'EcsWebServiceArn', {

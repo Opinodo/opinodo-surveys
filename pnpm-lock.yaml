@@ -239,16 +239,6 @@ importers:
         specifier: ^4.6.13
         version: 4.6.13
 
-  packages:
-
-    dependencies:
-      pino:
-        specifier: ^8.20.0
-        version: 8.20.0
-      react-select:
-        specifier: ^5.8.0
-        version: 5.8.0(react-dom@18.2.0)(react@18.2.0)
-
   packages/api:
     devDependencies:
       '@formbricks/tsconfig':
