@@ -20,11 +20,10 @@ function getHostname(url) {
 }
 
 const nextConfig = {
-  // cacheHandler:
-  //     process.env.NODE_ENV === 'production'
-  //         ? require.resolve('./cache-handler.mjs')
-  //         : undefined,
-  cacheHandler: resolveModule('./cache-handler.mjs'),
+  cacheHandler:
+      process.env.REDIS_URL
+          ? require.resolve('./cache-handler.mjs')
+          : undefined,
   assetPrefix: process.env.ASSET_PREFIX_URL || undefined,
   output: "standalone",
   experimental: {
