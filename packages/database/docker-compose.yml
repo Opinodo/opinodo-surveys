@@ -20,6 +20,11 @@ services:
       - 8025:8025 # web ui
       - 1025:1025 # smtp server
 
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+
 volumes:
   formbricks-postgres:
     driver: local
