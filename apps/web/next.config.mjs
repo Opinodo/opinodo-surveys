@@ -22,7 +22,7 @@ function getHostname(url) {
 const nextConfig = {
   cacheHandler:
       process.env.REDIS_URL
-          ? require.resolve('./cache-handler.mjs')
+          ? resolveModule('./cache-handler.mjs')
           : undefined,
   assetPrefix: process.env.ASSET_PREFIX_URL || undefined,
   output: "standalone",
