@@ -272,6 +272,8 @@ export default function ResponseOptionsCard({
     singleUseMessage.subheading,
     surveyClosedMessage.heading,
     surveyClosedMessage.subheading,
+    product.defaultRedirectOnFailUrl,
+    product.defaultRedirectOnCompleteUrl,
   ]);
 
   const toggleAutocomplete = () => {
