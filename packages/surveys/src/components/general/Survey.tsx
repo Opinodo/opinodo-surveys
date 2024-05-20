@@ -204,6 +204,18 @@ export function Survey({
     onActiveQuestionChange(nextQuestionId);
   };
 
+  const appendSurveyAndPanelistQueryParamsToRedirectUrl = (url: string | null): string | null => {
+    if (!url) return null;
+    const urlObj = new URL(url);
+    urlObj.searchParams.append("survey_id", survey.id);
+    const urlParams = new URLSearchParams(window.location.search);
+    const user_id = urlParams.get("userId");
+    if (user_id) {
+      urlObj.searchParams.append("panelist_id", user_id);
+    }
+    return urlObj.toString();
+  };
+
   const replaceRecallInfo = (text: string): string => {
     while (text.includes("recall:")) {
       const recallInfo = extractRecallInfo(text);
@@ -288,7 +300,7 @@ export function Survey({
             buttonLabel={survey.failureCard.buttonLabel}
             buttonLink={survey.failureCard.buttonLink}
             imageUrl={survey.failureCard.imageUrl}
-            redirectUrl={survey.redirectOnFailUrl}
+            redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectOnFailUrl)}
             isRedirectDisabled={isRedirectDisabled}
             languageCode={languageCode}
             replaceRecallInfo={replaceRecallInfo}
@@ -304,7 +316,7 @@ export function Survey({
           buttonLabel={survey.thankYouCard.buttonLabel}
           buttonLink={survey.thankYouCard.buttonLink}
           imageUrl={survey.thankYouCard.imageUrl}
-          redirectUrl={survey.redirectUrl}
+          redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectUrl)}
           isRedirectDisabled={isRedirectDisabled}
           languageCode={languageCode}
           replaceRecallInfo={replaceRecallInfo}
