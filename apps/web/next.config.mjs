@@ -1,29 +1,17 @@
 import { createId } from "@paralleldrive/cuid2";
 import { withSentryConfig } from "@sentry/nextjs";
 import createJiti from "jiti";
-import { fileURLToPath, URL } from "node:url";
-import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const jiti = createJiti(fileURLToPath(import.meta.url));
 
 jiti("@formbricks/lib/env");
-
-/** @type {import('next').NextConfig} */
-
-function resolveModule(modulePath) {
-  return resolve(dirname(fileURLToPath(import.meta.url)), modulePath);
-}
-
 function getHostname(url) {
   const urlObj = new URL(url);
   return urlObj.hostname;
 }
 
 const nextConfig = {
-  cacheHandler:
-      process.env.REDIS_URL
-          ? resolveModule('./cache-handler.mjs')
-          : undefined,
   assetPrefix: process.env.ASSET_PREFIX_URL || undefined,
   output: "standalone",
   experimental: {

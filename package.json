@@ -20,7 +20,7 @@
     "db:start": "turbo run db:start",
     "db:push": "turbo run db:push",
     "go": "turbo run go --concurrency 20 --ignore=\".cdk/**\"",
-    "dev": "turbo run dev --parallel --ignore=\".cdk/**\"",
+    "dev": "turbo run dev --filter web --parallel --ignore=\".cdk/**\"",
     "pre-commit": "lint-staged",
     "start": "turbo run start --parallel --ignore=\".cdk/**\"",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -65,7 +65,8 @@
   "dependencies": {
     "@changesets/cli": "^2.27.1",
     "iso-639-1": "^3.1.2",
-    "react-select": "^5.8.0",
-    "playwright": "^1.42.1"
+    "playwright": "^1.42.1",
+    "react-adsense": "^0.1.0",
+    "react-select": "^5.8.0"
   }
 }

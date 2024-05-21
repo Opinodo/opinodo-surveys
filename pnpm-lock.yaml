@@ -17,6 +17,9 @@ importers:
       playwright:
         specifier: ^1.42.1
         version: 1.42.1
+      react-adsense:
+        specifier: ^0.1.0
+        version: 0.1.0(prop-types@15.8.1)(react@18.2.0)
       react-select:
         specifier: ^5.8.0
         version: 5.8.0(react-dom@18.2.0)(react@18.2.0)
@@ -14219,6 +14222,16 @@ packages:
       minimist: 1.2.8
       strip-json-comments: 2.0.1
     dev: true
+
+  /react-adsense@0.1.0(prop-types@15.8.1)(react@18.2.0):
+    resolution: {integrity: sha512-VzGMH9qA7bBKAveK1joFWphhB7e2Y1ToSGzUa8b7eit3+VSkg/2MSvKxe5d/r4mcmkOHu6CHNJW0nn6RQC3IZA==}
+    peerDependencies:
+      prop-types: '>=15.0.0'
+      react: '>=0.13.2 || ^0.14 || ^15.0.0 || ^16.0.0'
+    dependencies:
+      prop-types: 15.8.1
+      react: 18.2.0
+    dev: false
 
   /react-beautiful-dnd@13.1.1(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-0Lvs4tq2VcrEjEgDXHjT98r+63drkKEgqyxdA7qD3mvKwga6a5SscbdLPO2IExotU1jW8L0Ksdl0Cj2AF67nPQ==}
