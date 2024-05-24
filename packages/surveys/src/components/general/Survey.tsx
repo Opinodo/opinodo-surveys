@@ -1,29 +1,29 @@
-import FormbricksBranding from "@/components/general/FormbricksBranding";
-import ProgressBar from "@/components/general/ProgressBar";
+import { FormbricksBranding } from "@/components/general/FormbricksBranding";
+import { ProgressBar } from "@/components/general/ProgressBar";
+import { QuestionConditional } from "@/components/general/QuestionConditional";
 import { ResponseErrorComponent } from "@/components/general/ResponseErrorComponent";
+import { SurveyCloseButton } from "@/components/general/SurveyCloseButton";
+import { ThankYouCard } from "@/components/general/ThankYouCard";
+import { WelcomeCard } from "@/components/general/WelcomeCard";
 import { AutoCloseWrapper } from "@/components/wrappers/AutoCloseWrapper";
+import { StackedCardsContainer } from "@/components/wrappers/StackedCardsContainer";
 import { evaluateCondition } from "@/lib/logicEvaluator";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
+import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import { formatDateWithOrdinal, isValidDateString } from "@formbricks/lib/utils/datetime";
 import { extractFallbackValue, extractId, extractRecallInfo } from "@formbricks/lib/utils/recall";
 import { SurveyBaseProps } from "@formbricks/types/formbricksSurveys";
 import type { TResponseData, TResponseTtc } from "@formbricks/types/responses";
 import { TSurveyQuestion } from "@formbricks/types/surveys";
 
-import QuestionConditional from "./QuestionConditional";
-import ThankYouCard from "./ThankYouCard";
-import WelcomeCard from "./WelcomeCard";
-
-export function Survey({
+export const Survey = ({
   survey,
   styling,
   isBrandingEnabled,
-  activeQuestionId,
   onDisplay = () => {},
-  onActiveQuestionChange = () => {},
   onResponse = () => {},
   onClose = () => {},
   onFinished = () => {},
@@ -33,12 +33,15 @@ export function Survey({
   languageCode,
   getSetIsError,
   getSetIsResponseSendingFinished,
+  getSetQuestionId,
   onFileUpload,
   responseCount,
-  isCardBorderVisible = true,
-}: SurveyBaseProps) {
+  startAtQuestionId,
+  clickOutside,
+}: SurveyBaseProps) => {
+  const isInIframe = window.self !== window.top;
   const [questionId, setQuestionId] = useState(
-    activeQuestionId || (survey.welcomeCard.enabled ? "start" : survey?.questions[0]?.id)
+    survey.welcomeCard.enabled ? "start" : survey?.questions[0]?.id
   );
   const [showError, setShowError] = useState(false);
   // flag state to store whether response processing has been completed or not, we ignore this check for survey editor preview and link survey preview where getSetIsResponseSendingFinished is undefined
@@ -50,6 +53,13 @@ export function Survey({
   const [history, setHistory] = useState<string[]>([]);
   const [responseData, setResponseData] = useState<TResponseData>({});
   const [ttc, setTtc] = useState<TResponseTtc>({});
+  const cardArrangement = useMemo(() => {
+    if (survey.type === "link") {
+      return styling.cardArrangement?.linkSurveys ?? "straight";
+    } else {
+      return styling.cardArrangement?.appSurveys ?? "straight";
+    }
+  }, [survey.type, styling.cardArrangement?.linkSurveys, styling.cardArrangement?.appSurveys]);
 
   const currentQuestionIndex = survey.questions.findIndex((q) => q.id === questionId);
   const currentQuestion = useMemo(() => {
@@ -63,15 +73,9 @@ export function Survey({
   }, [questionId, survey, history]);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const showProgressBar = !styling.hideProgressBar;
-
-  useEffect(() => {
-    if (activeQuestionId === "hidden" || activeQuestionId === "multiLanguage") return;
-    if (activeQuestionId === "start" && !survey.welcomeCard.enabled) {
-      setQuestionId(survey?.questions[0]?.id);
-      return;
-    }
-    setQuestionId(activeQuestionId || (survey.welcomeCard.enabled ? "start" : survey?.questions[0]?.id));
-  }, [activeQuestionId, survey.questions, survey.welcomeCard.enabled]);
+  const getShowSurveyCloseButton = (offset: number) => {
+    return offset === 0 && survey.type !== "link" && (clickOutside === undefined ? true : clickOutside);
+  };
 
   useEffect(() => {
     // scroll to top when question changes
@@ -84,7 +88,10 @@ export function Survey({
     // call onDisplay when component is mounted
     onDisplay();
     if (prefillResponseData) {
-      onSubmit(prefillResponseData, {}, true);
+      onChange(prefillResponseData);
+    }
+    if (startAtQuestionId) {
+      setQuestionId(startAtQuestionId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -98,6 +105,14 @@ export function Survey({
   }, [getSetIsError]);
 
   useEffect(() => {
+    if (getSetQuestionId) {
+      getSetQuestionId((value: string) => {
+        setQuestionId(value);
+      });
+    }
+  }, [getSetQuestionId]);
+
+  useEffect(() => {
     if (getSetIsResponseSendingFinished) {
       getSetIsResponseSendingFinished((value: boolean) => {
         setIsResponseSendingFinished(value);
@@ -108,18 +123,12 @@ export function Survey({
   let currIdxTemp = currentQuestionIndex;
   let currQuesTemp = currentQuestion;
 
-  function getNextQuestionId(data: TResponseData, isFromPrefilling: Boolean = false): string {
+  const getNextQuestionId = (data: TResponseData): string => {
     const questions = survey.questions;
     const responseValue = data[questionId];
 
-    if (questionId === "start") {
-      if (!isFromPrefilling) {
-        return questions[0]?.id || "end";
-      } else {
-        currIdxTemp = 0;
-        currQuesTemp = questions[0];
-      }
-    }
+    if (questionId === "start") return questions[0]?.id || "end";
+
     if (currIdxTemp === -1) throw new Error("Question not found");
     if (currQuesTemp?.logic && currQuesTemp?.logic.length > 0 && currentQuestion) {
       for (let logic of currQuesTemp.logic) {
@@ -173,8 +182,9 @@ export function Survey({
         }
       }
     }
+
     return questions[currIdxTemp + 1]?.id || "end";
-  }
+  };
 
   const onChange = (responseDataUpdate: TResponseData) => {
     const updatedResponseData = { ...responseData, ...responseDataUpdate };
@@ -183,10 +193,10 @@ export function Survey({
 
   const [failed, setFailed] = useState(false);
 
-  const onSubmit = (responseData: TResponseData, ttc: TResponseTtc, isFromPrefilling: Boolean = false) => {
+  const onSubmit = (responseData: TResponseData, ttc: TResponseTtc) => {
     const questionId = Object.keys(responseData)[0];
     setLoadingElement(true);
-    const nextQuestionId = getNextQuestionId(responseData, isFromPrefilling);
+    const nextQuestionId = getNextQuestionId(responseData);
     const finished = nextQuestionId === "end";
     const random = Math.random() * 100;
     const surveyFailed = finished && random <= survey.failureChance;
@@ -201,7 +211,6 @@ export function Survey({
     // add to history
     setHistory([...history, questionId]);
     setLoadingElement(false);
-    onActiveQuestionChange(nextQuestionId);
   };
 
   const appendSurveyAndPanelistQueryParamsToRedirectUrl = (url: string | null): string | null => {
@@ -228,7 +237,7 @@ export function Survey({
           value = formatDateWithOrdinal(new Date(value));
         }
         if (Array.isArray(value)) {
-          value = value.join(", ");
+          value = value.filter((item) => item !== null && item !== undefined && item !== "").join(", ");
         }
         text = text.replace(recallInfo, value);
       }
@@ -261,7 +270,6 @@ export function Survey({
     if (history?.length > 0) {
       const newHistory = [...history];
       prevQuestionId = newHistory.pop();
-      if (prefillResponseData && prevQuestionId === survey.questions[0].id) return;
       setHistory(newHistory);
     } else {
       // otherwise go back to previous question in array
@@ -269,109 +277,123 @@ export function Survey({
     }
     if (!prevQuestionId) throw new Error("Question not found");
     setQuestionId(prevQuestionId);
-    onActiveQuestionChange(prevQuestionId);
   };
-  function getCardContent() {
+  const getCardContent = (questionIdx: number, offset: number): JSX.Element | undefined => {
     if (showError) {
       return (
         <ResponseErrorComponent responseData={responseData} questions={survey.questions} onRetry={onRetry} />
       );
     }
-    if (questionId === "start" && survey.welcomeCard.enabled) {
-      return (
-        <WelcomeCard
-          headline={survey.welcomeCard.headline}
-          html={survey.welcomeCard.html}
-          fileUrl={survey.welcomeCard.fileUrl}
-          buttonLabel={survey.welcomeCard.buttonLabel}
-          onSubmit={onSubmit}
-          survey={survey}
-          languageCode={languageCode}
-          responseCount={responseCount}
-        />
-      );
-    } else if (questionId === "end" && survey.thankYouCard.enabled) {
-      if (survey.failureCard.enabled && failed) {
+
+    const content = () => {
+      if (questionIdx === -1) {
+        return (
+          <WelcomeCard
+            headline={survey.welcomeCard.headline}
+            html={survey.welcomeCard.html}
+            fileUrl={survey.welcomeCard.fileUrl}
+            buttonLabel={survey.welcomeCard.buttonLabel}
+            onSubmit={onSubmit}
+            survey={survey}
+            languageCode={languageCode}
+            responseCount={responseCount}
+            isInIframe={isInIframe}
+          />
+        );
+      } else if (questionIdx === survey.questions.length) {
+        if (survey.failureCard.enabled && failed) {
+          return (
+            <ThankYouCard
+              headline={survey.failureCard.headline}
+              subheader={survey.failureCard.subheader}
+              isResponseSendingFinished={isResponseSendingFinished}
+              buttonLabel={survey.failureCard.buttonLabel}
+              buttonLink={survey.failureCard.buttonLink}
+              imageUrl={survey.failureCard.imageUrl}
+              redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectOnFailUrl)}
+              isRedirectDisabled={isRedirectDisabled}
+              languageCode={languageCode}
+              replaceRecallInfo={replaceRecallInfo}
+              failed={true}
+              isInIframe={isInIframe}
+            />
+          );
+        }
         return (
           <ThankYouCard
-            headline={survey.failureCard.headline}
-            subheader={survey.failureCard.subheader}
+            headline={survey.thankYouCard.headline}
+            subheader={survey.thankYouCard.subheader}
             isResponseSendingFinished={isResponseSendingFinished}
-            buttonLabel={survey.failureCard.buttonLabel}
-            buttonLink={survey.failureCard.buttonLink}
-            imageUrl={survey.failureCard.imageUrl}
-            redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectOnFailUrl)}
+            buttonLabel={survey.thankYouCard.buttonLabel}
+            buttonLink={survey.thankYouCard.buttonLink}
+            imageUrl={survey.thankYouCard.imageUrl}
+            videoUrl={survey.thankYouCard.videoUrl}
+            redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectUrl)}
             isRedirectDisabled={isRedirectDisabled}
             languageCode={languageCode}
             replaceRecallInfo={replaceRecallInfo}
-            failed={true}
+            failed={false}
+            isInIframe={isInIframe}
           />
         );
+      } else {
+        const question = survey.questions[questionIdx];
+        return (
+          question && (
+            <QuestionConditional
+              surveyId={survey.id}
+              question={parseRecallInformation(question)}
+              value={responseData[question.id]}
+              onChange={onChange}
+              onSubmit={onSubmit}
+              onBack={onBack}
+              ttc={ttc}
+              setTtc={setTtc}
+              onFileUpload={onFileUpload}
+              isFirstQuestion={
+                history && prefillResponseData
+                  ? history[history.length - 1] === survey.questions[0].id
+                  : question.id === survey?.questions[0]?.id
+              }
+              isLastQuestion={question.id === survey.questions[survey.questions.length - 1].id}
+              languageCode={languageCode}
+              isInIframe={isInIframe}
+              currentQuestionId={questionId}
+            />
+          )
+        );
       }
-      return (
-        <ThankYouCard
-          headline={survey.thankYouCard.headline}
-          subheader={survey.thankYouCard.subheader}
-          isResponseSendingFinished={isResponseSendingFinished}
-          buttonLabel={survey.thankYouCard.buttonLabel}
-          buttonLink={survey.thankYouCard.buttonLink}
-          imageUrl={survey.thankYouCard.imageUrl}
-          redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectUrl)}
-          isRedirectDisabled={isRedirectDisabled}
-          languageCode={languageCode}
-          replaceRecallInfo={replaceRecallInfo}
-          failed={false}
-        />
-      );
-    } else {
-      return (
-        currentQuestion && (
-          <QuestionConditional
-            surveyId={survey.id}
-            question={parseRecallInformation(currentQuestion)}
-            value={responseData[currentQuestion.id]}
-            onChange={onChange}
-            onSubmit={onSubmit}
-            onBack={onBack}
-            ttc={ttc}
-            setTtc={setTtc}
-            onFileUpload={onFileUpload}
-            isFirstQuestion={
-              history && prefillResponseData
-                ? history[history.length - 1] === survey.questions[0].id
-                : currentQuestion.id === survey?.questions[0]?.id
-            }
-            isLastQuestion={currentQuestion.id === survey.questions[survey.questions.length - 1].id}
-            languageCode={languageCode}
-          />
-        )
-      );
-    }
-  }
+    };
 
-  return (
-    <>
+    return (
       <AutoCloseWrapper survey={survey} onClose={onClose}>
+        {getShowSurveyCloseButton(offset) && <SurveyCloseButton onClose={onClose} />}
         <div
           className={cn(
-            "no-scrollbar rounded-custom bg-survey-bg flex h-full w-full flex-col justify-between px-6 pb-3 pt-6",
-            isCardBorderVisible ? "border-survey-border border" : "",
-            survey.type === "link" ? "fb-survey-shadow" : ""
+            "no-scrollbar md:rounded-custom rounded-t-custom bg-survey-bg flex h-full w-full flex-col justify-between overflow-hidden transition-all duration-1000 ease-in-out",
+            cardArrangement === "simple" ? "fb-survey-shadow" : "",
+            offset === 0 || cardArrangement === "simple" ? "opacity-100" : "opacity-0"
           )}>
           <div ref={contentRef} className={cn(loadingElement ? "animate-pulse opacity-60" : "", "my-auto")}>
-            {survey.questions.length === 0 && !survey.welcomeCard.enabled && !survey.thankYouCard.enabled ? (
-              // Handle the case when there are no questions and both welcome and thank you cards are disabled
-              <div>No questions available.</div>
-            ) : (
-              getCardContent()
-            )}
+            {content()}
           </div>
-          <div className="mt-8">
+          <div className="mx-6 mb-10 mt-2 space-y-3 md:mb-6 md:mt-6">
             {isBrandingEnabled && <FormbricksBranding />}
             {showProgressBar && <ProgressBar survey={survey} questionId={questionId} />}
           </div>
         </div>
       </AutoCloseWrapper>
-    </>
+    );
+  };
+
+  return (
+    <StackedCardsContainer
+      cardArrangement={cardArrangement}
+      currentQuestionId={questionId}
+      getCardContent={getCardContent}
+      survey={survey}
+      styling={styling}
+      setQuestionId={setQuestionId}
+    />
   );
-}
+};

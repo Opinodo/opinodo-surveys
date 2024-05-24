@@ -5,8 +5,7 @@ import {
   generateResultShareUrlAction,
   getResultShareUrlAction,
 } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/actions";
-import { CopyIcon, GlobeIcon, LinkIcon } from "lucide-react";
-import { DownloadIcon } from "lucide-react";
+import { CopyIcon, DownloadIcon, GlobeIcon, LinkIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -20,16 +19,16 @@ import {
   DropdownMenuTrigger,
 } from "@formbricks/ui/DropdownMenu";
 
-import ShareEmbedSurvey from "../(analysis)/summary/components/ShareEmbedSurvey";
-import ShareSurveyResults from "../(analysis)/summary/components/ShareSurveyResults";
+import { ShareEmbedSurvey } from "../(analysis)/summary/components/ShareEmbedSurvey";
+import { ShareSurveyResults } from "../(analysis)/summary/components/ShareSurveyResults";
 
 interface ResultsShareButtonProps {
   survey: TSurvey;
   webAppUrl: string;
-  user: TUser;
+  user?: TUser;
 }
 
-export default function ResultsShareButton({ survey, webAppUrl, user }: ResultsShareButtonProps) {
+export const ResultsShareButton = ({ survey, webAppUrl, user }: ResultsShareButtonProps) => {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showResultsLinkModal, setShowResultsLinkModal] = useState(false);
 
@@ -55,13 +54,13 @@ export default function ResultsShareButton({ survey, webAppUrl, user }: ResultsS
   };
 
   useEffect(() => {
-    async function fetchSharingKey() {
+    const fetchSharingKey = async () => {
       const sharingKey = await getResultShareUrlAction(survey.id);
       if (sharingKey) {
         setSurveyUrl(webAppUrl + "/share/" + sharingKey);
         setShowPublishModal(true);
       }
-    }
+    };
 
     fetchSharingKey();
   }, [survey.id, webAppUrl]);
@@ -90,14 +89,14 @@ export default function ResultsShareButton({ survey, webAppUrl, user }: ResultsS
     }
   };
   return (
-    <div className="mb-12">
+    <div>
       <DropdownMenu>
         <DropdownMenuTrigger
           asChild
-          className="focus:bg-muted cursor-pointer border border-slate-300 outline-none hover:border-slate-400">
+          className="focus:bg-muted cursor-pointer border border-slate-200 outline-none hover:border-slate-300">
           <div className="min-w-auto h-auto rounded-md border bg-white p-3 sm:flex sm:min-w-[7rem] sm:px-6 sm:py-3">
             <div className="hidden w-full items-center justify-between sm:flex">
-              <span className="text-sm text-slate-700">Share Results</span>
+              <span className="text-sm text-slate-700">Share results</span>
               <LinkIcon className="ml-2 h-4 w-4" />
             </div>
             <DownloadIcon className="block h-4 sm:hidden" />
@@ -117,12 +116,12 @@ export default function ResultsShareButton({ survey, webAppUrl, user }: ResultsS
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem
-              className="hover:ring-0"
+              className="text-slate-700 hover:ring-0"
               onClick={() => {
                 copyUrlToClipboard();
               }}>
-              <p className="text-slate-700">
-                Copy link <CopyIcon className="ml-1.5 inline h-4 w-4" />
+              <p className="flex items-center text-slate-700">
+                Copy link <CopyIcon className="ml-1.5 h-4 w-4" />
               </p>
             </DropdownMenuItem>
           )}
@@ -131,15 +130,15 @@ export default function ResultsShareButton({ survey, webAppUrl, user }: ResultsS
             onClick={() => {
               setShowResultsLinkModal(true);
             }}>
-            <p className="text-slate-700">
+            <p className="flex items-center text-slate-700">
               {survey.resultShareKey ? "Unpublish from web" : "Publish to web"}
-              <GlobeIcon className="ml-1.5 inline h-4 w-4" />
+              <GlobeIcon className="ml-1.5 h-4 w-4" />
             </p>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {showLinkModal && (
+      {showLinkModal && user && (
         <ShareEmbedSurvey
           survey={survey}
           open={showLinkModal}
@@ -160,4 +159,4 @@ export default function ResultsShareButton({ survey, webAppUrl, user }: ResultsS
       )}
     </div>
   );
-}
+};

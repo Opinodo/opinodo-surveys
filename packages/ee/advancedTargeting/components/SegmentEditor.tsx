@@ -2,6 +2,7 @@ import { MoreVertical, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { cn } from "@formbricks/lib/cn";
+import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import {
   addFilterBelow,
   addFilterInGroup,
@@ -22,8 +23,8 @@ import {
   DropdownMenuTrigger,
 } from "@formbricks/ui/DropdownMenu";
 
-import AddFilterModal from "./AddFilterModal";
-import SegmentFilter from "./SegmentFilter";
+import { AddFilterModal } from "./AddFilterModal";
+import { SegmentFilter } from "./SegmentFilter";
 
 type TSegmentEditorProps = {
   group: TBaseFilters;
@@ -32,11 +33,11 @@ type TSegmentEditorProps = {
   segments: TSegment[];
   actionClasses: TActionClass[];
   attributeClasses: TAttributeClass[];
-  setSegment: React.Dispatch<React.SetStateAction<TSegment>>;
+  setSegment: React.Dispatch<React.SetStateAction<TSegment | null>>;
   viewOnly?: boolean;
 };
 
-const SegmentEditor = ({
+export const SegmentEditor = ({
   group,
   environmentId,
   setSegment,
@@ -260,5 +261,3 @@ const SegmentEditor = ({
     </div>
   );
 };
-
-export default SegmentEditor;

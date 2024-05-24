@@ -2,22 +2,28 @@ import { writeData as airtableWriteData } from "@formbricks/lib/airtable/service
 import { writeData } from "@formbricks/lib/googleSheet/service";
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
 import { writeData as writeNotionData } from "@formbricks/lib/notion/service";
+import { processResponseData } from "@formbricks/lib/responses";
+import { writeDataToSlack } from "@formbricks/lib/slack/service";
 import { TIntegration } from "@formbricks/types/integration";
 import { TIntegrationAirtable } from "@formbricks/types/integration/airtable";
 import { TIntegrationGoogleSheets } from "@formbricks/types/integration/googleSheet";
 import { TIntegrationNotion, TIntegrationNotionConfigData } from "@formbricks/types/integration/notion";
+import { TIntegrationSlack } from "@formbricks/types/integration/slack";
 import { TPipelineInput } from "@formbricks/types/pipelines";
 import { TSurvey, TSurveyQuestionType } from "@formbricks/types/surveys";
 
-export async function handleIntegrations(
+export const handleIntegrations = async (
   integrations: TIntegration[],
   data: TPipelineInput,
   survey: TSurvey
-) {
+) => {
   for (const integration of integrations) {
     switch (integration.type) {
       case "googleSheets":
         await handleGoogleSheetsIntegration(integration as TIntegrationGoogleSheets, data, survey);
+        break;
+      case "slack":
+        await handleSlackIntegration(integration as TIntegrationSlack, data, survey);
         break;
       case "airtable":
         await handleAirtableIntegration(integration as TIntegrationAirtable, data, survey);
@@ -27,13 +33,13 @@ export async function handleIntegrations(
         break;
     }
   }
-}
+};
 
-async function handleAirtableIntegration(
+const handleAirtableIntegration = async (
   integration: TIntegrationAirtable,
   data: TPipelineInput,
   survey: TSurvey
-) {
+) => {
   if (integration.config.data.length > 0) {
     for (const element of integration.config.data) {
       if (element.surveyId === data.surveyId) {
@@ -43,13 +49,13 @@ async function handleAirtableIntegration(
       }
     }
   }
-}
+};
 
-async function handleGoogleSheetsIntegration(
+const handleGoogleSheetsIntegration = async (
   integration: TIntegrationGoogleSheets,
   data: TPipelineInput,
   survey: TSurvey
-) {
+) => {
   if (integration.config.data.length > 0) {
     for (const element of integration.config.data) {
       if (element.surveyId === data.surveyId) {
@@ -58,36 +64,66 @@ async function handleGoogleSheetsIntegration(
       }
     }
   }
-}
+};
 
-async function extractResponses(
+const handleSlackIntegration = async (
+  integration: TIntegrationSlack,
+  data: TPipelineInput,
+  survey: TSurvey
+) => {
+  if (integration.config.data.length > 0) {
+    for (const element of integration.config.data) {
+      if (element.surveyId === data.surveyId) {
+        const values = await extractResponses(data, element.questionIds as string[], survey);
+        await writeDataToSlack(integration.config.key, element.channelId, values, survey?.name);
+      }
+    }
+  }
+};
+
+const extractResponses = async (
   data: TPipelineInput,
   questionIds: string[],
   survey: TSurvey
-): Promise<string[][]> {
+): Promise<string[][]> => {
   const responses: string[] = [];
   const questions: string[] = [];
 
   for (const questionId of questionIds) {
+    const question = survey?.questions.find((q) => q.id === questionId);
+    if (!question) {
+      continue;
+    }
+
     const responseValue = data.response.data[questionId];
 
     if (responseValue !== undefined) {
-      responses.push(Array.isArray(responseValue) ? responseValue.join("\n") : String(responseValue));
+      let answer: typeof responseValue;
+      if (question.type === TSurveyQuestionType.PictureSelection) {
+        const selectedChoiceIds = responseValue as string[];
+        answer = question?.choices
+          .filter((choice) => selectedChoiceIds.includes(choice.id))
+          .map((choice) => choice.imageUrl)
+          .join("\n");
+      } else {
+        answer = responseValue;
+      }
+
+      responses.push(processResponseData(answer));
     } else {
       responses.push("");
     }
-    const question = survey?.questions.find((q) => q.id === questionId);
     questions.push(getLocalizedValue(question?.headline, "default") || "");
   }
 
   return [responses, questions];
-}
+};
 
-async function handleNotionIntegration(
+const handleNotionIntegration = async (
   integration: TIntegrationNotion,
   data: TPipelineInput,
   surveyData: TSurvey
-) {
+) => {
   if (integration.config.data.length > 0) {
     for (const element of integration.config.data) {
       if (element.surveyId === data.surveyId) {
@@ -96,13 +132,13 @@ async function handleNotionIntegration(
       }
     }
   }
-}
+};
 
-function buildNotionPayloadProperties(
+const buildNotionPayloadProperties = (
   mapping: TIntegrationNotionConfigData["mapping"],
   data: TPipelineInput,
   surveyData: TSurvey
-) {
+) => {
   const properties: any = {};
   const responses = data.response.data;
 
@@ -130,11 +166,11 @@ function buildNotionPayloadProperties(
   });
 
   return properties;
-}
+};
 
 // notion requires specific payload for each column type
 // * TYPES NOT SUPPORTED BY NOTION API - rollup, created_by, created_time, last_edited_by, or last_edited_time
-function getValue(colType: string, value: string | string[] | number) {
+const getValue = (colType: string, value: string | string[] | number | Record<string, string>) => {
   try {
     switch (colType) {
       case "select":
@@ -181,4 +217,4 @@ function getValue(colType: string, value: string | string[] | number) {
   } catch (error) {
     throw new Error("Payload build failed!");
   }
-}
+};

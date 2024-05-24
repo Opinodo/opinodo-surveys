@@ -1,21 +1,19 @@
-import Modal from "@/components/wrappers/Modal";
+import { Modal } from "@/components/wrappers/Modal";
 import { useState } from "preact/hooks";
 
 import { SurveyModalProps } from "@formbricks/types/formbricksSurveys";
 
 import { Survey } from "./Survey";
 
-export function SurveyModal({
+export const SurveyModal = ({
   survey,
   isBrandingEnabled,
-  activeQuestionId,
   getSetIsError,
   placement,
   clickOutside,
   darkOverlay,
   onDisplay,
   getSetIsResponseSendingFinished,
-  onActiveQuestionChange,
   onResponse,
   onClose,
   onFinished = () => {},
@@ -25,7 +23,7 @@ export function SurveyModal({
   languageCode,
   responseCount,
   styling,
-}: SurveyModalProps) {
+}: SurveyModalProps) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const close = () => {
@@ -51,10 +49,8 @@ export function SurveyModal({
         <Survey
           survey={survey}
           isBrandingEnabled={isBrandingEnabled}
-          activeQuestionId={activeQuestionId}
           onDisplay={onDisplay}
           getSetIsResponseSendingFinished={getSetIsResponseSendingFinished}
-          onActiveQuestionChange={onActiveQuestionChange}
           onResponse={onResponse}
           languageCode={languageCode}
           onClose={close}
@@ -73,8 +69,9 @@ export function SurveyModal({
           responseCount={responseCount}
           styling={styling}
           isCardBorderVisible={!highlightBorderColor}
+          clickOutside={placement === "center" ? clickOutside : undefined}
         />
       </Modal>
     </div>
   );
-}
+};

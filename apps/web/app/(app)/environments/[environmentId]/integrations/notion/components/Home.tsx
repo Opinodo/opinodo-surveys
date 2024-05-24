@@ -8,23 +8,25 @@ import { TEnvironment } from "@formbricks/types/environment";
 import { TIntegrationNotion, TIntegrationNotionConfigData } from "@formbricks/types/integration/notion";
 import { Button } from "@formbricks/ui/Button";
 import { DeleteDialog } from "@formbricks/ui/DeleteDialog";
-import EmptySpaceFiller from "@formbricks/ui/EmptySpaceFiller";
+import { EmptySpaceFiller } from "@formbricks/ui/EmptySpaceFiller";
 
 interface HomeProps {
   environment: TEnvironment;
   notionIntegration: TIntegrationNotion;
   setOpenAddIntegrationModal: React.Dispatch<React.SetStateAction<boolean>>;
   setIsConnected: React.Dispatch<React.SetStateAction<boolean>>;
-  setSelectedIntegration: (v: (TIntegrationNotionConfigData & { index: number }) | null) => void;
+  setSelectedIntegration: React.Dispatch<
+    React.SetStateAction<(TIntegrationNotionConfigData & { index: number }) | null>
+  >;
 }
 
-export default function Home({
+export const Home = ({
   environment,
   notionIntegration,
   setOpenAddIntegrationModal,
   setIsConnected,
   setSelectedIntegration,
-}: HomeProps) {
+}: HomeProps) => {
   const [isDeleteIntegrationModalOpen, setIsDeleteIntegrationModalOpen] = useState(false);
   const [isDeleting, setisDeleting] = useState(false);
   const integrationArray = notionIntegration
@@ -48,10 +50,7 @@ export default function Home({
   };
 
   const editIntegration = (index: number) => {
-    setSelectedIntegration({
-      ...notionIntegration.config.data[index],
-      index: index,
-    });
+    setSelectedIntegration({ ...notionIntegration.config.data[index], index });
     setOpenAddIntegrationModal(true);
   };
 
@@ -127,4 +126,4 @@ export default function Home({
       />
     </div>
   );
-}
+};

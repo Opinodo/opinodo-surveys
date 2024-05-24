@@ -4,14 +4,14 @@ import { formbricksEnabled } from "@/app/lib/formbricks";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
-import formbricks from "@formbricks/js";
+import formbricks from "@formbricks/js/app";
 import { env } from "@formbricks/lib/env";
 
 type UsageAttributesUpdaterProps = {
   numSurveys: number;
 };
 
-export default function FormbricksClient({ session }) {
+export const FormbricksClient = ({ session }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -32,7 +32,7 @@ export default function FormbricksClient({ session }) {
     }
   }, [pathname, searchParams]);
   return null;
-}
+};
 
 const updateUsageAttributes = (numSurveys) => {
   if (!formbricksEnabled) return;
@@ -42,10 +42,10 @@ const updateUsageAttributes = (numSurveys) => {
   }
 };
 
-export function UsageAttributesUpdater({ numSurveys }: UsageAttributesUpdaterProps) {
+export const UsageAttributesUpdater = ({ numSurveys }: UsageAttributesUpdaterProps) => {
   useEffect(() => {
     updateUsageAttributes(numSurveys);
   }, [numSurveys]);
 
   return null;
-}
+};

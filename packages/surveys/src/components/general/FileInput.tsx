@@ -1,4 +1,5 @@
 import { useMemo } from "preact/hooks";
+// @ts-expect-error
 import { JSXInternal } from "preact/src/jsx";
 import { useState } from "react";
 
@@ -6,7 +7,7 @@ import { getOriginalFileNameFromUrl } from "@formbricks/lib/storage/utils";
 import { TAllowedFileExtension } from "@formbricks/types/common";
 import { TUploadFileConfig } from "@formbricks/types/storage";
 
-interface MultipleFileInputProps {
+interface FileInputProps {
   allowedFileExtensions?: TAllowedFileExtension[];
   surveyId: string | undefined;
   onUploadCallback: (uploadedUrls: string[]) => void;
@@ -14,9 +15,10 @@ interface MultipleFileInputProps {
   fileUrls: string[] | undefined;
   maxSizeInMB?: number;
   allowMultipleFiles?: boolean;
+  htmlFor?: string;
 }
 
-export default function FileInput({
+export const FileInput = ({
   allowedFileExtensions,
   surveyId,
   onUploadCallback,
@@ -24,7 +26,8 @@ export default function FileInput({
   fileUrls,
   maxSizeInMB,
   allowMultipleFiles,
-}: MultipleFileInputProps) {
+  htmlFor = "",
+}: FileInputProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -89,7 +92,6 @@ export default function FileInput({
     e.preventDefault();
     e.stopPropagation();
 
-    // @ts-expect-error
     e.dataTransfer.dropEffect = "copy";
   };
 
@@ -97,7 +99,6 @@ export default function FileInput({
     e.preventDefault();
     e.stopPropagation();
 
-    // @ts-expect-error
     const files = Array.from(e.dataTransfer.files);
 
     if (!allowMultipleFiles && files.length > 1) {
@@ -109,6 +110,7 @@ export default function FileInput({
       const validFiles = files.filter((file) =>
         allowedFileExtensions && allowedFileExtensions.length > 0
           ? allowedFileExtensions.includes(
+              // @ts-expect-error
               file.type.substring(file.type.lastIndexOf("/") + 1) as TAllowedFileExtension
             )
           : true
@@ -119,6 +121,7 @@ export default function FileInput({
 
         for (const file of validFiles) {
           if (maxSizeInMB) {
+            // @ts-expect-error
             const fileBuffer = await file.arrayBuffer();
 
             const bufferBytes = fileBuffer.byteLength;
@@ -129,7 +132,9 @@ export default function FileInput({
             } else {
               setIsUploading(true);
               try {
+                // @ts-expect-error
                 const response = await onFileUpload(file, { allowedFileExtensions, surveyId });
+                // @ts-expect-error
                 setSelectedFiles([...selectedFiles, file]);
 
                 uploadedUrls.push(response);
@@ -145,7 +150,9 @@ export default function FileInput({
           } else {
             setIsUploading(true);
             try {
+              // @ts-expect-error
               const response = await onFileUpload(file, { allowedFileExtensions, surveyId });
+              // @ts-expect-error
               setSelectedFiles([...selectedFiles, file]);
 
               uploadedUrls.push(response);
@@ -201,24 +208,27 @@ export default function FileInput({
     return true;
   }, [allowMultipleFiles, fileUrls, isUploading]);
 
+  const uniqueHtmlFor = useMemo(() => `selectedFile-${htmlFor}`, [htmlFor]);
+
   return (
-    <div className="items-left bg-input-bg hover:bg-input-bg-selected border-border relative mt-3 flex w-full flex-col justify-center rounded-lg border-2 border-dashed dark:border-slate-600 dark:bg-slate-700 dark:hover:border-slate-500 dark:hover:bg-slate-800">
-      <div className="max-h-[30vh] overflow-auto">
+    <div
+      className={`items-left bg-input-bg hover:bg-input-bg-selected border-border relative mt-3 flex w-full flex-col justify-center rounded-lg border-2 border-dashed dark:border-slate-600 dark:bg-slate-700 dark:hover:border-slate-500 dark:hover:bg-slate-800`}>
+      <div>
         {fileUrls &&
           fileUrls?.map((file, index) => {
             const fileName = getOriginalFileNameFromUrl(file);
 
             return (
-              <div key={index} className="relative m-2 rounded-md bg-slate-200">
+              <div key={index} className="bg-input-bg-selected border-border relative m-2 rounded-md border">
                 <div className="absolute right-0 top-0 m-2">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-100 hover:bg-slate-50">
+                  <div className="bg-survey-bg flex h-5 w-5 cursor-pointer items-center justify-center rounded-md">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 26 26"
                       strokeWidth={1}
                       stroke="currentColor"
-                      className="h-5 text-slate-700 hover:text-slate-900"
+                      className="text-heading h-5"
                       onClick={(e) => handleDeleteFile(index, e)}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10 10m0-10L9 19" />
                     </svg>
@@ -233,15 +243,15 @@ export default function FileInput({
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     class="lucide lucide-file"
-                    className="h-6 text-slate-500">
+                    className="text-heading h-6">
                     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
                     <polyline points="14 2 14 8 20 8" />
                   </svg>
-                  <p className="mt-1 w-full overflow-hidden overflow-ellipsis whitespace-nowrap px-2 text-center text-sm text-slate-600 dark:text-slate-400">
+                  <p className="text-heading mt-1 w-full overflow-hidden overflow-ellipsis whitespace-nowrap px-2 text-center text-sm">
                     {fileName}
                   </p>
                 </div>
@@ -253,15 +263,25 @@ export default function FileInput({
       <div>
         {isUploading && (
           <div className="inset-0 flex animate-pulse items-center justify-center rounded-lg py-4">
-            <label htmlFor="selectedFile" className="text-sm font-medium text-slate-500">
+            <label htmlFor={uniqueHtmlFor} className="text-subheading text-sm font-medium">
               Uploading...
             </label>
           </div>
         )}
 
-        <label htmlFor="selectedFile" onDragOver={(e) => handleDragOver(e)} onDrop={(e) => handleDrop(e)}>
+        <label htmlFor={uniqueHtmlFor} onDragOver={(e) => handleDragOver(e)} onDrop={(e) => handleDrop(e)}>
           {showUploader && (
-            <div className="flex flex-col items-center justify-center py-6 hover:cursor-pointer">
+            <div
+              className="focus:outline-brand flex flex-col items-center justify-center py-6 hover:cursor-pointer"
+              tabIndex={1}
+              onKeyDown={(e) => {
+                // Accessibility: if spacebar was pressed pass this down to the input
+                if (e.key === " ") {
+                  e.preventDefault();
+                  document.getElementById(uniqueHtmlFor)?.click();
+                  document.getElementById(uniqueHtmlFor)?.focus();
+                }
+              }}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -281,8 +301,8 @@ export default function FileInput({
               </p>
               <input
                 type="file"
-                id="selectedFile"
-                name="selectedFile"
+                id={uniqueHtmlFor}
+                name={uniqueHtmlFor}
                 accept={allowedFileExtensions?.map((ext) => `.${ext}`).join(",")}
                 className="hidden"
                 onChange={(e) => {
@@ -298,4 +318,4 @@ export default function FileInput({
       </div>
     </div>
   );
-}
+};

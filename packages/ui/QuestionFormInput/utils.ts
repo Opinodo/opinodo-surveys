@@ -2,12 +2,13 @@ import { createI18nString } from "@formbricks/lib/i18n/utils";
 import {
   TI18nString,
   TSurvey,
-  TSurveyMultipleChoiceMultiQuestion,
-  TSurveyMultipleChoiceSingleQuestion,
+  TSurveyMatrixQuestion,
+  TSurveyMultipleChoiceQuestion,
   TSurveyQuestion,
 } from "@formbricks/types/surveys";
 
-export const getChoiceIndex = (id: string, isChoice: boolean) => {
+// Function to get index for choice /rowLabel /columnLabel
+export const getIndex = (id: string, isChoice: boolean) => {
   if (!isChoice) return null;
 
   const parts = id.split("-");
@@ -22,8 +23,19 @@ export const getChoiceLabel = (
   choiceIdx: number,
   surveyLanguageCodes: string[]
 ): TI18nString => {
-  const choiceQuestion = question as TSurveyMultipleChoiceMultiQuestion | TSurveyMultipleChoiceSingleQuestion;
+  const choiceQuestion = question as TSurveyMultipleChoiceQuestion;
   return choiceQuestion.choices[choiceIdx]?.label || createI18nString("", surveyLanguageCodes);
+};
+
+export const getMatrixLabel = (
+  question: TSurveyQuestion,
+  idx: number,
+  surveyLanguageCodes: string[],
+  type: "row" | "column"
+): TI18nString => {
+  const matrixQuestion = question as TSurveyMatrixQuestion;
+  const labels = type === "row" ? matrixQuestion.rows : matrixQuestion.columns;
+  return labels[idx] || createI18nString("", surveyLanguageCodes);
 };
 
 export const getCardText = (
@@ -41,16 +53,16 @@ export const getCardText = (
   return (card[id as keyof typeof card] as TI18nString) || createI18nString("", surveyLanguageCodes);
 };
 
-export const determineImageUploaderVisibility = (questionId: string, localSurvey: TSurvey) => {
-  switch (questionId) {
-    case "end": // Thank You Card
-      return !!localSurvey.thankYouCard.imageUrl;
-    case "start": // Welcome Card
-      return !!localSurvey.welcomeCard.fileUrl;
+export const determineImageUploaderVisibility = (questionIdx: number, localSurvey: TSurvey) => {
+  switch (questionIdx) {
+    case localSurvey.questions.length: // Thank You Card
+      return !!localSurvey.thankYouCard.imageUrl || !!localSurvey.thankYouCard.videoUrl;
+    case -1: // Welcome Card
+      return false;
     default:
       // Regular Survey Question
-      const question = localSurvey.questions.find((q) => q.id === questionId);
-      return !!question && !!question.imageUrl;
+      const question = localSurvey.questions[questionIdx];
+      return (!!question && !!question.imageUrl) || (!!question && !!question.videoUrl);
   }
 };
 

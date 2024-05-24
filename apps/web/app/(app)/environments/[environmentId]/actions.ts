@@ -28,7 +28,7 @@ export const createShortUrlAction = async (url: string) => {
   return fullShortUrl;
 };
 
-export async function createTeamAction(teamName: string): Promise<Team> {
+export const createTeamAction = async (teamName: string): Promise<Team> => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
@@ -61,7 +61,7 @@ export async function createTeamAction(teamName: string): Promise<Team> {
   });
 
   return newTeam;
-}
+};
 
 export const getAllCountries = async () => {
   return await getAllDbCountries();

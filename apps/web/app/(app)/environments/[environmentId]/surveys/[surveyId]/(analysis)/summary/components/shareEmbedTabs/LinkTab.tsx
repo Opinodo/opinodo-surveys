@@ -1,4 +1,4 @@
-import UrlShortenerForm from "@/app/(app)/environments/[environmentId]/components/UrlShortenerForm";
+import { UrlShortenerForm } from "@/app/(app)/environments/[environmentId]/components/UrlShortenerForm";
 import Link from "next/link";
 
 import { TSurvey } from "@formbricks/types/surveys";
@@ -11,7 +11,7 @@ interface LinkTabProps {
   setSurveyUrl: (url: string) => void;
 }
 
-export default function LinkTab({ survey, webAppUrl, surveyUrl, setSurveyUrl }: LinkTabProps) {
+export const LinkTab = ({ survey, webAppUrl, surveyUrl, setSurveyUrl }: LinkTabProps) => {
   const docsLinks = [
     {
       title: "Identify users",
@@ -61,7 +61,7 @@ export default function LinkTab({ survey, webAppUrl, surveyUrl, setSurveyUrl }: 
           ))}
         </div>
       </div>
-      <div className="">
+      <div>
         <p className="mb-2 pt-2 font-semibold text-slate-700">Survey link got too long? Shorten it!</p>
         <div className="rounded-md border border-slate-200 bg-white">
           <UrlShortenerForm webAppUrl={webAppUrl} />
@@ -69,4 +69,4 @@ export default function LinkTab({ survey, webAppUrl, surveyUrl, setSurveyUrl }: 
       </div>
     </div>
   );
-}
+};

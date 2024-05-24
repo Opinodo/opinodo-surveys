@@ -2,6 +2,7 @@ import JsLogo from "@/images/jslogo.png";
 import MakeLogo from "@/images/make-small.png";
 import n8nLogo from "@/images/n8n.png";
 import notionLogo from "@/images/notion.png";
+import SlackLogo from "@/images/slacklogo.png";
 import WebhookLogo from "@/images/webhook.png";
 import ZapierLogo from "@/images/zapier-small.png";
 import { getServerSession } from "next-auth";
@@ -17,11 +18,13 @@ import { getWebhookCountBySource } from "@formbricks/lib/webhook/service";
 import { TIntegrationType } from "@formbricks/types/integration";
 import { Card } from "@formbricks/ui/Card";
 import { ErrorComponent } from "@formbricks/ui/ErrorComponent";
+import { PageContentWrapper } from "@formbricks/ui/PageContentWrapper";
+import { PageHeader } from "@formbricks/ui/PageHeader";
 
 import AirtableLogo from "./airtable/images/airtable.svg";
 import GoogleSheetsLogo from "./google-sheets/images/google-sheets-small.png";
 
-export default async function IntegrationsPage({ params }) {
+const Page = async ({ params }) => {
   const environmentId = params.environmentId;
 
   const [
@@ -61,12 +64,16 @@ export default async function IntegrationsPage({ params }) {
   const isNotionIntegrationConnected = isIntegrationConnected("notion");
   const isAirtableIntegrationConnected = isIntegrationConnected("airtable");
   const isN8nIntegrationConnected = isIntegrationConnected("n8n");
+  const isSlackIntegrationConnected = isIntegrationConnected("slack");
 
   const integrationCards = [
     {
       docsHref: "https://formbricks.com/docs/getting-started/framework-guides#next-js",
       docsText: "Docs",
       docsNewTab: true,
+      connectHref: `/environments/${environmentId}/product/setup`,
+      connectText: "Connect",
+      connectNewTab: false,
       label: "Javascript Widget",
       description: "Integrate Formbricks into your Webapp",
       icon: <Image src={JsLogo} alt="Javascript Logo" />,
@@ -136,6 +143,19 @@ export default async function IntegrationsPage({ params }) {
       statusText: isAirtableIntegrationConnected ? "Connected" : "Not Connected",
     },
     {
+      connectHref: `/environments/${params.environmentId}/integrations/slack`,
+      connectText: `${isSlackIntegrationConnected ? "Manage" : "Connect"}`,
+      connectNewTab: false,
+      docsHref: "https://formbricks.com/docs/integrations/slack",
+      docsText: "Docs",
+      docsNewTab: true,
+      label: "Slack",
+      description: "Instantly Connect your Slack Workspace with Formbricks",
+      icon: <Image src={SlackLogo} alt="Slack Logo" />,
+      connected: isSlackIntegrationConnected,
+      statusText: isSlackIntegrationConnected ? "Connected" : "Not Connected",
+    },
+    {
       docsHref: "https://formbricks.com/docs/integrations/n8n",
       connectText: `${isN8nIntegrationConnected ? "Manage" : "Connect"}`,
       docsText: "Docs",
@@ -189,10 +209,9 @@ export default async function IntegrationsPage({ params }) {
   if (isViewer) return <ErrorComponent />;
 
   return (
-    <div>
-      <h1 className="my-2 text-3xl font-bold text-slate-800">Integrations</h1>
-      <p className="mb-6 text-slate-500">Connect Formbricks with your favorite tools.</p>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <PageContentWrapper>
+      <PageHeader pageTitle="Integrations" />
+      <div className="grid grid-cols-3 place-content-stretch gap-4 lg:grid-cols-3">
         {integrationCards.map((card) => (
           <Card
             key={card.label}
@@ -210,6 +229,8 @@ export default async function IntegrationsPage({ params }) {
           />
         ))}
       </div>
-    </div>
+    </PageContentWrapper>
   );
-}
+};
+
+export default Page;

@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import z from "zod";
 
 import { cn } from "@formbricks/lib/cn";
+import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import {
   convertMetricToText,
   convertOperatorToText,
@@ -61,7 +62,7 @@ import {
 import { Input } from "@formbricks/ui/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@formbricks/ui/Select";
 
-import AddFilterModal from "./AddFilterModal";
+import { AddFilterModal } from "./AddFilterModal";
 
 type TSegmentFilterProps = {
   connector: TSegmentConnector;
@@ -943,7 +944,7 @@ const DeviceFilter = ({
   );
 };
 
-const SegmentFilter = ({
+export const SegmentFilter = ({
   resource,
   connector,
   environmentId,
@@ -1111,5 +1112,3 @@ const SegmentFilter = ({
       return <div>Unknown filter type</div>;
   }
 };
-
-export default SegmentFilter;

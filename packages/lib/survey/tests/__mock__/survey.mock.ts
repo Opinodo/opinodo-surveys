@@ -76,7 +76,9 @@ export const mockProduct: TProduct = {
   darkOverlay: false,
   environments: [],
   languages: [],
-  styling: { allowStyleOverwrite: false },
+  styling: {
+    allowStyleOverwrite: false,
+  },
 };
 
 export const mockDisplay = {
@@ -106,7 +108,7 @@ export const mockUser: TUser = {
     weeklySummary: {},
     unsubscribedTeamIds: [],
   },
-  role: null,
+  role: "other",
 };
 
 export const mockPrismaPerson: Prisma.PersonGetPayload<{
@@ -132,6 +134,7 @@ export const mockActionClass: TActionClass = {
   type: "code",
   description: "mock desc",
   noCodeConfig: null,
+  key: "mock action class",
   ...commonMockProperties,
 };
 
@@ -165,6 +168,7 @@ const baseSurveyProperties = {
   autoClose: 10,
   delay: 0,
   autoComplete: 7,
+  runOnDate: null,
   closeOnDate: currentDate,
   redirectUrl: "http://github.com/formbricks/formbricks",
   redirectOnFailUrl: "http://github.com/formbricks/formbricks",
@@ -217,8 +221,27 @@ export const mockTeamOutput: TTeam = {
   },
 };
 
+export const mockSyncSurveyOutput: SurveyMock = {
+  type: "app",
+  status: "inProgress",
+  displayOption: "respondMultiple",
+  triggers: [{ actionClass: mockActionClass }],
+  productOverwrites: null,
+  singleUse: null,
+  styling: null,
+  displayPercentage: null,
+  createdBy: null,
+  pin: null,
+  segment: null,
+  segmentId: null,
+  resultShareKey: null,
+  inlineTriggers: null,
+  languages: mockSurveyLanguages,
+  ...baseSurveyProperties,
+};
+
 export const mockSurveyOutput: SurveyMock = {
-  type: "web",
+  type: "website",
   status: "inProgress",
   displayOption: "respondMultiple",
   triggers: [{ actionClass: mockActionClass }],
@@ -237,18 +260,18 @@ export const mockSurveyOutput: SurveyMock = {
 };
 
 export const createSurveyInput: TSurveyInput = {
-  type: "web",
+  type: "website",
   status: "inProgress",
   displayOption: "respondMultiple",
-  triggers: [mockActionClass.name],
+  triggers: [{ actionClass: mockActionClass }],
   ...baseSurveyProperties,
 };
 
 export const updateSurveyInput: TSurvey = {
-  type: "web",
+  type: "website",
   status: "inProgress",
   displayOption: "respondMultiple",
-  triggers: [mockActionClass.name],
+  triggers: [{ actionClass: mockActionClass }],
   productOverwrites: null,
   styling: null,
   singleUse: null,
@@ -257,7 +280,6 @@ export const updateSurveyInput: TSurvey = {
   pin: null,
   resultShareKey: null,
   segment: null,
-  inlineTriggers: null,
   languages: [],
   ...commonMockProperties,
   ...baseSurveyProperties,
@@ -265,5 +287,8 @@ export const updateSurveyInput: TSurvey = {
 
 export const mockTransformedSurveyOutput = {
   ...mockSurveyOutput,
-  triggers: mockSurveyOutput.triggers.map((trigger) => trigger.actionClass.name),
+};
+
+export const mockTransformedSyncSurveyOutput = {
+  ...mockSyncSurveyOutput,
 };

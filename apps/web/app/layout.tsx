@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: "Open-Source Survey Suite",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en">
       <head>
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       {process.env.VERCEL === "1" && <SpeedInsights sampleRate={0.1} />}
-      <body className="flex h-screen flex-col">
+      <body className="flex h-dvh flex-col transition-all ease-in-out">
         <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-PJ6M9K9P"
@@ -38,4 +38,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

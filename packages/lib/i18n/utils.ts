@@ -7,12 +7,15 @@ import {
 import { TLanguage } from "@formbricks/types/product";
 import {
   TI18nString,
+  TSurvey,
   TSurveyCTAQuestion,
   TSurveyChoice,
   TSurveyConsentQuestion,
-  TSurveyMultipleChoiceSingleQuestion,
+  TSurveyLanguage,
+  TSurveyMultipleChoiceQuestion,
   TSurveyNPSQuestion,
   TSurveyOpenTextQuestion,
+  TSurveyQuestion,
   TSurveyRatingQuestion,
   TSurveyThankYouCard,
   TSurveyWelcomeCard,
@@ -20,8 +23,7 @@ import {
   ZSurveyCalQuestion,
   ZSurveyConsentQuestion,
   ZSurveyFileUploadQuestion,
-  ZSurveyMultipleChoiceMultiQuestion,
-  ZSurveyMultipleChoiceSingleQuestion,
+  ZSurveyMultipleChoiceQuestion,
   ZSurveyNPSQuestion,
   ZSurveyOpenTextQuestion,
   ZSurveyPictureSelectionQuestion,
@@ -30,12 +32,8 @@ import {
   ZSurveyThankYouCard,
   ZSurveyWelcomeCard,
 } from "@formbricks/types/surveys";
-import {
-  TSurvey,
-  TSurveyLanguage,
-  TSurveyMultipleChoiceMultiQuestion,
-  TSurveyQuestion,
-} from "@formbricks/types/surveys";
+
+import { structuredClone } from "../pollyfills/structuredClone";
 
 // Helper function to create an i18nString from a regular string.
 export const createI18nString = (
@@ -79,14 +77,9 @@ export const createI18nString = (
 };
 
 // Type guard to check if an object is an I18nString
-export function isI18nObject(obj: any): obj is TI18nString {
-  return (
-    obj !== null &&
-    typeof obj === "object" &&
-    Object.values(obj).every((value) => typeof value !== "undefined") &&
-    Object.keys(obj).includes("default")
-  );
-}
+export const isI18nObject = (obj: any): obj is TI18nString => {
+  return typeof obj === "object" && obj !== null && Object.keys(obj).includes("default");
+};
 
 export const isLabelValidForAllLanguages = (label: TI18nString, languages: string[]): boolean => {
   return languages.every((language) => label[language] && label[language].trim() !== "");
@@ -210,21 +203,16 @@ export const translateQuestion = (
 
     case "multipleChoiceSingle":
     case "multipleChoiceMulti":
-      (clonedQuestion as TSurveyMultipleChoiceSingleQuestion | TSurveyMultipleChoiceMultiQuestion).choices =
-        question.choices.map((choice) => {
-          return translateChoice(choice, languages);
-        });
-      if (
-        typeof (clonedQuestion as TSurveyMultipleChoiceSingleQuestion | TSurveyMultipleChoiceMultiQuestion)
-          .otherOptionPlaceholder !== "undefined"
-      ) {
-        (
-          clonedQuestion as TSurveyMultipleChoiceSingleQuestion | TSurveyMultipleChoiceMultiQuestion
-        ).otherOptionPlaceholder = createI18nString(question.otherOptionPlaceholder ?? "", languages);
+      (clonedQuestion as TSurveyMultipleChoiceQuestion).choices = question.choices.map((choice) => {
+        return translateChoice(choice, languages);
+      });
+      if (typeof (clonedQuestion as TSurveyMultipleChoiceQuestion).otherOptionPlaceholder !== "undefined") {
+        (clonedQuestion as TSurveyMultipleChoiceQuestion).otherOptionPlaceholder = createI18nString(
+          question.otherOptionPlaceholder ?? "",
+          languages
+        );
       }
-      if (question.type === "multipleChoiceSingle") {
-        return ZSurveyMultipleChoiceSingleQuestion.parse(clonedQuestion);
-      } else return ZSurveyMultipleChoiceMultiQuestion.parse(clonedQuestion);
+      return ZSurveyMultipleChoiceQuestion.parse(clonedQuestion);
 
     case "cta":
       if (typeof question.dismissButtonLabel !== "undefined") {
@@ -315,4 +303,10 @@ export const translateSurvey = (
     welcomeCard: translatedWelcomeCard,
     thankYouCard: translatedThankYouCard,
   };
+};
+
+export const getLanguageCode = (surveyLanguages: TSurveyLanguage[], languageCode: string | null) => {
+  if (!surveyLanguages?.length || !languageCode) return "default";
+  const language = surveyLanguages.find((surveyLanguage) => surveyLanguage.language.code === languageCode);
+  return language?.default ? "default" : language?.language.code || "default";
 };

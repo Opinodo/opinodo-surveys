@@ -4,9 +4,9 @@ import { CopyIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@formbricks/ui/Button";
-import CodeBlock from "@formbricks/ui/CodeBlock";
+import { CodeBlock } from "@formbricks/ui/CodeBlock";
 
-export default function WebpageTab({ surveyUrl }) {
+export const WebpageTab = ({ surveyUrl }) => {
   const iframeCode = `<div style="position: relative; height:100vh; max-height:100vh; overflow:auto;"> 
   <iframe 
     src="${surveyUrl}" 
@@ -17,7 +17,7 @@ export default function WebpageTab({ surveyUrl }) {
   return (
     <div className="flex h-full grow flex-col">
       <div className="flex justify-between">
-        <div className=""></div>
+        <div></div>
         <Button
           variant="darkCTA"
           title="Embed survey in your website"
@@ -40,4 +40,4 @@ export default function WebpageTab({ surveyUrl }) {
       </div>
     </div>
   );
-}
+};

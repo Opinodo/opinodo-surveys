@@ -6,17 +6,17 @@ import toast from "react-hot-toast";
 
 import { AuthenticationError } from "@formbricks/types/errors";
 import { Button } from "@formbricks/ui/Button";
-import CodeBlock from "@formbricks/ui/CodeBlock";
-import LoadingSpinner from "@formbricks/ui/LoadingSpinner";
+import { CodeBlock } from "@formbricks/ui/CodeBlock";
+import { LoadingSpinner } from "@formbricks/ui/LoadingSpinner";
 
-import { getEmailHtmlAction, sendEmailAction } from "../../actions";
+import { getEmailHtmlAction, sendEmbedSurveyPreviewEmailAction } from "../../actions";
 
 interface EmailTabProps {
   surveyId: string;
   email: string;
 }
 
-export default function EmailTab({ surveyId, email }: EmailTabProps) {
+export const EmailTab = ({ surveyId, email }: EmailTabProps) => {
   const [showEmbed, setShowEmbed] = useState(false);
   const [emailHtmlPreview, setEmailHtmlPreview] = useState<string>("");
 
@@ -29,23 +29,17 @@ export default function EmailTab({ surveyId, email }: EmailTabProps) {
   }, [emailHtmlPreview]);
 
   useEffect(() => {
-    getData();
-
-    async function getData() {
+    const getData = async () => {
       const emailHtml = await getEmailHtmlAction(surveyId);
       setEmailHtmlPreview(emailHtml);
-    }
-  });
+    };
 
-  const subject = "Formbricks Email Survey Preview";
+    getData();
+  }, [surveyId]);
 
-  const sendPreviewEmail = async (html) => {
+  const sendPreviewEmail = async () => {
     try {
-      await sendEmailAction({
-        html,
-        subject,
-        to: email,
-      });
+      await sendEmbedSurveyPreviewEmailAction(surveyId);
       toast.success("Email sent!");
     } catch (err) {
       if (err instanceof AuthenticationError) {
@@ -78,7 +72,7 @@ export default function EmailTab({ surveyId, email }: EmailTabProps) {
               variant="secondary"
               title="send preview email"
               aria-label="send preview email"
-              onClick={() => sendPreviewEmail(emailHtmlPreview)}
+              onClick={() => sendPreviewEmail()}
               EndIcon={MailIcon}
               className="shrink-0">
               Send Preview
@@ -113,9 +107,11 @@ export default function EmailTab({ surveyId, email }: EmailTabProps) {
             <div className="h-3 w-3 rounded-full bg-amber-500"></div>
             <div className="h-3 w-3 rounded-full bg-emerald-500"></div>
           </div>
-          <div className="">
+          <div>
             <div className="mb-2 border-b border-slate-200 pb-2 text-sm">To : {email || "user@mail.com"}</div>
-            <div className="border-b border-slate-200 pb-2 text-sm">Subject : {subject}</div>
+            <div className="border-b border-slate-200 pb-2 text-sm">
+              Subject : Formbricks Email Survey Preview
+            </div>
             <div className="p-4">
               {emailHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: emailHtmlPreview }}></div>
@@ -128,4 +124,4 @@ export default function EmailTab({ surveyId, email }: EmailTabProps) {
       )}
     </div>
   );
-}
+};

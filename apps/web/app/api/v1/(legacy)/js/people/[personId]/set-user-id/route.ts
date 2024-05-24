@@ -6,11 +6,11 @@ import logger from "@formbricks/lib/log";
 import { createPerson, getPersonByUserId } from "@formbricks/lib/person/service";
 import { ZJsPeopleUserIdInput } from "@formbricks/types/js";
 
-export async function OPTIONS(): Promise<Response> {
+export const OPTIONS = async (): Promise<Response> => {
   return responses.successResponse({}, true);
-}
+};
 
-export async function POST(req: Request): Promise<Response> {
+export const POST = async (req: Request): Promise<Response> => {
   try {
     const jsonInput = await req.json();
 
@@ -43,4 +43,4 @@ export async function POST(req: Request): Promise<Response> {
     logger.error(error);
     return responses.internalServerErrorResponse("Unable to handle the request: " + error.message, true);
   }
-}
+};

@@ -1,8 +1,9 @@
+import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import { deleteResource, isResourceFilter, moveResource } from "@formbricks/lib/segment/utils";
 import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TBaseFilters, TSegment } from "@formbricks/types/segment";
 
-import BasicSegmentFilter from "./BasicSegmentFilter";
+import { BasicSegmentFilter } from "./BasicSegmentFilter";
 
 type TBasicSegmentEditorProps = {
   group: TBaseFilters;
@@ -13,7 +14,7 @@ type TBasicSegmentEditorProps = {
   viewOnly?: boolean;
 };
 
-const BasicSegmentEditor = ({
+export const BasicSegmentEditor = ({
   group,
   environmentId,
   setSegment,
@@ -69,5 +70,3 @@ const BasicSegmentEditor = ({
     </div>
   );
 };
-
-export default BasicSegmentEditor;

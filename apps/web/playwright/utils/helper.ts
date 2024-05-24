@@ -75,8 +75,8 @@ export const finishOnboarding = async (page: Page, deleteExampleSurvey: boolean 
   let htmlFile = replaceEnvironmentIdInHtml(htmlFilePath, environmentId);
   await page.goto(htmlFile);
 
-  // Formbricks In App Sync has happened
-  const syncApi = await page.waitForResponse((response) => response.url().includes("/in-app/sync"));
+  // Formbricks Website Sync has happened
+  const syncApi = await page.waitForResponse((response) => response.url().includes("/website/sync"));
   expect(syncApi.status()).toBe(200);
 
   await page.goto("/");
@@ -96,7 +96,7 @@ export const replaceEnvironmentIdInHtml = (filePath: string, environmentId: stri
   let htmlContent = readFileSync(filePath, "utf-8");
   htmlContent = htmlContent.replace(/environmentId: ".*?"/, `environmentId: "${environmentId}"`);
 
-  writeFileSync(filePath, htmlContent);
+  writeFileSync(filePath, htmlContent, { mode: 1 });
   return "file:///" + filePath;
 };
 
@@ -133,7 +133,8 @@ export const createSurvey = async (
   await signUpAndLogin(page, name, email, password);
   await finishOnboarding(page);
 
-  await page.getByText("Start from scratchCreate a").click();
+  await page.getByRole("button", { name: "Start from scratch Create a" }).click();
+  await page.getByRole("button", { name: "Create survey", exact: true }).click();
 
   // Welcome Card
   await expect(page.locator("#welcome-toggle")).toBeVisible();
@@ -144,11 +145,13 @@ export const createSurvey = async (
   await page.getByText("Welcome CardOn").click();
 
   // Open Text Question
-  await page.getByRole("button", { name: "1 What would you like to know" }).click();
+  await page.getByRole("main").getByText("What would you like to know?").click();
+
   await page.getByLabel("Question").fill(params.openTextQuestion.question);
   await page.getByLabel("Description").fill(params.openTextQuestion.description);
   await page.getByLabel("Placeholder").fill(params.openTextQuestion.placeholder);
-  await page.getByRole("button", { name: params.openTextQuestion.question }).click();
+
+  await page.locator("p").filter({ hasText: params.openTextQuestion.question }).click();
 
   // Single Select Question
   await page
@@ -239,8 +242,42 @@ export const createSurvey = async (
   await page.getByRole("button", { name: "File Upload" }).click();
   await page.getByLabel("Question").fill(params.fileUploadQuestion.question);
 
+  // Fill Matrix question in german
+  // File Upload Question
+  await page
+    .locator("div")
+    .filter({ hasText: new RegExp(`^${addQuestion}$`) })
+    .nth(1)
+    .click();
+  await page.getByRole("button", { name: "Matrix" }).click();
+  await page.getByLabel("Question").fill(params.matrix.question);
+  await page.getByLabel("Description").fill(params.matrix.description);
+  await page.locator("#row-0").click();
+  await page.locator("#row-0").fill(params.matrix.rows[0]);
+  await page.locator("#row-1").click();
+  await page.locator("#row-1").fill(params.matrix.rows[1]);
+  await page.locator("#row-2").click();
+  await page.locator("#row-2").fill(params.matrix.rows[2]);
+  await page.locator("#column-0").click();
+  await page.locator("#column-0").fill(params.matrix.columns[0]);
+  await page.locator("#column-1").click();
+  await page.locator("#column-1").fill(params.matrix.columns[1]);
+  await page.locator("#column-2").click();
+  await page.locator("#column-2").fill(params.matrix.columns[2]);
+  await page.locator("#column-3").click();
+  await page.locator("#column-3").fill(params.matrix.columns[3]);
+
+  // File Address Question
+  await page
+    .locator("div")
+    .filter({ hasText: new RegExp(`^${addQuestion}$`) })
+    .nth(1)
+    .click();
+  await page.getByRole("button", { name: "Address" }).click();
+  await page.getByLabel("Question").fill(params.address.question);
+
   // Thank You Card
-  await page.getByText("Thank You CardShownShow").click();
-  await page.getByLabel("Question").fill(params.thankYouCard.headline);
+  await page.getByText("Thank You CardShown").click();
+  await page.getByLabel("Headline").fill(params.thankYouCard.headline);
   await page.getByLabel("Description").fill(params.thankYouCard.description);
 };

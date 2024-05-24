@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 import { authOptions } from "@formbricks/lib/authOptions";
 import logger from "@formbricks/lib/log";
 
-export async function POST(request: NextRequest) {
+export const POST = async (request: NextRequest) => {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -49,4 +49,4 @@ export async function POST(request: NextRequest) {
       headers,
     }
   );
-}
+};

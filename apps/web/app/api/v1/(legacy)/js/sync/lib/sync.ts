@@ -25,7 +25,7 @@ import { TSurvey } from "@formbricks/types/surveys";
 export const transformLegacySurveys = (surveys: TSurvey[]): TSurveyWithTriggers[] => {
   const updatedSurveys = surveys.map((survey) => {
     const updatedSurvey: any = { ...reverseTranslateSurvey(survey) };
-    updatedSurvey.triggers = updatedSurvey.triggers.map((trigger) => ({ name: trigger }));
+    updatedSurvey.triggers = updatedSurvey.triggers.map((trigger) => ({ name: trigger.actionClass.name }));
     return updatedSurvey;
   });
   return updatedSurveys;
@@ -101,7 +101,9 @@ export const getUpdatedState = async (environmentId: string, personId?: string):
     surveys = await getSyncSurveys(environmentId, (person as TPerson).id);
   } else {
     surveys = await getSurveys(environmentId);
-    surveys = surveys.filter((survey) => survey.type === "web" && survey.status === "inProgress");
+    surveys = surveys.filter(
+      (survey) => (survey.type === "app" || survey.type === "website") && survey.status === "inProgress"
+    );
   }
 
   surveys = transformLegacySurveys(surveys);

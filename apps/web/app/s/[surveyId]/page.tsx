@@ -1,10 +1,9 @@
 import { validateSurveySingleUseId } from "@/app/lib/singleUseSurveys";
-import LegalFooter from "@/app/s/[surveyId]/components/LegalFooter";
-import LinkSurvey from "@/app/s/[surveyId]/components/LinkSurvey";
-import { MediaBackground } from "@/app/s/[surveyId]/components/MediaBackground";
-import PinScreen from "@/app/s/[surveyId]/components/PinScreen";
-import SurveyInactive from "@/app/s/[surveyId]/components/SurveyInactive";
-import { checkValidity } from "@/app/s/[surveyId]/lib/prefilling";
+import { LegalFooter } from "@/app/s/[surveyId]/components/LegalFooter";
+import { LinkSurvey } from "@/app/s/[surveyId]/components/LinkSurvey";
+import { PinScreen } from "@/app/s/[surveyId]/components/PinScreen";
+import { SurveyInactive } from "@/app/s/[surveyId]/components/SurveyInactive";
+import { getMetadataForLinkSurvey } from "@/app/s/[surveyId]/metadata";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -14,12 +13,12 @@ import logger from "@formbricks/lib/log";
 import { createPerson, getPersonByUserId, updatePerson } from "@formbricks/lib/person/service";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
 import { getResponseBySingleUseId, getResponseCountBySurveyId } from "@formbricks/lib/response/service";
-import { COLOR_DEFAULTS } from "@formbricks/lib/styling/constants";
 import { getSurvey } from "@formbricks/lib/survey/service";
 import { getTeamByEnvironmentId } from "@formbricks/lib/team/service";
 import { ZId } from "@formbricks/types/environment";
 import { TPersonUpdateInput } from "@formbricks/types/people";
 import { TResponse } from "@formbricks/types/responses";
+import { MediaBackground } from "@formbricks/ui/MediaBackground";
 
 import { getEmailVerificationDetails } from "./lib/helpers";
 
@@ -38,60 +37,16 @@ interface LinkSurveyPageProps {
   };
 }
 
-export async function generateMetadata({ params }: LinkSurveyPageProps): Promise<Metadata> {
+export const generateMetadata = async ({ params }: LinkSurveyPageProps): Promise<Metadata> => {
   const validId = ZId.safeParse(params.surveyId);
   if (!validId.success) {
     notFound();
   }
 
-  const survey = await getSurvey(params.surveyId);
+  return getMetadataForLinkSurvey(params.surveyId);
+};
 
-  if (!survey || survey.type !== "link" || survey.status === "draft") {
-    notFound();
-  }
-
-  const product = await getProductByEnvironmentId(survey.environmentId);
-
-  if (!product) {
-    throw new Error("Product not found");
-  }
-
-  function getNameForURL(url: string) {
-    return url.replace(/ /g, "%20");
-  }
-
-  function getBrandColorForURL(url: string) {
-    return url.replace(/#/g, "%23");
-  }
-
-  // const brandColor = getBrandColorForURL(product.brandColor);
-  const brandColor = getBrandColorForURL(survey.styling?.brandColor?.light || COLOR_DEFAULTS.brandColor);
-  const surveyName = getNameForURL(survey.name);
-
-  const ogImgURL = `/api/v1/og?brandColor=${brandColor}&name=${surveyName}`;
-
-  return {
-    title: survey.name,
-    metadataBase: new URL(WEBAPP_URL),
-    openGraph: {
-      title: survey.name,
-      description: "Create your own survey like this with Formbricks' open source survey suite.",
-      url: `/s/${survey.id}`,
-      siteName: "",
-      images: [ogImgURL],
-      locale: "en_US",
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: survey.name,
-      description: "Create your own survey like this with Formbricks' open source survey suite.",
-      images: [ogImgURL],
-    },
-  };
-}
-
-export default async function LinkSurveyPage({ params, searchParams }: LinkSurveyPageProps) {
+const Page = async ({ params, searchParams }: LinkSurveyPageProps) => {
   const validId = ZId.safeParse(params.surveyId);
   if (!validId.success) {
     notFound();
@@ -111,7 +66,7 @@ export default async function LinkSurveyPage({ params, searchParams }: LinkSurve
   if (!team) {
     throw new Error("Team not found");
   }
-  const isMultiLanguageAllowed = getMultiLanguagePermission(team);
+  const isMultiLanguageAllowed = await getMultiLanguagePermission(team);
 
   if (survey && survey.status !== "inProgress") {
     return (
@@ -212,12 +167,6 @@ export default async function LinkSurveyPage({ params, searchParams }: LinkSurve
   const isSurveyPinProtected = Boolean(!!survey && survey.pin);
   const responseCount = await getResponseCountBySurveyId(survey.id);
 
-  // question pre filling: Check if the first question is prefilled and if it is valid
-  const prefillAnswer = searchParams[survey.questions[0].id];
-  const isPrefilledAnswerValid = prefillAnswer
-    ? checkValidity(survey!.questions[0], prefillAnswer, languageCode)
-    : false;
-
   if (isSurveyPinProtected) {
     return (
       <PinScreen
@@ -225,7 +174,6 @@ export default async function LinkSurveyPage({ params, searchParams }: LinkSurve
         product={product}
         userId={userId}
         emailVerificationStatus={emailVerificationStatus}
-        prefillAnswer={isPrefilledAnswerValid ? prefillAnswer : null}
         singleUseId={isSingleUseSurvey ? singleUseId : undefined}
         singleUseResponse={singleUseResponse ? singleUseResponse : undefined}
         webAppUrl={WEBAPP_URL}
@@ -255,7 +203,6 @@ export default async function LinkSurveyPage({ params, searchParams }: LinkSurve
           product={product}
           userId={userId}
           emailVerificationStatus={emailVerificationStatus}
-          prefillAnswer={isPrefilledAnswerValid ? prefillAnswer : null}
           singleUseId={isSingleUseSurvey ? singleUseId : undefined}
           singleUseResponse={singleUseResponse ? singleUseResponse : undefined}
           webAppUrl={WEBAPP_URL}
@@ -263,13 +210,15 @@ export default async function LinkSurveyPage({ params, searchParams }: LinkSurve
           verifiedEmail={verifiedEmail}
           languageCode={languageCode}
         />
+        <LegalFooter
+          IMPRINT_URL={IMPRINT_URL}
+          PRIVACY_URL={PRIVACY_URL}
+          IS_FORMBRICKS_CLOUD={IS_FORMBRICKS_CLOUD}
+          surveyUrl={WEBAPP_URL + "/s/" + survey.id}
+        />
       </MediaBackground>
-      <LegalFooter
-        IMPRINT_URL={IMPRINT_URL}
-        PRIVACY_URL={PRIVACY_URL}
-        IS_FORMBRICKS_CLOUD={IS_FORMBRICKS_CLOUD}
-        surveyUrl={WEBAPP_URL + "/s/" + survey.id}
-      />
     </div>
   ) : null;
-}
+};
+
+export default Page;

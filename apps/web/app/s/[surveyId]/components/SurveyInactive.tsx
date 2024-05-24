@@ -7,11 +7,11 @@ import { Button } from "@formbricks/ui/Button";
 
 import footerLogo from "../lib/footerlogo.svg";
 
-const SurveyInactive = ({
+export const SurveyInactive = ({
   status,
   surveyClosedMessage,
 }: {
-  status: "paused" | "completed" | "link invalid";
+  status: "paused" | "completed" | "link invalid" | "scheduled";
   surveyClosedMessage?: TSurveyClosedMessage | null;
 }) => {
   const icons = {
@@ -53,5 +53,3 @@ const SurveyInactive = ({
     </div>
   );
 };
-
-export default SurveyInactive;

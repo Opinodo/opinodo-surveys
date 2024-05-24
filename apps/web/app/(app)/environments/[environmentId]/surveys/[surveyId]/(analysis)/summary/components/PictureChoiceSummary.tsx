@@ -1,46 +1,22 @@
-import Headline from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/components/Headline";
-import { convertFloatToNDecimal } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/lib/util";
-import { questionTypes } from "@/app/lib/questions";
-import { InboxIcon } from "lucide-react";
 import Image from "next/image";
 
-import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
-import { TSurveySummaryPictureSelection } from "@formbricks/types/responses";
+import { TSurveyQuestionSummaryPictureSelection } from "@formbricks/types/surveys";
 import { ProgressBar } from "@formbricks/ui/ProgressBar";
 
+import { convertFloatToNDecimal } from "../lib/utils";
+import { QuestionSummaryHeader } from "./QuestionSummaryHeader";
+
 interface PictureChoiceSummaryProps {
-  questionSummary: TSurveySummaryPictureSelection;
+  questionSummary: TSurveyQuestionSummaryPictureSelection;
 }
 
-export default function PictureChoiceSummary({ questionSummary }: PictureChoiceSummaryProps) {
-  const isMulti = questionSummary.question.allowMulti;
-  const questionTypeInfo = questionTypes.find((type) => type.id === questionSummary.question.type);
-
+export const PictureChoiceSummary = ({ questionSummary }: PictureChoiceSummaryProps) => {
   const results = questionSummary.choices.sort((a, b) => b.count - a.count);
 
   return (
-    <div className=" rounded-lg border border-slate-200 bg-slate-50 shadow-sm">
-      <div className="space-y-2 px-4 pb-5 pt-6 md:px-6">
-        <Headline headline={getLocalizedValue(questionSummary.question.headline, "default")} />
-
-        <div className="flex space-x-2 text-xs font-semibold text-slate-600 md:text-sm">
-          <div className="flex items-center rounded-lg bg-slate-100 p-2">
-            {questionTypeInfo && <questionTypeInfo.icon className="mr-2 h-4 w-4 " />}
-            {questionTypeInfo ? questionTypeInfo.label : "Unknown Question Type"} Question
-          </div>
-          <div className="flex items-center rounded-lg bg-slate-100 p-2">
-            <InboxIcon className="mr-2 h-4 w-4 " />
-            {questionSummary.responseCount} responses
-          </div>
-          <div className="flex items-center rounded-lg bg-slate-100 p-2">
-            {isMulti ? "Multi" : "Single"} Select
-          </div>
-          {!questionSummary.question.required && (
-            <div className="flex items-center  rounded-lg bg-slate-100 p-2">Optional</div>
-          )}
-        </div>
-      </div>
-      <div className="space-y-5 rounded-b-lg bg-white px-4 pb-6 pt-4 text-sm md:px-6 md:text-base">
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <QuestionSummaryHeader questionSummary={questionSummary} />
+      <div className="space-y-5 px-4 pb-6 pt-4 text-sm md:px-6 md:text-base">
         {results.map((result) => (
           <div key={result.id}>
             <div className="text flex flex-col justify-between px-2 pb-2 sm:flex-row">
@@ -64,10 +40,10 @@ export default function PictureChoiceSummary({ questionSummary }: PictureChoiceS
                 {result.count} {result.count === 1 ? "response" : "responses"}
               </p>
             </div>
-            <ProgressBar barColor="bg-brand" progress={result.percentage / 100 || 0} />
+            <ProgressBar barColor="bg-brand-dark" progress={result.percentage / 100 || 0} />
           </div>
         ))}
       </div>
     </div>
   );
-}
+};

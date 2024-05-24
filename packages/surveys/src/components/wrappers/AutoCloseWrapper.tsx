@@ -10,10 +10,11 @@ interface AutoCloseProps {
   children: React.ReactNode;
 }
 
-export function AutoCloseWrapper({ survey, onClose, children }: AutoCloseProps) {
+export const AutoCloseWrapper = ({ survey, onClose, children }: AutoCloseProps) => {
   const [countDownActive, setCountDownActive] = useState(true);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showAutoCloseProgressBar = countDownActive && survey.type === "web";
+  const isAppSurvey = survey.type === "app" || survey.type === "website";
+  const showAutoCloseProgressBar = countDownActive && isAppSurvey;
 
   const startCountdown = () => {
     if (!survey.autoClose) return;
@@ -43,7 +44,7 @@ export function AutoCloseWrapper({ survey, onClose, children }: AutoCloseProps) 
   }, [survey.autoClose]);
 
   return (
-    <div>
+    <div className="h-full w-full">
       {survey.autoClose && showAutoCloseProgressBar && (
         <AutoCloseProgressBar autoCloseTimeout={survey.autoClose} />
       )}
@@ -52,4 +53,4 @@ export function AutoCloseWrapper({ survey, onClose, children }: AutoCloseProps) 
       </div>
     </div>
   );
-}
+};

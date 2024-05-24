@@ -7,17 +7,18 @@ import { authOptions } from "@formbricks/lib/authOptions";
 import { getResponseCountBySurveyId, getResponses, getSurveySummary } from "@formbricks/lib/response/service";
 import { canUserAccessSurvey } from "@formbricks/lib/survey/auth";
 import { AuthorizationError } from "@formbricks/types/errors";
-import { TResponse, TResponseFilterCriteria, TSurveySummary } from "@formbricks/types/responses";
+import { TResponse, TResponseFilterCriteria } from "@formbricks/types/responses";
+import { TSurveySummary } from "@formbricks/types/surveys";
 
-export default async function revalidateSurveyIdPath(environmentId: string, surveyId: string) {
+export const revalidateSurveyIdPath = async (environmentId: string, surveyId: string) => {
   revalidatePath(`/environments/${environmentId}/surveys/${surveyId}`);
-}
+};
 
-export async function getMoreResponses(
+export const getMoreResponses = async (
   surveyId: string,
   page: number,
   batchSize?: number
-): Promise<TResponse[]> {
+): Promise<TResponse[]> => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
@@ -27,14 +28,14 @@ export async function getMoreResponses(
   batchSize = batchSize ?? 10;
   const responses = await getResponses(surveyId, page, batchSize);
   return responses;
-}
+};
 
-export async function getResponsesAction(
+export const getResponsesAction = async (
   surveyId: string,
   page: number,
   batchSize?: number,
   filterCriteria?: TResponseFilterCriteria
-): Promise<TResponse[]> {
+): Promise<TResponse[]> => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
@@ -44,7 +45,7 @@ export async function getResponsesAction(
   batchSize = batchSize ?? 10;
   const responses = await getResponses(surveyId, page, batchSize, filterCriteria);
   return responses;
-}
+};
 
 export const getSurveySummaryAction = async (
   surveyId: string,

@@ -4,13 +4,12 @@ import { transformErrorToDetails } from "@/app/lib/api/validator";
 
 import logger from "@formbricks/lib/log";
 import { ZJsSyncLegacyInput } from "@formbricks/types/js";
-import { TPersonClient } from "@formbricks/types/people";
 
-export async function OPTIONS(): Promise<Response> {
+export const OPTIONS = async (): Promise<Response> => {
   return responses.successResponse({}, true);
-}
+};
 
-export async function POST(req: Request): Promise<Response> {
+export const POST = async (req: Request): Promise<Response> => {
   try {
     const jsonInput = await req.json();
 
@@ -29,7 +28,7 @@ export async function POST(req: Request): Promise<Response> {
 
     const state = await getUpdatedState(environmentId, personId);
 
-    let person: TPersonClient | null = null;
+    let person: { id: string; userId: string } | null = null;
     if (state.person && "id" in state.person && "userId" in state.person) {
       person = {
         id: state.person.id,
@@ -42,4 +41,4 @@ export async function POST(req: Request): Promise<Response> {
     logger.error(error);
     return responses.internalServerErrorResponse("Unable to handle the request: " + error.message, true);
   }
-}
+};

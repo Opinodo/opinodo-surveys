@@ -9,11 +9,13 @@ export interface ApiSuccessResponse<T = { [key: string]: any }> {
 export interface ApiErrorResponse {
   code:
     | "not_found"
+    | "gone"
     | "bad_request"
     | "internal_server_error"
     | "unauthorized"
     | "method_not_allowed"
     | "not_authenticated"
+    | "forbidden"
     | "validation_error";
   message: string;
   details: {
@@ -28,6 +30,19 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
+
+const goneResponse = (message: string, details?: { [key: string]: string }, cors: boolean = false) =>
+  Response.json(
+    {
+      code: "gone",
+      message,
+      details: details || {},
+    } as ApiErrorResponse,
+    {
+      status: 410,
+      ...(cors && { headers: corsHeaders }),
+    }
+  );
 
 const badRequestResponse = (message: string, details?: { [key: string]: string }, cors: boolean = false) =>
   Response.json(
@@ -70,8 +85,18 @@ const methodNotAllowedResponse = (
     }
   );
 
-const notFoundResponse = (resourceType: string, resourceId: string, cors: boolean = false) =>
-  Response.json(
+const notFoundResponse = (
+  resourceType: string,
+  resourceId: string,
+  cors: boolean = false,
+  cache: string = "private, no-store"
+) => {
+  const headers = {
+    ...(cors && corsHeaders),
+    "Cache-Control": cache,
+  };
+
+  return Response.json(
     {
       code: "not_found",
       message: `${resourceType} not found`,
@@ -82,9 +107,10 @@ const notFoundResponse = (resourceType: string, resourceId: string, cors: boolea
     } as ApiErrorResponse,
     {
       status: 404,
-      ...(cors && { headers: corsHeaders }),
+      headers,
     }
   );
+};
 
 const notAuthenticatedResponse = (cors: boolean = false) =>
   Response.json(
@@ -110,6 +136,23 @@ const unauthorizedResponse = (cors: boolean = false) =>
     } as ApiErrorResponse,
     {
       status: 401,
+      ...(cors && { headers: corsHeaders }),
+    }
+  );
+
+const forbiddenResponse = (
+  message: string,
+  cors: boolean = false,
+  details: ApiErrorResponse["details"] = {}
+) =>
+  Response.json(
+    {
+      code: "forbidden",
+      message,
+      details,
+    } as ApiErrorResponse,
+    {
+      status: 403,
       ...(cors && { headers: corsHeaders }),
     }
   );
@@ -192,6 +235,7 @@ const validationResponse = (details?: { [key: string]: string }, cors: boolean =
 };
 
 export const responses = {
+  goneResponse,
   badRequestResponse,
   internalServerErrorResponse,
   missingFieldResponse,
@@ -202,4 +246,5 @@ export const responses = {
   successResponse,
   validationResponse,
   tooManyRequestsResponse,
+  forbiddenResponse,
 };

@@ -3,20 +3,20 @@ import { useCallback } from "preact/hooks";
 interface SubmitButtonProps {
   buttonLabel: string | undefined;
   isLastQuestion: boolean;
-  onClick: () => void;
+  onClick?: () => void;
   focus?: boolean;
   tabIndex?: number;
   type?: "submit" | "button";
 }
 
-function SubmitButton({
+export const SubmitButton = ({
   buttonLabel,
   isLastQuestion,
-  onClick,
+  onClick = () => {},
   tabIndex = 1,
   focus = false,
   type = "submit",
-}: SubmitButtonProps) {
+}: SubmitButtonProps) => {
   const buttonRef = useCallback(
     (currentButton: HTMLButtonElement | null) => {
       if (currentButton && focus) {
@@ -39,5 +39,4 @@ function SubmitButton({
       {buttonLabel || (isLastQuestion ? "Finish" : "Next")}
     </button>
   );
-}
-export default SubmitButton;
+};

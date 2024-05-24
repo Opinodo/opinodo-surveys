@@ -1,5 +1,6 @@
 import {
   CalendarDaysIcon,
+  HomeIcon,
   ListIcon,
   MessageSquareTextIcon,
   PhoneIcon,
@@ -10,6 +11,7 @@ import {
 import { RefObject, useEffect, useMemo, useState } from "react";
 
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
+import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import { replaceRecallInfoWithUnderline } from "@formbricks/lib/utils/recall";
 import { TSurvey, TSurveyQuestion } from "@formbricks/types/surveys";
 
@@ -21,6 +23,7 @@ const questionIconMapping = {
   nps: PresentationIcon,
   date: CalendarDaysIcon,
   cal: PhoneIcon,
+  address: HomeIcon,
 };
 
 interface RecallQuestionSelectProps {
@@ -34,7 +37,7 @@ interface RecallQuestionSelectProps {
   selectedLanguageCode: string;
 }
 
-export default function RecallQuestionSelect({
+export const RecallQuestionSelect = ({
   localSurvey,
   questionId,
   addRecallQuestion,
@@ -43,7 +46,7 @@ export default function RecallQuestionSelect({
   inputRef,
   recallQuestions,
   selectedLanguageCode,
-}: RecallQuestionSelectProps) {
+}: RecallQuestionSelectProps) => {
   const [focusedQuestionIdx, setFocusedQuestionIdx] = useState(0); // New state for managing focus
   const isNotAllowedQuestionType = (question: TSurveyQuestion) => {
     return (
@@ -51,7 +54,8 @@ export default function RecallQuestionSelect({
       question.type === "cta" ||
       question.type === "consent" ||
       question.type === "pictureSelection" ||
-      question.type === "cal"
+      question.type === "cal" ||
+      question.type === "matrix"
     );
   };
 
@@ -143,4 +147,4 @@ export default function RecallQuestionSelect({
       </div>
     </div>
   );
-}
+};
