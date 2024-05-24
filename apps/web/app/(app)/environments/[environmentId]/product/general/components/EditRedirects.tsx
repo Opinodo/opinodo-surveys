@@ -1,6 +1,5 @@
 "use client";
 
-import { updateProductAction } from "@/app/(app)/environments/[environmentId]/settings/product/actions";
 import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -9,6 +8,8 @@ import { TProduct } from "@formbricks/types/product";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
+
+import { updateProductAction } from "../actions";
 
 type EditDefaultRedirectValues = {
   defaultRedirectOnCompleteUrl: string | null;
@@ -20,7 +21,7 @@ type EditRedirectsProps = {
   product: TProduct;
 };
 
-const EditRedirects: React.FC<EditRedirectsProps> = ({ product, environmentId }) => {
+export const EditRedirects: React.FC<EditRedirectsProps> = ({ product, environmentId }) => {
   const router = useRouter();
   const {
     register,
@@ -91,5 +92,3 @@ const EditRedirects: React.FC<EditRedirectsProps> = ({ product, environmentId })
     </form>
   );
 };
-
-export default EditRedirects;

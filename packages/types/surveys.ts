@@ -524,7 +524,7 @@ export const ZSurveyInput = z.object({
   displayOption: ZSurveyDisplayOption.optional(),
   autoClose: z.number().nullish(),
   redirectUrl: z.string().url().nullish(),
-  redirectOnFailUrl: z.string().url().optional(),
+  redirectOnFailUrl: z.string().url().nullish(),
   recontactDays: z.number().nullish(),
   welcomeCard: ZSurveyWelcomeCard.optional(),
   questions: ZSurveyQuestions.optional(),

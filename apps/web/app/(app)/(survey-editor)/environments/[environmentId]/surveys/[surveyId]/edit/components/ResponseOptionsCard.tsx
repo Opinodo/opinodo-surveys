@@ -1,8 +1,7 @@
 "use client";
 
 import * as Collapsible from "@radix-ui/react-collapsible";
-import { ArrowUpRight, CheckIcon } from "lucide-react";
-import Link from "next/link";
+import { CheckIcon } from "lucide-react";
 import { KeyboardEventHandler, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -489,66 +488,6 @@ export const ResponseOptionsCard = ({
                   </div>
                 </div>
               </AdvancedOptionToggle>
-
-              {/* Single User Survey Options */}
-              {/*<AdvancedOptionToggle*/}
-              {/*  htmlId="singleUserSurveyOptions"*/}
-              {/*  isChecked={!!localSurvey.singleUse?.enabled}*/}
-              {/*  onToggle={handleSingleUseSurveyToggle}*/}
-              {/*  title="Single-Use Survey Links"*/}
-              {/*  description="Allow only 1 response per survey link."*/}
-              {/*  childBorder={true}>*/}
-              {/*  <div className="flex w-full items-center space-x-1 p-4 pb-4">*/}
-              {/*    <div className="w-full cursor-pointer items-center  bg-slate-50">*/}
-              {/*      <div className="row mb-2 flex cursor-default items-center space-x-2">*/}
-              {/*        <Label htmlFor="howItWorks">How it works</Label>*/}
-              {/*      </div>*/}
-              {/*      <ul className="mb-3 ml-4 cursor-default list-inside list-disc space-y-1">*/}
-              {/*        <li className="text-sm text-slate-600">*/}
-              {/*          Blocks survey if the survey URL has no Single Use Id (suId).*/}
-              {/*        </li>*/}
-              {/*        <li className="text-sm text-slate-600">*/}
-              {/*          Blocks survey if a submission with the Single Use Id (suId) in the URL exists already.*/}
-              {/*        </li>*/}
-              {/*      </ul>*/}
-              {/*      <Label htmlFor="headline">&lsquo;Link Used&rsquo; Message</Label>*/}
-              {/*      <Input*/}
-              {/*        autoFocus*/}
-              {/*        id="heading"*/}
-              {/*        className="mb-4 mt-2 bg-white"*/}
-              {/*        name="heading"*/}
-              {/*        defaultValue={singleUseMessage.heading}*/}
-              {/*        onChange={(e) => handleSingleUseSurveyMessageChange({ heading: e.target.value })}*/}
-              {/*      />*/}
-
-              {/*      <Label htmlFor="headline">Subheading</Label>*/}
-              {/*      <Input*/}
-              {/*        className="mb-4 mt-2 bg-white"*/}
-              {/*        id="subheading"*/}
-              {/*        name="subheading"*/}
-              {/*        defaultValue={singleUseMessage.subheading}*/}
-              {/*        onChange={(e) => handleSingleUseSurveyMessageChange({ subheading: e.target.value })}*/}
-              {/*      />*/}
-              {/*      <Label htmlFor="headline">URL Encryption</Label>*/}
-              {/*      <div>*/}
-              {/*        <div className="mt-2 flex items-center space-x-1 ">*/}
-              {/*          <Switch*/}
-              {/*            id="encryption-switch"*/}
-              {/*            checked={singleUseEncryption}*/}
-              {/*            onCheckedChange={hangleSingleUseEncryptionToggle}*/}
-              {/*          />*/}
-              {/*          <Label htmlFor="encryption-label">*/}
-              {/*            <div className="ml-2">*/}
-              {/*              <p className="text-sm font-normal text-slate-600">*/}
-              {/*                Enable encryption of Single Use Id (suId) in survey URL.*/}
-              {/*              </p>*/}
-              {/*            </div>*/}
-              {/*          </Label>*/}
-              {/*        </div>*/}
-              {/*      </div>*/}
-              {/*    </div>*/}
-              {/*  </div>*/}
-              {/*</AdvancedOptionToggle>*/}
 
               {/* Verify Email Section */}
               <AdvancedOptionToggle

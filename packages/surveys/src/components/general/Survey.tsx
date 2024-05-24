@@ -276,16 +276,20 @@ export const Survey = ({
         if (survey.failureCard.enabled && failed) {
           return (
             <ThankYouCard
-              headline={survey.failureCard.headline}
-              subheader={survey.failureCard.subheader}
+              headline={replaceRecallInfo(
+                getLocalizedValue(survey.failureCard.headline, languageCode),
+                responseData
+              )}
+              subheader={replaceRecallInfo(
+                getLocalizedValue(survey.failureCard.subheader, languageCode),
+                responseData
+              )}
               isResponseSendingFinished={isResponseSendingFinished}
-              buttonLabel={survey.failureCard.buttonLabel}
+              buttonLabel={getLocalizedValue(survey.failureCard.buttonLabel, languageCode)}
               buttonLink={survey.failureCard.buttonLink}
               imageUrl={survey.failureCard.imageUrl}
               redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectOnFailUrl)}
               isRedirectDisabled={isRedirectDisabled}
-              languageCode={languageCode}
-              replaceRecallInfo={replaceRecallInfo}
               failed={true}
               isInIframe={isInIframe}
             />
@@ -308,8 +312,6 @@ export const Survey = ({
             videoUrl={survey.thankYouCard.videoUrl}
             redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectUrl)}
             isRedirectDisabled={isRedirectDisabled}
-            languageCode={languageCode}
-            replaceRecallInfo={replaceRecallInfo}
             failed={false}
             isInIframe={isInIframe}
           />

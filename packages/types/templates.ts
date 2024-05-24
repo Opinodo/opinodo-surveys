@@ -25,6 +25,9 @@ export const ZTemplate = z.object({
     thankYouCard: ZSurveyThankYouCard,
     failureCard: ZSurveyFailureCard,
     hiddenFields: ZSurveyHiddenFields,
+    reward: z.number(),
+    redirectUrl: z.string().url().nullish(),
+    redirectOnFailUrl: z.string().url().nullish(),
   }),
 });
 

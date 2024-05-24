@@ -13,12 +13,12 @@ import { PageContentWrapper } from "@formbricks/ui/PageContentWrapper";
 import { PageHeader } from "@formbricks/ui/PageHeader";
 import { SettingsId } from "@formbricks/ui/SettingsId";
 
-import SettingsCard from "../components/SettingsCard";
-import DeleteProduct from "./components/DeleteProduct";
-import EditDefaultReward from "./components/EditDefaultReward";
-import EditProductName from "./components/EditProductName";
-import EditRedirects from "./components/EditRedirects";
-import EditWaitingTime from "./components/EditWaitingTime";
+import { SettingsCard } from "../../settings/components/SettingsCard";
+import { DeleteProduct } from "./components/DeleteProduct";
+import { EditDefaultReward } from "./components/EditDefaultReward";
+import { EditProductName } from "./components/EditProductName";
+import { EditRedirects } from "./components/EditRedirects";
+import { EditWaitingTime } from "./components/EditWaitingTime";
 
 const Page = async ({ params }: { params: { environmentId: string } }) => {
   const [, product, session, team] = await Promise.all([

@@ -53,16 +53,18 @@ export const ThankYouCard = ({
     </div>
   );
 
-  return failed ? (
-    <div className="text-brand mb-4 flex items-center justify-center">
-      <div className="text-brand text-6xl font-bold">Ughh</div>
-    </div>
-  ) : (
+  return (
     <ScrollableContainer>
       <div className="text-center">
         {isResponseSendingFinished ? (
           <>
-            {media || checkmark}
+            {(failed && (
+              <div className="text-brand mb-4 flex items-center justify-center">
+                <div className="text-brand text-6xl font-bold">Ughh</div>
+              </div>
+            )) ||
+              media ||
+              checkmark}
             <Headline alignTextCenter={true} headline={headline} questionId="thankYouCard" />
             <Subheader subheader={subheader} questionId="thankYouCard" />
             <RedirectCountDown redirectUrl={redirectUrl} isRedirectDisabled={isRedirectDisabled} />

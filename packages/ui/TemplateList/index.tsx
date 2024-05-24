@@ -67,7 +67,7 @@ export const TemplateList = ({
 
   const addSurvey = async (activeTemplate: TTemplate) => {
     setLoading(true);
-    const surveyType = environment?.widgetSetupCompleted ? "web" : "link";
+    const surveyType = environment?.widgetSetupCompleted ? "app" : "link";
     activeTemplate.preset.reward = product.defaultRewardInUSD;
     activeTemplate.preset.redirectOnFailUrl = product.defaultRedirectOnFailUrl;
     activeTemplate.preset.redirectUrl = product.defaultRedirectOnCompleteUrl;

@@ -19,8 +19,8 @@ const thankYouCardDefault: TSurveyThankYouCard = {
   enabled: true,
   headline: { default: "Thank you!" },
   subheader: { default: "We appreciate your feedback." },
-  buttonLabel: { default: "Create your own Survey" },
-  buttonLink: "https://formbricks.com/signup",
+  buttonLabel: { default: "Join DigiOpinion" },
+  buttonLink: "https://digiopinion.com",
 };
 
 const failureCardDefault = {
@@ -46,7 +46,9 @@ const surveyDefault: TTemplate["preset"] = {
   name: "New Survey",
   welcomeCard: welcomeCardDefault,
   thankYouCard: thankYouCardDefault,
+  failureCard: failureCardDefault,
   hiddenFields: hiddenFieldsDefault,
+  reward: 0,
   questions: [],
 };
 

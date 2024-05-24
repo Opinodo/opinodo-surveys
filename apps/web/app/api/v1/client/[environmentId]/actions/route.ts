@@ -49,7 +49,7 @@ export const POST = async (req: Request, context: Context): Promise<Response> =>
 
     return responses.successResponse({}, true);
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return responses.internalServerErrorResponse("Unable to handle the request: " + error.message, true);
   }
 };

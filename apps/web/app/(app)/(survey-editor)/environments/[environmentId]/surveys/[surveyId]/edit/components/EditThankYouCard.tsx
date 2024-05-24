@@ -139,8 +139,8 @@ export const EditThankYouCard = ({
                       updateSurvey({ buttonLabel: undefined, buttonLink: undefined });
                     } else {
                       updateSurvey({
-                        buttonLabel: { default: "Create your own Survey" },
-                        buttonLink: "https://formbricks.com/signup",
+                        buttonLabel: { default: "Join DigiOpinion" },
+                        buttonLink: "https://digiopinion.com",
                       });
                     }
                     setshowThankYouCardCTA(!showThankYouCardCTA);
@@ -161,7 +161,7 @@ export const EditThankYouCard = ({
                     <QuestionFormInput
                       id="buttonLabel"
                       label="Button Label"
-                      placeholder="Create your own Survey"
+                      placeholder="Join DigiOpinion"
                       className="bg-white"
                       value={localSurvey.thankYouCard.buttonLabel}
                       localSurvey={localSurvey}
@@ -178,7 +178,7 @@ export const EditThankYouCard = ({
                       id="buttonLink"
                       name="buttonLink"
                       className="bg-white"
-                      placeholder="https://formbricks.com/signup"
+                      placeholder="https://digiopinion.com"
                       value={localSurvey.thankYouCard.buttonLink}
                       onChange={(e) => updateSurvey({ buttonLink: e.target.value })}
                     />

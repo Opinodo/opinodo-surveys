@@ -1,6 +1,5 @@
 "use client";
 
-import { updateProductAction } from "@/app/(app)/environments/[environmentId]/settings/product/actions";
 import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -9,6 +8,8 @@ import { TProduct } from "@formbricks/types/product";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
+
+import { updateProductAction } from "../actions";
 
 type EditDefaultRewardFormValues = {
   defaultRewardInUSD: number;
@@ -19,7 +20,7 @@ type EditDefaultRewardProps = {
   product: TProduct;
 };
 
-const EditDefaultReward: React.FC<EditDefaultRewardProps> = ({ product, environmentId }) => {
+export const EditDefaultReward: React.FC<EditDefaultRewardProps> = ({ product, environmentId }) => {
   const router = useRouter();
   const {
     register,
@@ -73,5 +74,3 @@ const EditDefaultReward: React.FC<EditDefaultRewardProps> = ({ product, environm
     </form>
   );
 };
-
-export default EditDefaultReward;
