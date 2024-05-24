@@ -16,9 +16,9 @@ import { SettingsId } from "@formbricks/ui/SettingsId";
 import { SettingsCard } from "../../settings/components/SettingsCard";
 import { DeleteProduct } from "./components/DeleteProduct";
 import { EditDefaultReward } from "./components/EditDefaultReward";
-import { EditProductName } from "./components/EditProductName";
+import { EditProductNameForm } from "./components/EditProductNameForm";
 import { EditRedirects } from "./components/EditRedirects";
-import { EditWaitingTime } from "./components/EditWaitingTime";
+import { EditWaitingTimeForm } from "./components/EditWaitingTimeForm";
 
 const Page = async ({ params }: { params: { environmentId: string } }) => {
   const [, product, session, team] = await Promise.all([
@@ -59,7 +59,7 @@ const Page = async ({ params }: { params: { environmentId: string } }) => {
       </PageHeader>
 
       <SettingsCard title="Product Name" description="Change your products name.">
-        <EditProductName
+        <EditProductNameForm
           environmentId={params.environmentId}
           product={product}
           isProductNameEditDisabled={isProductNameEditDisabled}
@@ -68,7 +68,7 @@ const Page = async ({ params }: { params: { environmentId: string } }) => {
       <SettingsCard
         title="Recontact Waiting Time"
         description="Control how frequently users can be surveyed across all surveys.">
-        <EditWaitingTime environmentId={params.environmentId} product={product} />
+        <EditWaitingTimeForm environmentId={params.environmentId} product={product} />
       </SettingsCard>
       <SettingsCard title="Default Reward" description="Define the default reward for a survey in dollars.">
         <EditDefaultReward environmentId={params.environmentId} product={product} />
