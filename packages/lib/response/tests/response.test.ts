@@ -4,7 +4,6 @@ import {
   getMockUpdateResponseInput,
   mockDisplay,
   mockEnvironmentId,
-  mockFinishedResponse,
   mockMeta,
   mockPerson,
   mockPersonAttributesData,
@@ -35,7 +34,7 @@ import {
 import { TTag } from "@formbricks/types/tags";
 
 import { selectPerson } from "../../person/service";
-import { mockSurveyOutput } from "../../survey/tests/__mock__/survey.mock";
+import { mockAttributeClass, mockSurveyOutput } from "../../survey/tests/__mock__/survey.mock";
 import {
   createResponse,
   createResponseLegacy,
@@ -474,7 +473,8 @@ describe("Tests for getSurveySummary service", () => {
   describe("Happy Path", () => {
     it("Returns a summary of the survey responses", async () => {
       prisma.survey.findUnique.mockResolvedValue(mockSurveyOutput);
-      prisma.response.findMany.mockResolvedValue([mockFinishedResponse]);
+      prisma.response.findMany.mockResolvedValue([mockResponse]);
+      prisma.attributeClass.findMany.mockResolvedValueOnce([mockAttributeClass]);
 
       const summary = await getSurveySummary(mockSurveyId);
       expect(summary).toEqual(mockSurveySummaryOutput);
@@ -493,6 +493,7 @@ describe("Tests for getSurveySummary service", () => {
 
       prisma.survey.findUnique.mockResolvedValue(mockSurveyOutput);
       prisma.response.findMany.mockRejectedValue(errToThrow);
+      prisma.attributeClass.findMany.mockResolvedValueOnce([mockAttributeClass]);
 
       await expect(getSurveySummary(mockSurveyId)).rejects.toThrow(DatabaseError);
     });
@@ -502,6 +503,7 @@ describe("Tests for getSurveySummary service", () => {
 
       prisma.survey.findUnique.mockResolvedValue(mockSurveyOutput);
       prisma.response.findMany.mockRejectedValue(new Error(mockErrorMessage));
+      prisma.attributeClass.findMany.mockResolvedValueOnce([mockAttributeClass]);
 
       await expect(getSurveySummary(mockSurveyId)).rejects.toThrow(Error);
     });

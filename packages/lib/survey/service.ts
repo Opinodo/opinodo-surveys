@@ -388,7 +388,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
         : [];
       const updatedLanguageIds =
         languages.length > 1 ? updatedSurvey.languages.map((l) => l.language.id) : [];
-      const enabledLangaugeIds = languages.map((language) => {
+      const enabledLanguageIds = languages.map((language) => {
         if (language.enabled) return language.language.id;
       });
 
@@ -406,7 +406,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
         where: { languageId: surveyLanguage.language.id },
         data: {
           default: surveyLanguage.language.id === defaultLanguageId,
-          enabled: enabledLangaugeIds.includes(surveyLanguage.language.id),
+          enabled: enabledLanguageIds.includes(surveyLanguage.language.id),
         },
       }));
 
@@ -415,7 +415,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
         data.languages.create = languagesToAdd.map((languageId) => ({
           languageId: languageId,
           default: languageId === defaultLanguageId,
-          enabled: enabledLangaugeIds.includes(languageId),
+          enabled: enabledLanguageIds.includes(languageId),
         }));
       }
 
@@ -423,7 +423,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       if (languagesToRemove.length > 0) {
         data.languages.deleteMany = languagesToRemove.map((languageId) => ({
           languageId: languageId,
-          enabled: enabledLangaugeIds.includes(languageId),
+          enabled: enabledLanguageIds.includes(languageId),
         }));
       }
     }

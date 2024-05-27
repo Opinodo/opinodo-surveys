@@ -27,6 +27,7 @@ import { useState } from "react";
 
 import { cn } from "@formbricks/lib/cn";
 import { recallToHeadline } from "@formbricks/lib/utils/recall";
+import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TProduct } from "@formbricks/types/product";
 import { TI18nString, TSurvey, TSurveyQuestion, TSurveyQuestionType } from "@formbricks/types/surveys";
 import { Label } from "@formbricks/ui/Label";
@@ -64,6 +65,7 @@ interface QuestionCardProps {
   selectedLanguageCode: string;
   setSelectedLanguageCode: (language: string) => void;
   isInvalid: boolean;
+  attributeClasses: TAttributeClass[];
 }
 
 export const QuestionCard = ({
@@ -81,6 +83,7 @@ export const QuestionCard = ({
   selectedLanguageCode,
   setSelectedLanguageCode,
   isInvalid,
+  attributeClasses,
 }: QuestionCardProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: question.id,
@@ -217,13 +220,21 @@ export const QuestionCard = ({
               </div>
               <div>
                 <p className="text-sm font-semibold">
-                  {recallToHeadline(question.headline, localSurvey, true, selectedLanguageCode)[
-                    selectedLanguageCode
-                  ]
+                  {recallToHeadline(
+                    question.headline,
+                    localSurvey,
+                    true,
+                    selectedLanguageCode,
+                    attributeClasses
+                  )[selectedLanguageCode]
                     ? formatTextWithSlashes(
-                        recallToHeadline(question.headline, localSurvey, true, selectedLanguageCode)[
-                          selectedLanguageCode
-                        ] ?? ""
+                        recallToHeadline(
+                          question.headline,
+                          localSurvey,
+                          true,
+                          selectedLanguageCode,
+                          attributeClasses
+                        )[selectedLanguageCode] ?? ""
                       )
                     : getTSurveyQuestionTypeName(question.type)}
                 </p>
@@ -255,6 +266,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.MultipleChoiceSingle ? (
             <MultipleChoiceQuestionForm
@@ -266,6 +278,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.MultipleChoiceMulti ? (
             <MultipleChoiceQuestionForm
@@ -277,6 +290,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.NPS ? (
             <NPSQuestionForm
@@ -288,6 +302,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.CTA ? (
             <CTAQuestionForm
@@ -299,6 +314,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.Ad ? (
             <AdQuestionForm />
@@ -312,6 +328,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.Consent ? (
             <ConsentQuestionForm
@@ -322,6 +339,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.Date ? (
             <DateQuestionForm
@@ -333,6 +351,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.PictureSelection ? (
             <PictureSelectionForm
@@ -344,6 +363,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.FileUpload ? (
             <FileUploadQuestionForm
@@ -356,6 +376,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.Cal ? (
             <CalQuestionForm
@@ -367,6 +388,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.Matrix ? (
             <MatrixQuestionForm
@@ -378,6 +400,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : question.type === TSurveyQuestionType.Address ? (
             <AddressQuestionForm
@@ -389,6 +412,7 @@ export const QuestionCard = ({
               selectedLanguageCode={selectedLanguageCode}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
+              attributeClasses={attributeClasses}
             />
           ) : null}
           <div className="mt-4">
@@ -429,6 +453,7 @@ export const QuestionCard = ({
                           if (questionIdx === localSurvey.questions.length - 1) return;
                           updateEmptyNextButtonLabels(translatedNextButtonLabel);
                         }}
+                        attributeClasses={attributeClasses}
                       />
                     </div>
                     {questionIdx !== 0 && (
@@ -443,6 +468,7 @@ export const QuestionCard = ({
                         updateQuestion={updateQuestion}
                         selectedLanguageCode={selectedLanguageCode}
                         setSelectedLanguageCode={setSelectedLanguageCode}
+                        attributeClasses={attributeClasses}
                       />
                     )}
                   </div>
@@ -462,6 +488,7 @@ export const QuestionCard = ({
                         updateQuestion={updateQuestion}
                         selectedLanguageCode={selectedLanguageCode}
                         setSelectedLanguageCode={setSelectedLanguageCode}
+                        attributeClasses={attributeClasses}
                       />
                     </div>
                   )}
@@ -471,6 +498,7 @@ export const QuestionCard = ({
                   questionIdx={questionIdx}
                   localSurvey={localSurvey}
                   updateQuestion={updateQuestion}
+                  attributeClasses={attributeClasses}
                 />
               </Collapsible.CollapsibleContent>
             </Collapsible.Root>

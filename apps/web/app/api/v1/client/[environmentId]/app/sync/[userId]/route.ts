@@ -1,10 +1,14 @@
 import { sendFreeLimitReachedEventToPosthogBiWeekly } from "@/app/api/v1/client/[environmentId]/app/sync/lib/posthog";
+import {
+  replaceAttributeRecall,
+  replaceAttributeRecallInLegacySurveys,
+} from "@/app/api/v1/client/[environmentId]/app/sync/lib/utils";
 import { responses } from "@/app/lib/api/response";
 import { transformErrorToDetails } from "@/app/lib/api/validator";
 import { NextRequest, userAgent } from "next/server";
 
 import { getActionClasses } from "@formbricks/lib/actionClass/service";
-import { getAttribute } from "@formbricks/lib/attribute/service";
+import { getAttributes } from "@formbricks/lib/attribute/service";
 import {
   IS_FORMBRICKS_CLOUD,
   PRICING_APPSURVEYS_FREE_RESPONSES,
@@ -155,8 +159,8 @@ export const GET = async (
         highlightBorderColor: product.styling.highlightBorderColor.light,
       }),
     };
-
-    const language = await getAttribute("language", person.id);
+    const attributes = await getAttributes(person.id);
+    const language = attributes["language"];
     const noCodeActionClasses = actionClasses.filter((actionClass) => actionClass.type === "noCode");
 
     // Scenario 1: Multi language and updated trigger action classes supported.
@@ -165,7 +169,9 @@ export const GET = async (
 
     // creating state object
     let state: TJsAppStateSync | TJsAppLegacyStateSync = {
-      surveys: !isInAppSurveyLimitReached ? transformedSurveys : [],
+      surveys: !isInAppSurveyLimitReached
+        ? transformedSurveys.map((survey) => replaceAttributeRecall(survey, attributes))
+        : [],
       actionClasses,
       language,
       product: updatedProduct,
@@ -184,7 +190,9 @@ export const GET = async (
       );
 
       state = {
-        surveys: !isInAppSurveyLimitReached ? transformedSurveys : [],
+        surveys: !isInAppSurveyLimitReached
+          ? transformedSurveys.map((survey) => replaceAttributeRecallInLegacySurveys(survey, attributes))
+          : [],
         person,
         noCodeActionClasses,
         language,
