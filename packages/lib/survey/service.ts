@@ -22,6 +22,7 @@ import { displayCache } from "../display/cache";
 import { getDisplaysByPersonId } from "../display/service";
 import { reverseTranslateSurvey } from "../i18n/reverseTranslation";
 import logger from "../log";
+import { subscribeOrganizationMembersToSurveyResponses } from "../organization/service";
 import { personCache } from "../person/cache";
 import { getPerson } from "../person/service";
 import { structuredClone } from "../pollyfills/structuredClone";
@@ -31,7 +32,6 @@ import { responseCache } from "../response/cache";
 import { segmentCache } from "../segment/cache";
 import { createSegment, deleteSegment, evaluateSegment, getSegment, updateSegment } from "../segment/service";
 import { transformSegmentFiltersToAttributeFilters } from "../segment/utils";
-import { subscribeTeamMembersToSurveyResponses } from "../team/service";
 import { diffInDays } from "../utils/datetime";
 import { validateInputs } from "../utils/validate";
 import { surveyCache } from "./cache";
@@ -691,7 +691,7 @@ export const createSurvey = async (environmentId: string, surveyBody: TSurveyInp
       }),
     };
 
-    await subscribeTeamMembersToSurveyResponses(environmentId, survey.id);
+    await subscribeOrganizationMembersToSurveyResponses(environmentId, survey.id);
 
     surveyCache.revalidate({
       id: survey.id,
