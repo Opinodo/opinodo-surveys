@@ -58,7 +58,7 @@ export const AdQuestion = ({
           <HtmlBody htmlString={getLocalizedValue(question.html, languageCode)} questionId={question.id} />
           <Adsense
             client="ca-pub-1574672111746393"
-            slot="7259870550"
+            slot="3700116888"
             style={{ width: 500, height: 300 }}
             format=""
           />

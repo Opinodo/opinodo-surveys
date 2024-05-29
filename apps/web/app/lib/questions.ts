@@ -144,7 +144,6 @@ export const questionTypes: TSurveyQuestionType[] = [
         default:
           '<p class="fb-editor-paragraph" dir="ltr"><span>We would love to understand your user experience better. Sharing your insight helps a lot.</span></p>',
       },
-      buttonLabel: { default: "Book interview" },
       buttonExternal: false,
       dismissButtonLabel: { default: "Skip" },
     } as Partial<TSurveyCTAQuestion>,
@@ -155,10 +154,16 @@ export const questionTypes: TSurveyQuestionType[] = [
     description: "Show an advertisement",
     icon: ScanEyeIcon,
     preset: {
-      headline: { default: "Check out our new product!" },
+      headline: { default: "Sponsored links" },
       html: {
         default:
-          '<p class="fb-editor-paragraph" dir="ltr"><span>We would love to understand your user experience better. Sharing your insight helps a lot.</span></p>',
+          '<p class="fb-editor-paragraph" dir="ltr"><span>Why are you seeing an ad in this survey?\n' +
+          "\n" +
+          "\n" +
+          "In some selected surveys you might be presented with an ad that\n" +
+          "you can simply skip to continue with the survey. We use ads to\n" +
+          "finance the continued growth and development of this platform,\n" +
+          "so you can continue to earn money and enjoy our surveys.</span></p>",
       },
       dismissButtonLabel: { default: "Skip" },
     } as Partial<TSurveyAdQuestion>,
