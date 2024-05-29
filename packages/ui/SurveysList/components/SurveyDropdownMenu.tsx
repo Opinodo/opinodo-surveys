@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../DropdownMenu";
-import LoadingSpinner from "../../LoadingSpinner";
+import { LoadingSpinner } from "../../LoadingSpinner";
 import {
   copyToOtherEnvironmentAction,
   deleteSurveyAction,
@@ -38,7 +38,7 @@ interface SurveyDropDownMenuProps {
   deleteSurvey: (surveyId: string) => void;
 }
 
-export default function SurveyDropDownMenu({
+export const SurveyDropDownMenu = ({
   environmentId,
   survey,
   environment,
@@ -48,7 +48,7 @@ export default function SurveyDropDownMenu({
   isSurveyCreationDeletionDisabled,
   deleteSurvey,
   duplicateSurvey,
-}: SurveyDropDownMenuProps) {
+}: SurveyDropDownMenuProps) => {
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isDropDownOpen, setIsDropDownOpen] = useState(false);
@@ -244,4 +244,4 @@ export default function SurveyDropDownMenu({
       )}
     </div>
   );
-}
+};

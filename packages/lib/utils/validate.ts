@@ -12,7 +12,7 @@ export const validateInputs = (...pairs: ValidationPair[]): void => {
 
     if (!inputValidation.success) {
       logger.error(
-        `Validation failed for ${JSON.stringify(value)} and ${JSON.stringify(schema)}: ${inputValidation.error.message}`
+        `Validation failed for ${JSON.stringify(value).substring(0, 100)} and ${JSON.stringify(schema)}: ${inputValidation.error.message}`
       );
       throw new ValidationError("Validation failed");
     }

@@ -1,24 +1,20 @@
 import { z } from "zod";
 
-import { ZPerson, ZPersonAttributes } from "./people";
-import {
-  ZSurvey,
-  ZSurveyCTAQuestion,
-  ZSurveyCalQuestion,
-  ZSurveyConsentQuestion,
-  ZSurveyDateQuestion,
-  ZSurveyFileUploadQuestion,
-  ZSurveyLogicCondition,
-  ZSurveyMultipleChoiceMultiQuestion,
-  ZSurveyMultipleChoiceSingleQuestion,
-  ZSurveyNPSQuestion,
-  ZSurveyOpenTextQuestion,
-  ZSurveyPictureSelectionQuestion,
-  ZSurveyRatingQuestion,
-} from "./surveys";
+import { ZAttributes } from "./attributes";
+import { ZId } from "./environment";
+import { ZSurvey, ZSurveyLogicCondition } from "./surveys";
 import { ZTag } from "./tags";
 
-export const ZResponseData = z.record(z.union([z.string(), z.number(), z.array(z.string())]));
+export const ZResponseDataValue = z.union([
+  z.string(),
+  z.number(),
+  z.array(z.string()),
+  z.record(z.string()),
+]);
+
+export type TResponseDataValue = z.infer<typeof ZResponseDataValue>;
+
+export const ZResponseData = z.record(ZResponseDataValue);
 
 export type TResponseData = z.infer<typeof ZResponseData>;
 
@@ -26,13 +22,17 @@ export const ZResponseTtc = z.record(z.number());
 
 export type TResponseTtc = z.infer<typeof ZResponseTtc>;
 
-export const ZResponsePersonAttributes = ZPersonAttributes.nullable();
+export const ZResponsePersonAttributes = ZAttributes.nullable();
 
 export type TResponsePersonAttributes = z.infer<typeof ZResponsePersonAttributes>;
 
 export const ZSurveyPersonAttributes = z.record(z.array(z.string()));
 
 export type TSurveyPersonAttributes = z.infer<typeof ZSurveyPersonAttributes>;
+
+export const ZSurveyMetaFieldFilter = z.record(z.array(z.string()));
+
+export type TSurveyMetaFieldFilter = z.infer<typeof ZSurveyMetaFieldFilter>;
 
 const ZResponseFilterCriteriaDataLessThan = z.object({
   op: z.literal(ZSurveyLogicCondition.Values.lessThan),
@@ -102,6 +102,11 @@ const ZResponseFilterCriteriaDataBooked = z.object({
   op: z.literal(ZSurveyLogicCondition.Values.booked),
 });
 
+const ZResponseFilterCriteriaMatrix = z.object({
+  op: z.literal("matrix"),
+  value: z.record(z.string(), z.string()),
+});
+
 export const ZResponseFilterCriteria = z.object({
   finished: z.boolean().optional(),
   failed: z.boolean().optional(),
@@ -139,6 +144,7 @@ export const ZResponseFilterCriteria = z.object({
         ZResponseFilterCriteriaDataUploaded,
         ZResponseFilterCriteriaDataNotUploaded,
         ZResponseFilterCriteriaDataBooked,
+        ZResponseFilterCriteriaMatrix,
       ])
     )
     .optional(),
@@ -150,7 +156,16 @@ export const ZResponseFilterCriteria = z.object({
     })
     .optional(),
 
-  metadata: z
+  others: z
+    .record(
+      z.object({
+        op: z.enum(["equals", "notEquals"]),
+        value: z.union([z.string(), z.number()]),
+      })
+    )
+    .optional(),
+
+  meta: z
     .record(
       z.object({
         op: z.enum(["equals", "notEquals"]),
@@ -159,6 +174,13 @@ export const ZResponseFilterCriteria = z.object({
     )
     .optional(),
 });
+
+export const ZResponsePerson = z.object({
+  id: ZId,
+  userId: z.string(),
+});
+
+export type TResponsePerson = z.infer<typeof ZResponsePerson>;
 
 export type TResponseFilterCriteria = z.infer<typeof ZResponseFilterCriteria>;
 
@@ -192,6 +214,7 @@ export const ZResponseMeta = z.object({
     })
     .optional(),
   country: z.string().optional(),
+  action: z.string().optional(),
 });
 
 export type TResponseMeta = z.infer<typeof ZResponseMeta>;
@@ -201,7 +224,7 @@ export const ZResponse = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   surveyId: z.string().cuid2(),
-  person: ZPerson.nullable(),
+  person: ZResponsePerson.nullable(),
   personAttributes: ZResponsePersonAttributes,
   finished: z.boolean(),
   failed: z.boolean(),
@@ -217,6 +240,8 @@ export const ZResponse = z.object({
 export type TResponse = z.infer<typeof ZResponse>;
 
 export const ZResponseInput = z.object({
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
   environmentId: z.string().cuid2(),
   surveyId: z.string().cuid2(),
   userId: z.string().nullish(),
@@ -238,6 +263,7 @@ export const ZResponseInput = z.object({
         })
         .optional(),
       country: z.string().optional(),
+      action: z.string().optional(),
     })
     .optional(),
 });
@@ -276,240 +302,9 @@ export const ZResponseUpdate = z.object({
     .object({
       url: z.string().optional(),
       source: z.string().optional(),
+      action: z.string().optional(),
     })
     .optional(),
 });
 
 export type TResponseUpdate = z.infer<typeof ZResponseUpdate>;
-
-export const ZSurveySummaryOpenText = z.object({
-  type: z.literal("openText"),
-  question: ZSurveyOpenTextQuestion,
-  responseCount: z.number(),
-  samples: z.array(
-    z.object({
-      id: z.string(),
-      updatedAt: z.date(),
-      value: z.string(),
-      person: ZPerson.nullable(),
-    })
-  ),
-});
-
-export type TSurveySummaryOpenText = z.infer<typeof ZSurveySummaryOpenText>;
-
-export const ZSurveySummaryMultipleChoice = z.object({
-  type: z.union([z.literal("multipleChoiceMulti"), z.literal("multipleChoiceSingle")]),
-  question: z.union([ZSurveyMultipleChoiceSingleQuestion, ZSurveyMultipleChoiceMultiQuestion]),
-  responseCount: z.number(),
-  choices: z.array(
-    z.object({
-      value: z.string(),
-      count: z.number(),
-      percentage: z.number(),
-      others: z
-        .array(
-          z.object({
-            value: z.string(),
-            person: ZPerson.nullable(),
-          })
-        )
-        .optional(),
-    })
-  ),
-});
-
-export type TSurveySummaryMultipleChoice = z.infer<typeof ZSurveySummaryMultipleChoice>;
-
-export const ZSurveySummaryPictureSelection = z.object({
-  type: z.literal("pictureSelection"),
-  question: ZSurveyPictureSelectionQuestion,
-  responseCount: z.number(),
-  choices: z.array(
-    z.object({
-      id: z.string(),
-      imageUrl: z.string(),
-      count: z.number(),
-      percentage: z.number(),
-    })
-  ),
-});
-
-export type TSurveySummaryPictureSelection = z.infer<typeof ZSurveySummaryPictureSelection>;
-
-export const ZSurveySummaryRating = z.object({
-  type: z.literal("rating"),
-  question: ZSurveyRatingQuestion,
-  responseCount: z.number(),
-  average: z.number(),
-  choices: z.array(
-    z.object({
-      rating: z.number(),
-      count: z.number(),
-      percentage: z.number(),
-    })
-  ),
-  dismissed: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-});
-
-export type TSurveySummaryRating = z.infer<typeof ZSurveySummaryRating>;
-
-export const ZSurveySummaryNps = z.object({
-  type: z.literal("nps"),
-  question: ZSurveyNPSQuestion,
-  responseCount: z.number(),
-  total: z.number(),
-  score: z.number(),
-  promoters: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-  passives: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-  detractors: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-  dismissed: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-});
-
-export type TSurveySummaryNps = z.infer<typeof ZSurveySummaryNps>;
-
-export const ZSurveySummaryCta = z.object({
-  type: z.literal("cta"),
-  question: ZSurveyCTAQuestion,
-  responseCount: z.number(),
-  ctr: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-});
-
-export type TSurveySummaryCta = z.infer<typeof ZSurveySummaryCta>;
-
-export const ZSurveySummaryConsent = z.object({
-  type: z.literal("consent"),
-  question: ZSurveyConsentQuestion,
-  responseCount: z.number(),
-  accepted: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-  dismissed: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-});
-
-export type TSurveySummaryConsent = z.infer<typeof ZSurveySummaryConsent>;
-
-export const ZSurveySummaryDate = z.object({
-  type: z.literal("date"),
-  question: ZSurveyDateQuestion,
-  responseCount: z.number(),
-  samples: z.array(
-    z.object({
-      id: z.string(),
-      updatedAt: z.date(),
-      value: z.string(),
-      person: ZPerson.nullable(),
-    })
-  ),
-});
-
-export type TSurveySummaryDate = z.infer<typeof ZSurveySummaryDate>;
-
-export const ZSurveySummaryFileUpload = z.object({
-  type: z.literal("fileUpload"),
-  question: ZSurveyFileUploadQuestion,
-  responseCount: z.number(),
-  files: z.array(
-    z.object({
-      id: z.string(),
-      updatedAt: z.date(),
-      value: z.array(z.string()),
-      person: ZPerson.nullable(),
-    })
-  ),
-});
-
-export type TSurveySummaryFileUpload = z.infer<typeof ZSurveySummaryFileUpload>;
-
-export const ZSurveySummaryCal = z.object({
-  type: z.literal("cal"),
-  question: ZSurveyCalQuestion,
-  responseCount: z.number(),
-  booked: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-  skipped: z.object({
-    count: z.number(),
-    percentage: z.number(),
-  }),
-});
-
-export type TSurveySummaryCal = z.infer<typeof ZSurveySummaryCal>;
-
-export const ZSurveySummaryHiddenField = z.object({
-  type: z.literal("hiddenField"),
-  question: z.string(),
-  responseCount: z.number(),
-  samples: z.array(
-    z.object({
-      updatedAt: z.date(),
-      value: z.string(),
-      person: ZPerson.nullable(),
-    })
-  ),
-});
-
-export type TSurveySummaryHiddenField = z.infer<typeof ZSurveySummaryHiddenField>;
-
-export const ZSurveySummary = z.object({
-  meta: z.object({
-    displayCount: z.number(),
-    totalResponses: z.number(),
-    startsPercentage: z.number(),
-    completedResponses: z.number(),
-    completedPercentage: z.number(),
-    dropOffCount: z.number(),
-    dropOffPercentage: z.number(),
-    ttcAverage: z.number(),
-  }),
-  dropOff: z.array(
-    z.object({
-      questionId: z.string().cuid2(),
-      headline: z.string(),
-      ttc: z.number(),
-      views: z.number(),
-      dropOffCount: z.number(),
-      dropOffPercentage: z.number(),
-    })
-  ),
-  summary: z.array(
-    z.union([
-      ZSurveySummaryOpenText,
-      ZSurveySummaryMultipleChoice,
-      ZSurveySummaryPictureSelection,
-      ZSurveySummaryRating,
-      ZSurveySummaryNps,
-      ZSurveySummaryCta,
-      ZSurveySummaryConsent,
-      ZSurveySummaryDate,
-      ZSurveySummaryFileUpload,
-      ZSurveySummaryCal,
-      ZSurveySummaryHiddenField,
-    ])
-  ),
-});
-
-export type TSurveySummary = z.infer<typeof ZSurveySummary>;

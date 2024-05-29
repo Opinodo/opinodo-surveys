@@ -16,7 +16,7 @@ type FormValues = {
   name: string;
 };
 
-export default function CreateFirstTeam() {
+export const CreateFirstTeam = () => {
   const router = useRouter();
 
   const { register, handleSubmit } = useForm<FormValues>();
@@ -84,4 +84,4 @@ export default function CreateFirstTeam() {
       </div>
     </div>
   );
-}
+};

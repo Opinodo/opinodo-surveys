@@ -2,6 +2,7 @@
 
 import { getServerSession } from "next-auth";
 
+import { sendInviteMemberEmail } from "@formbricks/email";
 import { hasTeamAuthority } from "@formbricks/lib/auth";
 import { authOptions } from "@formbricks/lib/authOptions";
 import { INVITE_DISABLED } from "@formbricks/lib/constants";
@@ -55,9 +56,18 @@ export const inviteTeamMateAction = async (
       name: "",
       role,
     },
-    isOnboardingInvite: true,
-    inviteMessage: inviteMessage,
   });
+
+  if (invite) {
+    await sendInviteMemberEmail(
+      invite.id,
+      email,
+      session.user.name ?? "",
+      "",
+      true, // is onboarding invite
+      inviteMessage
+    );
+  }
 
   return invite;
 };
@@ -70,7 +80,7 @@ export const finishOnboardingAction = async () => {
   return await updateUser(session.user.id, updatedProfile);
 };
 
-export async function createSurveyAction(environmentId: string, surveyBody: TSurveyInput) {
+export const createSurveyAction = async (environmentId: string, surveyBody: TSurveyInput) => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
@@ -78,14 +88,14 @@ export async function createSurveyAction(environmentId: string, surveyBody: TSur
   if (!isAuthorized) throw new AuthorizationError("Not authorized");
 
   return await createSurvey(environmentId, surveyBody);
-}
+};
 
-export async function fetchEnvironment(id: string) {
+export const fetchEnvironment = async (id: string) => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
   return await getEnvironment(id);
-}
+};
 
 export const createSurveyFromTemplate = async (template: TTemplate, environmentId: string) => {
   const session = await getServerSession(authOptions);
@@ -107,14 +117,17 @@ export const createSurveyFromTemplate = async (template: TTemplate, environmentI
   return await createSurvey(environmentId, surveyInput);
 };
 
-export async function updateUserAction(updatedUser: TUserUpdateInput) {
+export const updateUserAction = async (updatedUser: TUserUpdateInput) => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
   return await updateUser(session.user.id, updatedUser);
-}
+};
 
-export async function updateProductAction(productId: string, updatedProduct: Partial<TProductUpdateInput>) {
+export const updateProductAction = async (
+  productId: string,
+  updatedProduct: Partial<TProductUpdateInput>
+) => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
@@ -127,4 +140,4 @@ export async function updateProductAction(productId: string, updatedProduct: Par
   if (!hasCreateOrUpdateAccess) throw new AuthorizationError("Not authorized");
 
   return await updateProduct(productId, updatedProduct);
-}
+};

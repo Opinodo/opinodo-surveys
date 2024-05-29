@@ -1,9 +1,10 @@
 import { BackButton } from "@/components/buttons/BackButton";
-import SubmitButton from "@/components/buttons/SubmitButton";
-import CalEmbed from "@/components/general/CalEmbed";
-import Headline from "@/components/general/Headline";
-import QuestionImage from "@/components/general/QuestionImage";
-import Subheader from "@/components/general/Subheader";
+import { SubmitButton } from "@/components/buttons/SubmitButton";
+import { CalEmbed } from "@/components/general/CalEmbed";
+import { Headline } from "@/components/general/Headline";
+import { QuestionMedia } from "@/components/general/QuestionMedia";
+import { Subheader } from "@/components/general/Subheader";
+import { ScrollableContainer } from "@/components/wrappers/ScrollableContainer";
 import { getUpdatedTtc, useTtc } from "@/lib/ttc";
 import { useCallback, useState } from "preact/hooks";
 
@@ -14,7 +15,7 @@ import { TSurveyCalQuestion } from "@formbricks/types/surveys";
 
 interface CalQuestionProps {
   question: TSurveyCalQuestion;
-  value: string | number | string[];
+  value: string;
   onChange: (responseData: TResponseData) => void;
   onSubmit: (data: TResponseData, ttc: TResponseTtc) => void;
   onBack: () => void;
@@ -23,9 +24,11 @@ interface CalQuestionProps {
   languageCode: string;
   ttc: TResponseTtc;
   setTtc: (ttc: TResponseTtc) => void;
+  isInIframe: boolean;
+  currentQuestionId: string;
 }
 
-export default function CalQuestion({
+export const CalQuestion = ({
   question,
   value,
   onChange,
@@ -36,11 +39,12 @@ export default function CalQuestion({
   languageCode,
   ttc,
   setTtc,
-}: CalQuestionProps) {
+  currentQuestionId,
+}: CalQuestionProps) => {
   const [startTime, setStartTime] = useState(performance.now());
-  useTtc(question.id, ttc, setTtc, startTime, setStartTime);
-
+  const isMediaAvailable = question.imageUrl || question.videoUrl;
   const [errorMessage, setErrorMessage] = useState("");
+  useTtc(question.id, ttc, setTtc, startTime, setStartTime, question.id === currentQuestionId);
 
   const onSuccessfulBooking = useCallback(() => {
     onChange({ [question.id]: "booked" });
@@ -66,22 +70,25 @@ export default function CalQuestion({
         onSubmit({ [question.id]: value }, updatedttc);
       }}
       className="w-full">
-      {question.imageUrl && <QuestionImage imgUrl={question.imageUrl} />}
-      <Headline
-        headline={getLocalizedValue(question.headline, languageCode)}
-        questionId={question.id}
-        required={question.required}
-      />
-      <Subheader
-        subheader={question.subheader ? getLocalizedValue(question.subheader, languageCode) : ""}
-        questionId={question.id}
-      />
-      <>
-        {errorMessage && <span className="text-red-500">{errorMessage}</span>}
-        <CalEmbed key={question.id} question={question} onSuccessfulBooking={onSuccessfulBooking} />
-      </>
-
-      <div className="mt-4 flex w-full justify-between">
+      <ScrollableContainer>
+        <div>
+          {isMediaAvailable && <QuestionMedia imgUrl={question.imageUrl} videoUrl={question.videoUrl} />}
+          <Headline
+            headline={getLocalizedValue(question.headline, languageCode)}
+            questionId={question.id}
+            required={question.required}
+          />
+          <Subheader
+            subheader={question.subheader ? getLocalizedValue(question.subheader, languageCode) : ""}
+            questionId={question.id}
+          />
+          <>
+            {errorMessage && <span className="text-red-500">{errorMessage}</span>}
+            <CalEmbed key={question.id} question={question} onSuccessfulBooking={onSuccessfulBooking} />
+          </>
+        </div>
+      </ScrollableContainer>
+      <div className="flex w-full justify-between px-6 py-4">
         {!isFirstQuestion && (
           <BackButton
             backButtonLabel={getLocalizedValue(question.backButtonLabel, languageCode)}
@@ -95,10 +102,9 @@ export default function CalQuestion({
           <SubmitButton
             buttonLabel={getLocalizedValue(question.buttonLabel, languageCode)}
             isLastQuestion={isLastQuestion}
-            onClick={() => {}}
           />
         )}
       </div>
     </form>
   );
-}
+};

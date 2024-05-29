@@ -13,7 +13,7 @@ import { hasUserEnvironmentAccess } from "@formbricks/lib/environment/auth";
 import logger from "@formbricks/lib/log";
 import { putFileToLocalStorage } from "@formbricks/lib/storage/service";
 
-export async function POST(req: NextRequest): Promise<Response> {
+export const POST = async (req: NextRequest): Promise<Response> => {
   const accessType = "public"; // public files are accessible by anyone
   const headersList = headers();
 
@@ -102,4 +102,4 @@ export async function POST(req: NextRequest): Promise<Response> {
     logger.error("File upload failed", err);
     return responses.internalServerErrorResponse("File upload failed");
   }
-}
+};

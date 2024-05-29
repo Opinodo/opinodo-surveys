@@ -7,7 +7,7 @@ import { SEMRESATTRS_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 
 import logger from "@formbricks/lib/log";
 
-export function startInstrumentationForNode(url: string) {
+export const startInstrumentationForNode = (url: string) => {
   try {
     const exporter = new OTLPTraceExporter({
       url,
@@ -26,4 +26,4 @@ export function startInstrumentationForNode(url: string) {
   } catch (err) {
     logger.error(`Unable to setup Telemetry: ${err}`);
   }
-}
+};

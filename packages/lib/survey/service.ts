@@ -1,38 +1,41 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
-import { unstable_cache } from "next/cache";
 
 import { prisma } from "@formbricks/database";
-import { TLegacySurvey, ZLegacySurvey } from "@formbricks/types/LegacySurvey";
+import { TLegacySurvey } from "@formbricks/types/LegacySurvey";
 import { TActionClass } from "@formbricks/types/actionClasses";
 import { ZOptionalNumber } from "@formbricks/types/common";
 import { ZId } from "@formbricks/types/environment";
 import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TPerson } from "@formbricks/types/people";
-import { TSegment, ZSegment, ZSegmentFilters } from "@formbricks/types/segment";
-import { TSurvey, TSurveyInput, ZSurvey, ZSurveyWithRefinements } from "@formbricks/types/surveys";
+import { TSegment, ZSegmentFilters } from "@formbricks/types/segment";
+import { TSurvey, TSurveyFilterCriteria, TSurveyInput, ZSurvey } from "@formbricks/types/surveys";
 
 import { getActionsByPersonId } from "../action/service";
 import { getActionClasses } from "../actionClass/service";
-import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL } from "../constants";
+import { attributeCache } from "../attribute/cache";
+import { getAttributes } from "../attribute/service";
+import { cache } from "../cache";
+import { ITEMS_PER_PAGE } from "../constants";
 import { displayCache } from "../display/cache";
 import { getDisplaysByPersonId } from "../display/service";
 import { reverseTranslateSurvey } from "../i18n/reverseTranslation";
 import logger from "../log";
 import { personCache } from "../person/cache";
 import { getPerson } from "../person/service";
+import { structuredClone } from "../pollyfills/structuredClone";
 import { productCache } from "../product/cache";
 import { getProductByEnvironmentId } from "../product/service";
 import { responseCache } from "../response/cache";
 import { segmentCache } from "../segment/cache";
-import { createSegment, evaluateSegment, getSegment, updateSegment } from "../segment/service";
+import { createSegment, deleteSegment, evaluateSegment, getSegment, updateSegment } from "../segment/service";
 import { transformSegmentFiltersToAttributeFilters } from "../segment/utils";
 import { subscribeTeamMembersToSurveyResponses } from "../team/service";
-import { diffInDays, formatDateFields } from "../utils/datetime";
+import { diffInDays } from "../utils/datetime";
 import { validateInputs } from "../utils/validate";
 import { surveyCache } from "./cache";
-import { anySurveyHasFilters } from "./util";
+import { anySurveyHasFilters, buildOrderByClause, buildWhereClause, transformPrismaSurvey } from "./utils";
 
 interface TriggerUpdate {
   create?: Array<{ actionClassId: string }>;
@@ -60,6 +63,7 @@ export const selectSurvey = {
   displayOption: true,
   recontactDays: true,
   autoClose: true,
+  runOnDate: true,
   closeOnDate: true,
   delay: true,
   displayPercentage: true,
@@ -103,12 +107,12 @@ export const selectSurvey = {
           name: true,
           description: true,
           type: true,
+          key: true,
           noCodeConfig: true,
         },
       },
     },
   },
-  inlineTriggers: true,
   segment: {
     include: {
       surveys: {
@@ -120,67 +124,74 @@ export const selectSurvey = {
   },
 };
 
-const getActionClassIdFromName = (actionClasses: TActionClass[], actionClassName: string): string => {
-  return actionClasses.find((actionClass) => actionClass.name === actionClassName)!.id;
-};
+const checkTriggersValidity = (triggers: TSurvey["triggers"], actionClasses: TActionClass[]) => {
+  if (!triggers) return;
 
-const revalidateSurveyByActionClassName = (
-  actionClasses: TActionClass[],
-  actionClassNames: string[]
-): void => {
-  for (const actionClassName of actionClassNames) {
-    const actionClassId: string = getActionClassIdFromName(actionClasses, actionClassName);
-    surveyCache.revalidate({
-      actionClassId,
-    });
+  // check if all the triggers are valid
+  triggers.forEach((trigger) => {
+    if (!actionClasses.find((actionClass) => actionClass.id === trigger.actionClass.id)) {
+      throw new InvalidInputError("Invalid trigger id");
+    }
+  });
+
+  // check if all the triggers are unique
+  const triggerIds = triggers.map((trigger) => trigger.actionClass.id);
+
+  if (new Set(triggerIds).size !== triggerIds.length) {
+    throw new InvalidInputError("Duplicate trigger id");
   }
 };
 
-const processTriggerUpdates = (
-  triggers: string[],
-  currentSurveyTriggers: string[],
+const handleTriggerUpdates = (
+  updatedTriggers: TSurvey["triggers"],
+  currentTriggers: TSurvey["triggers"],
   actionClasses: TActionClass[]
 ) => {
-  const newTriggers: string[] = [];
-  const removedTriggers: string[] = [];
+  if (!updatedTriggers) return {};
+  checkTriggersValidity(updatedTriggers, actionClasses);
 
-  // find added triggers
-  for (const trigger of triggers) {
-    if (!trigger || currentSurveyTriggers.includes(trigger)) {
-      continue;
-    }
-    newTriggers.push(trigger);
-  }
+  const currentTriggerIds = currentTriggers.map((trigger) => trigger.actionClass.id);
+  const updatedTriggerIds = updatedTriggers.map((trigger) => trigger.actionClass.id);
 
-  // find removed triggers
-  for (const trigger of currentSurveyTriggers) {
-    if (!triggers.includes(trigger)) {
-      removedTriggers.push(trigger);
-    }
-  }
+  // added triggers are triggers that are not in the current triggers and are there in the new triggers
+  const addedTriggers = updatedTriggers.filter(
+    (trigger) => !currentTriggerIds.includes(trigger.actionClass.id)
+  );
+
+  // deleted triggers are triggers that are not in the new triggers and are there in the current triggers
+  const deletedTriggers = currentTriggers.filter(
+    (trigger) => !updatedTriggerIds.includes(trigger.actionClass.id)
+  );
 
   // Construct the triggers update object
   const triggersUpdate: TriggerUpdate = {};
 
-  if (newTriggers.length > 0) {
-    triggersUpdate.create = newTriggers.map((trigger) => ({
-      actionClassId: getActionClassIdFromName(actionClasses, trigger),
+  if (addedTriggers.length > 0) {
+    triggersUpdate.create = addedTriggers.map((trigger) => ({
+      actionClassId: trigger.actionClass.id,
     }));
   }
 
-  if (removedTriggers.length > 0) {
+  if (deletedTriggers.length > 0) {
+    // disconnect the public triggers from the survey
     triggersUpdate.deleteMany = {
       actionClassId: {
-        in: removedTriggers.map((trigger) => getActionClassIdFromName(actionClasses, trigger)),
+        in: deletedTriggers.map((trigger) => trigger.actionClass.id),
       },
     };
   }
-  revalidateSurveyByActionClassName(actionClasses, [...newTriggers, ...removedTriggers]);
+
+  [...addedTriggers, ...deletedTriggers].forEach((trigger) => {
+    surveyCache.revalidate({
+      actionClassId: trigger.actionClass.id,
+    });
+  });
+
   return triggersUpdate;
 };
 
-export const getSurvey = async (surveyId: string): Promise<TSurvey | null> => {
-  const survey = await unstable_cache(
+export const getSurvey = (surveyId: string): Promise<TSurvey | null> =>
+  cache(
     async () => {
       validateInputs([surveyId, ZId]);
 
@@ -204,74 +215,48 @@ export const getSurvey = async (surveyId: string): Promise<TSurvey | null> => {
         return null;
       }
 
-      let surveySegment: TSegment | null = null;
-      if (surveyPrisma.segment) {
-        surveySegment = formatDateFields(
-          {
-            ...surveyPrisma.segment,
-            surveys: surveyPrisma.segment.surveys.map((survey) => survey.id),
-          },
-          ZSegment
-        );
-      }
-
-      const transformedSurvey: TSurvey = {
-        ...surveyPrisma,
-        triggers: surveyPrisma.triggers.map((trigger) => trigger.actionClass.name),
-        segment: surveySegment,
-      };
-
-      return transformedSurvey;
+      return transformPrismaSurvey(surveyPrisma);
     },
     [`getSurvey-${surveyId}`],
     {
       tags: [surveyCache.tag.byId(surveyId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
 
-  // since the unstable_cache function does not support deserialization of dates, we need to manually deserialize them
-  // https://github.com/vercel/next.js/issues/51613
-  return survey ? formatDateFields(survey, ZSurvey) : null;
-};
-
-export const getSurveysByActionClassId = async (actionClassId: string, page?: number): Promise<TSurvey[]> => {
-  const surveys = await unstable_cache(
+export const getSurveysByActionClassId = (actionClassId: string, page?: number): Promise<TSurvey[]> =>
+  cache(
     async () => {
       validateInputs([actionClassId, ZId], [page, ZOptionalNumber]);
 
-      const surveysPrisma = await prisma.survey.findMany({
-        where: {
-          triggers: {
-            some: {
-              actionClass: {
-                id: actionClassId,
+      let surveysPrisma;
+      try {
+        surveysPrisma = await prisma.survey.findMany({
+          where: {
+            triggers: {
+              some: {
+                actionClass: {
+                  id: actionClassId,
+                },
               },
             },
           },
-        },
-        select: selectSurvey,
-        take: page ? ITEMS_PER_PAGE : undefined,
-        skip: page ? ITEMS_PER_PAGE * (page - 1) : undefined,
-      });
+          select: selectSurvey,
+          take: page ? ITEMS_PER_PAGE : undefined,
+          skip: page ? ITEMS_PER_PAGE * (page - 1) : undefined,
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          console.error(error);
+          throw new DatabaseError(error.message);
+        }
+
+        throw error;
+      }
 
       const surveys: TSurvey[] = [];
 
       for (const surveyPrisma of surveysPrisma) {
-        let segment: TSegment | null = null;
-
-        if (surveyPrisma.segment) {
-          segment = {
-            ...surveyPrisma.segment,
-            surveys: surveyPrisma.segment.surveys.map((survey) => survey.id),
-          };
-        }
-
-        const transformedSurvey: TSurvey = {
-          ...surveyPrisma,
-          triggers: surveyPrisma.triggers.map((trigger) => trigger.actionClass.name),
-          segment,
-        };
+        const transformedSurvey = transformPrismaSurvey(surveyPrisma);
         surveys.push(transformedSurvey);
       }
 
@@ -280,18 +265,16 @@ export const getSurveysByActionClassId = async (actionClassId: string, page?: nu
     [`getSurveysByActionClassId-${actionClassId}-${page}`],
     {
       tags: [surveyCache.tag.byActionClassId(actionClassId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
-  return surveys.map((survey) => formatDateFields(survey, ZSurvey));
-};
 
-export const getSurveys = async (
+export const getSurveys = (
   environmentId: string,
   limit?: number,
-  offset?: number
-): Promise<TSurvey[]> => {
-  const surveys = await unstable_cache(
+  offset?: number,
+  filterCriteria?: TSurveyFilterCriteria
+): Promise<TSurvey[]> =>
+  cache(
     async () => {
       validateInputs([environmentId, ZId], [limit, ZOptionalNumber], [offset, ZOptionalNumber]);
       let surveysPrisma;
@@ -300,13 +283,10 @@ export const getSurveys = async (
         surveysPrisma = await prisma.survey.findMany({
           where: {
             environmentId,
+            ...buildWhereClause(filterCriteria),
           },
           select: selectSurvey,
-          orderBy: [
-            {
-              updatedAt: "desc",
-            },
-          ],
+          orderBy: buildOrderByClause(filterCriteria?.sortBy),
           take: limit ? limit : undefined,
           skip: offset ? offset : undefined,
         });
@@ -322,60 +302,14 @@ export const getSurveys = async (
       const surveys: TSurvey[] = [];
 
       for (const surveyPrisma of surveysPrisma) {
-        let segment: TSegment | null = null;
-
-        if (surveyPrisma.segment) {
-          segment = {
-            ...surveyPrisma.segment,
-            surveys: surveyPrisma.segment.surveys.map((survey) => survey.id),
-          };
-        }
-
-        const transformedSurvey: TSurvey = {
-          ...surveyPrisma,
-          triggers: surveyPrisma.triggers.map((trigger) => trigger.actionClass.name),
-          segment,
-        };
-
+        const transformedSurvey = transformPrismaSurvey(surveyPrisma);
         surveys.push(transformedSurvey);
       }
       return surveys;
     },
-    [`getSurveys-${environmentId}-${limit}-${offset}`],
+    [`getSurveys-${environmentId}-${limit}-${offset}-${JSON.stringify(filterCriteria)}`],
     {
       tags: [surveyCache.tag.byEnvironmentId(environmentId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
-    }
-  )();
-
-  // since the unstable_cache function does not support deserialization of dates, we need to manually deserialize them
-  // https://github.com/vercel/next.js/issues/51613
-  return surveys.map((survey) => formatDateFields(survey, ZSurvey));
-};
-
-export const getSurveysCount = async (environmentId: string): Promise<number> =>
-  unstable_cache(
-    async () => {
-      validateInputs([environmentId, ZId]);
-
-      try {
-        return await prisma.survey.count({
-          where: {
-            environmentId: environmentId,
-          },
-        });
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          throw new DatabaseError(error.message);
-        }
-
-        throw error;
-      }
-    },
-    [`getSurveysCount-${environmentId}`],
-    {
-      tags: [surveyCache.tag.byEnvironmentId(environmentId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
 
@@ -383,22 +317,21 @@ export const transformToLegacySurvey = async (
   survey: TSurvey,
   languageCode?: string
 ): Promise<TLegacySurvey> => {
-  const transformedSurvey = await unstable_cache(
-    async () => {
-      const targetLanguage = languageCode ?? "default";
-      return reverseTranslateSurvey(survey, targetLanguage);
-    },
-    [`transformToLegacySurvey-${survey.id}-${languageCode}`],
-    {
-      tags: [surveyCache.tag.byId(survey.id)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
-    }
-  )();
-  return formatDateFields(transformedSurvey, ZLegacySurvey);
+  const targetLanguage = languageCode ?? "default";
+
+  // workaround to handle triggers for legacy surveys
+  // because we dont wanna do this in the `reverseTranslateSurvey` function
+  const surveyToTransform: any = {
+    ...structuredClone(survey),
+    triggers: survey.triggers.map((trigger) => trigger.actionClass.name),
+  };
+
+  const transformedSurvey = reverseTranslateSurvey(surveyToTransform as TSurvey, targetLanguage);
+  return transformedSurvey;
 };
 
-export const getSurveyCount = async (environmentId: string): Promise<number> => {
-  const count = await unstable_cache(
+export const getSurveyCount = async (environmentId: string): Promise<number> =>
+  cache(
     async () => {
       validateInputs([environmentId, ZId]);
       try {
@@ -421,111 +354,151 @@ export const getSurveyCount = async (environmentId: string): Promise<number> => 
     [`getSurveyCount-${environmentId}`],
     {
       tags: [surveyCache.tag.byEnvironmentId(environmentId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
 
-  return count;
-};
-
 export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => {
-  validateInputs([updatedSurvey, ZSurveyWithRefinements]);
-
-  const surveyId = updatedSurvey.id;
-  let data: any = {};
-
-  const actionClasses = await getActionClasses(updatedSurvey.environmentId);
-  const currentSurvey = await getSurvey(surveyId);
-
-  if (!currentSurvey) {
-    throw new ResourceNotFoundError("Survey", surveyId);
-  }
-
-  const { countries, triggers, environmentId, segment, languages, ...surveyData } = updatedSurvey;
-
-  if (countries) {
-    data.countries = {
-      set: countries.map((country) => ({ isoCode: country.isoCode })),
-    };
-  }
-
-  if (languages) {
-    // Process languages update logic here
-    // Extract currentLanguageIds and updatedLanguageIds
-    const currentLanguageIds = currentSurvey.languages
-      ? currentSurvey.languages.map((l) => l.language.id)
-      : [];
-    const updatedLanguageIds = languages.length > 1 ? updatedSurvey.languages.map((l) => l.language.id) : [];
-    const enabledLangaugeIds = languages.map((language) => {
-      if (language.enabled) return language.language.id;
-    });
-
-    // Determine languages to add and remove
-    const languagesToAdd = updatedLanguageIds.filter((id) => !currentLanguageIds.includes(id));
-    const languagesToRemove = currentLanguageIds.filter((id) => !updatedLanguageIds.includes(id));
-
-    const defaultLanguageId = updatedSurvey.languages.find((l) => l.default)?.language.id;
-
-    // Prepare data for Prisma update
-    data.languages = {};
-
-    // Update existing languages for default value changes
-    data.languages.updateMany = currentSurvey.languages.map((surveyLanguage) => ({
-      where: { languageId: surveyLanguage.language.id },
-      data: {
-        default: surveyLanguage.language.id === defaultLanguageId,
-        enabled: enabledLangaugeIds.includes(surveyLanguage.language.id),
-      },
-    }));
-
-    // Add new languages
-    if (languagesToAdd.length > 0) {
-      data.languages.create = languagesToAdd.map((languageId) => ({
-        languageId: languageId,
-        default: languageId === defaultLanguageId,
-        enabled: enabledLangaugeIds.includes(languageId),
-      }));
-    }
-
-    // Remove languages no longer associated with the survey
-    if (languagesToRemove.length > 0) {
-      data.languages.deleteMany = languagesToRemove.map((languageId) => ({
-        languageId: languageId,
-        enabled: enabledLangaugeIds.includes(languageId),
-      }));
-    }
-  }
-
-  if (triggers) {
-    data.triggers = processTriggerUpdates(triggers, currentSurvey.triggers, actionClasses);
-  }
-
-  if (segment) {
-    // parse the segment filters:
-    const parsedFilters = ZSegmentFilters.safeParse(segment.filters);
-    if (!parsedFilters.success) {
-      throw new InvalidInputError("Invalid user segment filters");
-    }
-
-    try {
-      await updateSegment(segment.id, segment);
-    } catch (error) {
-      logger.error(error);
-      throw new Error("Error updating survey");
-    }
-  }
-
-  surveyData.updatedAt = new Date();
-  data = {
-    ...surveyData,
-    ...data,
-  };
-
-  if (data.reward !== undefined) {
-    data.reward = Math.max(0, Math.min(20, data.reward));
-  }
+  validateInputs([updatedSurvey, ZSurvey]);
 
   try {
+    const surveyId = updatedSurvey.id;
+    let data: any = {};
+
+    const actionClasses = await getActionClasses(updatedSurvey.environmentId);
+    const currentSurvey = await getSurvey(surveyId);
+
+    if (!currentSurvey) {
+      throw new ResourceNotFoundError("Survey", surveyId);
+    }
+
+    const { countries, triggers, environmentId, segment, questions, languages, type, ...surveyData } =
+      updatedSurvey;
+
+    if (countries) {
+      data.countries = {
+        set: countries.map((country) => ({ isoCode: country.isoCode })),
+      };
+    }
+
+    if (languages) {
+      // Process languages update logic here
+      // Extract currentLanguageIds and updatedLanguageIds
+      const currentLanguageIds = currentSurvey.languages
+        ? currentSurvey.languages.map((l) => l.language.id)
+        : [];
+      const updatedLanguageIds =
+        languages.length > 1 ? updatedSurvey.languages.map((l) => l.language.id) : [];
+      const enabledLangaugeIds = languages.map((language) => {
+        if (language.enabled) return language.language.id;
+      });
+
+      // Determine languages to add and remove
+      const languagesToAdd = updatedLanguageIds.filter((id) => !currentLanguageIds.includes(id));
+      const languagesToRemove = currentLanguageIds.filter((id) => !updatedLanguageIds.includes(id));
+
+      const defaultLanguageId = updatedSurvey.languages.find((l) => l.default)?.language.id;
+
+      // Prepare data for Prisma update
+      data.languages = {};
+
+      // Update existing languages for default value changes
+      data.languages.updateMany = currentSurvey.languages.map((surveyLanguage) => ({
+        where: { languageId: surveyLanguage.language.id },
+        data: {
+          default: surveyLanguage.language.id === defaultLanguageId,
+          enabled: enabledLangaugeIds.includes(surveyLanguage.language.id),
+        },
+      }));
+
+      // Add new languages
+      if (languagesToAdd.length > 0) {
+        data.languages.create = languagesToAdd.map((languageId) => ({
+          languageId: languageId,
+          default: languageId === defaultLanguageId,
+          enabled: enabledLangaugeIds.includes(languageId),
+        }));
+      }
+
+      // Remove languages no longer associated with the survey
+      if (languagesToRemove.length > 0) {
+        data.languages.deleteMany = languagesToRemove.map((languageId) => ({
+          languageId: languageId,
+          enabled: enabledLangaugeIds.includes(languageId),
+        }));
+      }
+    }
+
+    if (triggers) {
+      data.triggers = handleTriggerUpdates(triggers, currentSurvey.triggers, actionClasses);
+    }
+
+    // if the survey body has type other than "app" but has a private segment, we delete that segment, and if it has a public segment, we disconnect from to the survey
+    if (segment) {
+      if (type === "app") {
+        // parse the segment filters:
+        const parsedFilters = ZSegmentFilters.safeParse(segment.filters);
+        if (!parsedFilters.success) {
+          throw new InvalidInputError("Invalid user segment filters");
+        }
+
+        try {
+          await updateSegment(segment.id, segment);
+        } catch (error) {
+          logger.error(error);
+          throw new Error("Error updating survey");
+        }
+      } else {
+        if (segment.isPrivate) {
+          await deleteSegment(segment.id);
+        } else {
+          await prisma.survey.update({
+            where: {
+              id: surveyId,
+            },
+            data: {
+              segment: {
+                disconnect: true,
+              },
+            },
+          });
+        }
+      }
+
+      segmentCache.revalidate({
+        id: segment.id,
+        environmentId: segment.environmentId,
+      });
+    }
+    data.questions = questions.map((question) => {
+      const { isDraft, ...rest } = question;
+      return rest;
+    });
+
+    surveyData.updatedAt = new Date();
+
+    data = {
+      ...surveyData,
+      ...data,
+      type,
+    };
+
+    // Remove scheduled status when runOnDate is not set
+    if (data.status === "scheduled" && data.runOnDate === null) {
+      data.status = "inProgress";
+    }
+    // Set scheduled status when runOnDate is set and in the future on completed surveys
+    if (
+      (data.status === "completed" || data.status === "paused" || data.status === "inProgress") &&
+      data.runOnDate &&
+      data.runOnDate > new Date()
+    ) {
+      data.status = "scheduled";
+    }
+
+    if (data.reward !== undefined) {
+      data.reward = Math.max(0, Math.min(20, data.reward));
+    }
+
     const prismaSurvey = await prisma.survey.update({
       where: { id: surveyId },
       data,
@@ -540,10 +513,10 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       };
     }
 
+    // TODO: Fix this, this happens because the survey type "web" is no longer in the zod types but its required in the schema for migration
+    // @ts-expect-error
     const modifiedSurvey: TSurvey = {
       ...prismaSurvey, // Properties from prismaSurvey
-      triggers: updatedSurvey.triggers ? updatedSurvey.triggers : [], // Include triggers from updatedSurvey
-      countries: updatedSurvey.countries ? updatedSurvey.countries : [],
       segment: surveySegment,
     };
 
@@ -554,6 +527,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       environmentId: modifiedSurvey.environmentId,
       segmentId: modifiedSurvey.segment?.id,
     });
+
     return modifiedSurvey;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -565,378 +539,478 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
   }
 };
 
-export async function deleteSurvey(surveyId: string) {
+export const deleteSurvey = async (surveyId: string) => {
   validateInputs([surveyId, ZId]);
 
-  const deletedSurvey = await prisma.survey.delete({
-    where: {
-      id: surveyId,
-    },
-    select: selectSurvey,
-  });
+  try {
+    const deletedSurvey = await prisma.survey.delete({
+      where: {
+        id: surveyId,
+      },
+      select: selectSurvey,
+    });
 
-  logger.info("Survey deleted", { surveyId: surveyId });
+    logger.info("Survey deleted", { surveyId: surveyId });
 
-  responseCache.revalidate({
-    surveyId,
-    environmentId: deletedSurvey.environmentId,
-  });
-  surveyCache.revalidate({
-    id: deletedSurvey.id,
-    environmentId: deletedSurvey.environmentId,
-  });
+    if (deletedSurvey.type === "app") {
+      const deletedSegment = await prisma.segment.delete({
+        where: {
+          title: surveyId,
+          isPrivate: true,
+          environmentId_title: {
+            environmentId: deletedSurvey.environmentId,
+            title: surveyId,
+          },
+        },
+      });
 
-  if (deletedSurvey.segment?.id) {
-    segmentCache.revalidate({
-      id: deletedSurvey.segment.id,
+      if (deletedSegment) {
+        segmentCache.revalidate({
+          id: deletedSegment.id,
+          environmentId: deletedSurvey.environmentId,
+        });
+      }
+    }
+
+    responseCache.revalidate({
+      surveyId,
       environmentId: deletedSurvey.environmentId,
     });
-  }
-
-  // Revalidate triggers by actionClassId
-  deletedSurvey.triggers.forEach((trigger) => {
     surveyCache.revalidate({
-      actionClassId: trigger.actionClass.id,
+      id: deletedSurvey.id,
+      environmentId: deletedSurvey.environmentId,
     });
-  });
 
-  return deletedSurvey;
-}
+    if (deletedSurvey.segment?.id) {
+      segmentCache.revalidate({
+        id: deletedSurvey.segment.id,
+        environmentId: deletedSurvey.environmentId,
+      });
+    }
+
+    // Revalidate public triggers by actionClassId
+    deletedSurvey.triggers.forEach((trigger) => {
+      surveyCache.revalidate({
+        actionClassId: trigger.actionClass.id,
+      });
+    });
+
+    return deletedSurvey;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error(error);
+      throw new DatabaseError(error.message);
+    }
+
+    throw error;
+  }
+};
 
 export const createSurvey = async (environmentId: string, surveyBody: TSurveyInput): Promise<TSurvey> => {
   validateInputs([environmentId, ZId]);
 
-  // if the survey body has both triggers and inlineTriggers, we throw an error
-  if (surveyBody.triggers && surveyBody.inlineTriggers) {
-    throw new InvalidInputError("Survey body cannot have both triggers and inlineTriggers");
-  }
+  try {
+    const createdBy = surveyBody.createdBy;
+    delete surveyBody.createdBy;
 
-  if (surveyBody.triggers) {
     const actionClasses = await getActionClasses(environmentId);
-    revalidateSurveyByActionClassName(actionClasses, surveyBody.triggers);
-  }
-  const createdBy = surveyBody.createdBy;
-  delete surveyBody.createdBy;
-
-  const data: Omit<Prisma.SurveyCreateInput, "environment"> = {
-    ...surveyBody,
-    // TODO: Create with attributeFilters
-    triggers: surveyBody.triggers
-      ? processTriggerUpdates(surveyBody.triggers, [], await getActionClasses(environmentId))
-      : undefined,
-    attributeFilters: undefined,
-  };
-
-  if (surveyBody.type === "web" && data.thankYouCard) {
-    data.thankYouCard.buttonLabel = undefined;
-    data.thankYouCard.buttonLink = undefined;
-  }
-
-  if (createdBy) {
-    data.creator = {
-      connect: {
-        id: createdBy,
-      },
+    const data: Omit<Prisma.SurveyCreateInput, "environment"> = {
+      ...surveyBody,
+      // TODO: Create with attributeFilters
+      triggers: surveyBody.triggers
+        ? handleTriggerUpdates(surveyBody.triggers, [], actionClasses)
+        : undefined,
+      attributeFilters: undefined,
     };
-  }
 
-  const survey = await prisma.survey.create({
-    data: {
-      ...data,
-      environment: {
+    if ((surveyBody.type === "website" || surveyBody.type === "app") && data.thankYouCard) {
+      data.thankYouCard.buttonLabel = undefined;
+      data.thankYouCard.buttonLink = undefined;
+    }
+
+    if (createdBy) {
+      data.creator = {
         connect: {
-          id: environmentId,
+          id: createdBy,
+        },
+      };
+    }
+
+    const survey = await prisma.survey.create({
+      data: {
+        ...data,
+        environment: {
+          connect: {
+            id: environmentId,
+          },
         },
       },
-    },
-    select: selectSurvey,
-  });
+      select: selectSurvey,
+    });
 
-  logger.info("New Survey Created", survey);
+    logger.info("New Survey Created", survey);
 
-  const transformedSurvey: TSurvey = {
-    ...survey,
-    triggers: survey.triggers.map((trigger) => trigger.actionClass.name),
-    segment: null,
-  };
+    // if the survey created is an "app" survey, we also create a private segment for it.
+    if (survey.type === "app") {
+      const newSegment = await createSegment({
+        environmentId,
+        surveyId: survey.id,
+        filters: [],
+        title: survey.id,
+        isPrivate: true,
+      });
 
-  await subscribeTeamMembersToSurveyResponses(environmentId, survey.id);
+      await prisma.survey.update({
+        where: {
+          id: survey.id,
+        },
+        data: {
+          segment: {
+            connect: {
+              id: newSegment.id,
+            },
+          },
+        },
+      });
 
-  surveyCache.revalidate({
-    id: survey.id,
-    environmentId: survey.environmentId,
-  });
+      segmentCache.revalidate({
+        id: newSegment.id,
+        environmentId: survey.environmentId,
+      });
+    }
 
-  return transformedSurvey;
+    // TODO: Fix this, this happens because the survey type "web" is no longer in the zod types but its required in the schema for migration
+    // @ts-expect-error
+    const transformedSurvey: TSurvey = {
+      ...survey,
+      ...(survey.segment && {
+        segment: {
+          ...survey.segment,
+          surveys: survey.segment.surveys.map((survey) => survey.id),
+        },
+      }),
+    };
+
+    await subscribeTeamMembersToSurveyResponses(environmentId, survey.id);
+
+    surveyCache.revalidate({
+      id: survey.id,
+      environmentId: survey.environmentId,
+    });
+
+    return transformedSurvey;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error(error);
+      throw new DatabaseError(error.message);
+    }
+
+    throw error;
+  }
 };
 
 export const duplicateSurvey = async (environmentId: string, surveyId: string, userId: string) => {
   validateInputs([environmentId, ZId], [surveyId, ZId]);
-  const existingSurvey = await getSurvey(surveyId);
-  const currentDate = new Date();
-  if (!existingSurvey) {
-    throw new ResourceNotFoundError("Survey", surveyId);
-  }
 
-  const defaultLanguageId = existingSurvey.languages.find((l) => l.default)?.language.id;
-
-  const actionClasses = await getActionClasses(environmentId);
-
-  // create new survey with the data of the existing survey
-  const newSurvey = await prisma.survey.create({
-    data: {
-      ...existingSurvey,
-      id: undefined, // id is auto-generated
-      environmentId: undefined, // environmentId is set below
-      createdAt: currentDate,
-      updatedAt: currentDate,
-      createdBy: undefined,
-      name: `${existingSurvey.name} (copy)`,
-      status: "draft",
-      questions: structuredClone(existingSurvey.questions),
-      thankYouCard: structuredClone(existingSurvey.thankYouCard),
-      failureCard: structuredClone(existingSurvey.failureCard),
-      languages: {
-        create: existingSurvey.languages?.map((surveyLanguage) => ({
-          languageId: surveyLanguage.language.id,
-          default: surveyLanguage.language.id === defaultLanguageId,
-        })),
-      },
-      triggers: {
-        create: existingSurvey.triggers.map((trigger) => ({
-          actionClassId: getActionClassIdFromName(actionClasses, trigger),
-        })),
-      },
-      inlineTriggers: existingSurvey.inlineTriggers ?? undefined,
-      environment: {
-        connect: {
-          id: environmentId,
-        },
-      },
-      creator: {
-        connect: {
-          id: userId,
-        },
-      },
-      surveyClosedMessage: existingSurvey.surveyClosedMessage
-        ? structuredClone(existingSurvey.surveyClosedMessage)
-        : Prisma.JsonNull,
-      singleUse: existingSurvey.singleUse ? structuredClone(existingSurvey.singleUse) : Prisma.JsonNull,
-      productOverwrites: existingSurvey.productOverwrites
-        ? structuredClone(existingSurvey.productOverwrites)
-        : Prisma.JsonNull,
-      styling: existingSurvey.styling ? structuredClone(existingSurvey.styling) : Prisma.JsonNull,
-      verifyEmail: existingSurvey.verifyEmail ? structuredClone(existingSurvey.verifyEmail) : Prisma.JsonNull,
-      // we'll update the segment later
-      segment: undefined,
-      countries: {
-        connect: existingSurvey.countries,
-      },
-    },
-  });
-
-  // if the existing survey has an inline segment, we copy the filters and create a new inline segment and connect it to the new survey
-  if (existingSurvey.segment) {
-    if (existingSurvey.segment.isPrivate) {
-      const newInlineSegment = await createSegment({
-        environmentId,
-        title: `${newSurvey.id}`,
-        isPrivate: true,
-        surveyId: newSurvey.id,
-        filters: existingSurvey.segment.filters,
-      });
-
-      await prisma.survey.update({
-        where: {
-          id: newSurvey.id,
-        },
-        data: {
-          segment: {
-            connect: {
-              id: newInlineSegment.id,
-            },
-          },
-        },
-      });
-
-      segmentCache.revalidate({
-        id: newInlineSegment.id,
-        environmentId: newSurvey.environmentId,
-      });
-    } else {
-      await prisma.survey.update({
-        where: {
-          id: newSurvey.id,
-        },
-        data: {
-          segment: {
-            connect: {
-              id: existingSurvey.segment.id,
-            },
-          },
-        },
-      });
-
-      segmentCache.revalidate({
-        id: existingSurvey.segment.id,
-        environmentId: newSurvey.environmentId,
-      });
+  try {
+    const existingSurvey = await getSurvey(surveyId);
+    const currentDate = new Date();
+    if (!existingSurvey) {
+      throw new ResourceNotFoundError("Survey", surveyId);
     }
+
+    const defaultLanguageId = existingSurvey.languages.find((l) => l.default)?.language.id;
+
+    // create new survey with the data of the existing survey
+    const newSurvey = await prisma.survey.create({
+      data: {
+        ...existingSurvey,
+        id: undefined, // id is auto-generated
+        environmentId: undefined, // environmentId is set below
+        createdAt: currentDate,
+        updatedAt: currentDate,
+        createdBy: undefined,
+        name: `${existingSurvey.name} (copy)`,
+        status: "draft",
+        questions: structuredClone(existingSurvey.questions),
+        thankYouCard: structuredClone(existingSurvey.thankYouCard),
+        failureCard: structuredClone(existingSurvey.failureCard),
+        languages: {
+          create: existingSurvey.languages?.map((surveyLanguage) => ({
+            languageId: surveyLanguage.language.id,
+            default: surveyLanguage.language.id === defaultLanguageId,
+          })),
+        },
+        triggers: {
+          create: existingSurvey.triggers.map((trigger) => ({
+            actionClassId: trigger.actionClass.id,
+          })),
+        },
+
+        environment: {
+          connect: {
+            id: environmentId,
+          },
+        },
+        creator: {
+          connect: {
+            id: userId,
+          },
+        },
+        surveyClosedMessage: existingSurvey.surveyClosedMessage
+          ? structuredClone(existingSurvey.surveyClosedMessage)
+          : Prisma.JsonNull,
+        singleUse: existingSurvey.singleUse ? structuredClone(existingSurvey.singleUse) : Prisma.JsonNull,
+        productOverwrites: existingSurvey.productOverwrites
+          ? structuredClone(existingSurvey.productOverwrites)
+          : Prisma.JsonNull,
+        styling: existingSurvey.styling ? structuredClone(existingSurvey.styling) : Prisma.JsonNull,
+        verifyEmail: existingSurvey.verifyEmail
+          ? structuredClone(existingSurvey.verifyEmail)
+          : Prisma.JsonNull,
+        // we'll update the segment later
+        segment: undefined,
+        countries: {
+          connect: existingSurvey.countries,
+        },
+      },
+    });
+
+    // if the existing survey has an inline segment, we copy the filters and create a new inline segment and connect it to the new survey
+    if (existingSurvey.segment) {
+      if (existingSurvey.segment.isPrivate) {
+        const newInlineSegment = await createSegment({
+          environmentId,
+          title: `${newSurvey.id}`,
+          isPrivate: true,
+          surveyId: newSurvey.id,
+          filters: existingSurvey.segment.filters,
+        });
+
+        await prisma.survey.update({
+          where: {
+            id: newSurvey.id,
+          },
+          data: {
+            segment: {
+              connect: {
+                id: newInlineSegment.id,
+              },
+            },
+          },
+        });
+
+        segmentCache.revalidate({
+          id: newInlineSegment.id,
+          environmentId: newSurvey.environmentId,
+        });
+      } else {
+        await prisma.survey.update({
+          where: {
+            id: newSurvey.id,
+          },
+          data: {
+            segment: {
+              connect: {
+                id: existingSurvey.segment.id,
+              },
+            },
+          },
+        });
+
+        segmentCache.revalidate({
+          id: existingSurvey.segment.id,
+          environmentId: newSurvey.environmentId,
+        });
+      }
+    }
+
+    surveyCache.revalidate({
+      id: newSurvey.id,
+      environmentId: newSurvey.environmentId,
+    });
+
+    existingSurvey.triggers.forEach((trigger) => {
+      surveyCache.revalidate({
+        actionClassId: trigger.actionClass.id,
+      });
+    });
+
+    return newSurvey;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error(error);
+      throw new DatabaseError(error.message);
+    }
+
+    throw error;
   }
-
-  surveyCache.revalidate({
-    id: newSurvey.id,
-    environmentId: newSurvey.environmentId,
-  });
-
-  // Revalidate surveys by actionClassId
-  revalidateSurveyByActionClassName(actionClasses, existingSurvey.triggers);
-
-  return newSurvey;
 };
 
-export const getSyncSurveys = async (
+export const getSyncSurveys = (
   environmentId: string,
   personId: string,
   deviceType: "phone" | "desktop" = "desktop",
   options?: {
     version?: string;
   }
-): Promise<TSurvey[] | TLegacySurvey[]> => {
-  validateInputs([environmentId, ZId]);
-
-  const surveys = await unstable_cache(
+): Promise<TSurvey[] | TLegacySurvey[]> =>
+  cache(
     async () => {
-      const product = await getProductByEnvironmentId(environmentId);
-      const person = personId === "legacy" ? ({ id: "legacy" } as TPerson) : await getPerson(personId);
+      validateInputs([environmentId, ZId]);
+      try {
+        const product = await getProductByEnvironmentId(environmentId);
 
-      if (!product) {
-        throw new Error("Product not found");
-      }
-
-      if (!person) {
-        throw new Error("Person not found");
-      }
-
-      let surveys: TSurvey[] | TLegacySurvey[] = await getSurveys(environmentId);
-
-      // filtered surveys for running and web
-      surveys = surveys.filter((survey) => survey.status === "inProgress" && survey.type === "web");
-
-      const displays = await getDisplaysByPersonId(person.id);
-
-      // filter surveys that meet the displayOption criteria
-      surveys = surveys.filter((survey) => {
-        if (survey.displayOption === "respondMultiple") {
-          return true;
-        } else if (survey.displayOption === "displayOnce") {
-          return displays.filter((display) => display.surveyId === survey.id).length === 0;
-        } else if (survey.displayOption === "displayMultiple") {
-          return (
-            displays.filter((display) => display.surveyId === survey.id && display.responseId !== null)
-              .length === 0
-          );
-        } else {
-          throw Error("Invalid displayOption");
+        if (!product) {
+          throw new Error("Product not found");
         }
-      });
 
-      const latestDisplay = displays[0];
+        const person = personId === "legacy" ? ({ id: "legacy" } as TPerson) : await getPerson(personId);
 
-      // filter surveys that meet the recontactDays criteria
-      surveys = surveys.filter((survey) => {
-        if (!latestDisplay) {
-          return true;
-        } else if (survey.recontactDays !== null) {
-          const lastDisplaySurvey = displays.filter((display) => display.surveyId === survey.id)[0];
-          if (!lastDisplaySurvey) {
+        if (!person) {
+          throw new Error("Person not found");
+        }
+
+        let surveys: TSurvey[] | TLegacySurvey[] = await getSurveys(environmentId);
+
+        // filtered surveys for running and web
+        surveys = surveys.filter((survey) => survey.status === "inProgress" && survey.type === "app");
+
+        // if no surveys are left, return an empty array
+        if (surveys.length === 0) {
+          return [];
+        }
+
+        const displays = await getDisplaysByPersonId(person.id);
+
+        // filter surveys that meet the displayOption criteria
+        surveys = surveys.filter((survey) => {
+          if (survey.displayOption === "respondMultiple") {
+            return true;
+          } else if (survey.displayOption === "displayOnce") {
+            return displays.filter((display) => display.surveyId === survey.id).length === 0;
+          } else if (survey.displayOption === "displayMultiple") {
+            return (
+              displays.filter((display) => display.surveyId === survey.id && display.responseId !== null)
+                .length === 0
+            );
+          } else {
+            throw Error("Invalid displayOption");
+          }
+        });
+
+        const latestDisplay = displays[0];
+
+        // filter surveys that meet the recontactDays criteria
+        surveys = surveys.filter((survey) => {
+          if (!latestDisplay) {
+            return true;
+          } else if (survey.recontactDays !== null) {
+            const lastDisplaySurvey = displays.filter((display) => display.surveyId === survey.id)[0];
+            if (!lastDisplaySurvey) {
+              return true;
+            }
+            return diffInDays(new Date(), new Date(lastDisplaySurvey.createdAt)) >= survey.recontactDays;
+          } else if (product.recontactDays !== null) {
+            return diffInDays(new Date(), new Date(latestDisplay.createdAt)) >= product.recontactDays;
+          } else {
             return true;
           }
-          return diffInDays(new Date(), new Date(lastDisplaySurvey.createdAt)) >= survey.recontactDays;
-        } else if (product.recontactDays !== null) {
-          return diffInDays(new Date(), new Date(latestDisplay.createdAt)) >= product.recontactDays;
-        } else {
-          return true;
-        }
-      });
+        });
 
-      // if no surveys have segment filters, return the surveys
-      if (!anySurveyHasFilters(surveys)) {
-        return surveys;
-      }
-
-      const personActions = await getActionsByPersonId(person.id);
-      const personActionClassIds = Array.from(
-        new Set(personActions?.map((action) => action.actionClass?.id ?? ""))
-      );
-      const personUserId = person.userId ?? person.attributes?.userId ?? "";
-
-      // the surveys now have segment filters, so we need to evaluate them
-      const surveyPromises = surveys.map(async (survey) => {
-        const { segment } = survey;
-        if (!segment) {
-          return survey;
+        // if no surveys are left, return an empty array
+        if (surveys.length === 0) {
+          return [];
         }
 
-        // backwards compatibility for older versions of the js package
-        // if the version is not provided, we will use the old method of evaluating the segment, which is attribute filters
-        // transform the segment filters to attribute filters and evaluate them
-        if (!options?.version) {
-          const attributeFilters = transformSegmentFiltersToAttributeFilters(segment.filters);
+        // if no surveys have segment filters, return the surveys
+        if (!anySurveyHasFilters(surveys)) {
+          return surveys;
+        }
 
-          // if the attribute filters are null, it means the segment filters don't match the expected format for attribute filters, so we skip this survey
-          if (attributeFilters === null) {
-            return null;
-          }
+        const personActions = await getActionsByPersonId(person.id);
+        const personActionClassIds = Array.from(
+          new Set(personActions?.map((action) => action.actionClass?.id ?? ""))
+        );
 
-          // if there are no attribute filters, we return the survey
-          if (!attributeFilters.length) {
+        const attributes = await getAttributes(person.id);
+        const personUserId = person.userId;
+
+        // the surveys now have segment filters, so we need to evaluate them
+        const surveyPromises = surveys.map(async (survey) => {
+          const { segment } = survey;
+          // if the survey has no segment, or the segment has no filters, we return the survey
+          if (!segment || !segment.filters?.length) {
             return survey;
           }
 
-          // we check if the person meets the attribute filters for all the attribute filters
-          const isEligible = attributeFilters.every((attributeFilter) => {
-            const personAttributeValue = person?.attributes?.[attributeFilter.attributeClassName];
-            if (!personAttributeValue) {
-              return false;
+          // backwards compatibility for older versions of the js package
+          // if the version is not provided, we will use the old method of evaluating the segment, which is attribute filters
+          // transform the segment filters to attribute filters and evaluate them
+          if (!options?.version) {
+            const attributeFilters = transformSegmentFiltersToAttributeFilters(segment.filters);
+
+            // if the attribute filters are null, it means the segment filters don't match the expected format for attribute filters, so we skip this survey
+            if (attributeFilters === null) {
+              return null;
             }
 
-            if (attributeFilter.operator === "equals") {
-              return personAttributeValue === attributeFilter.value;
-            } else if (attributeFilter.operator === "notEquals") {
-              return personAttributeValue !== attributeFilter.value;
-            } else {
-              // if the operator is not equals or not equals, we skip the survey, this means that new segment filter options are being used
-              return false;
+            // if there are no attribute filters, we return the survey
+            if (!attributeFilters.length) {
+              return survey;
             }
-          });
 
-          return isEligible ? survey : null;
+            // we check if the person meets the attribute filters for all the attribute filters
+            const isEligible = attributeFilters.every((attributeFilter) => {
+              const personAttributeValue = attributes[attributeFilter.attributeClassName];
+              if (!personAttributeValue) {
+                return false;
+              }
+
+              if (attributeFilter.operator === "equals") {
+                return personAttributeValue === attributeFilter.value;
+              } else if (attributeFilter.operator === "notEquals") {
+                return personAttributeValue !== attributeFilter.value;
+              } else {
+                // if the operator is not equals or not equals, we skip the survey, this means that new segment filter options are being used
+                return false;
+              }
+            });
+
+            return isEligible ? survey : null;
+          }
+
+          // Evaluate the segment filters
+          const result = await evaluateSegment(
+            {
+              attributes: attributes ?? {},
+              actionIds: personActionClassIds,
+              deviceType,
+              environmentId,
+              personId: person.id,
+              userId: personUserId,
+            },
+            segment.filters
+          );
+
+          return result ? survey : null;
+        });
+
+        const resolvedSurveys = await Promise.all(surveyPromises);
+        surveys = resolvedSurveys.filter((survey) => !!survey) as TSurvey[];
+
+        if (!surveys) {
+          throw new ResourceNotFoundError("Survey", environmentId);
+        }
+        return surveys;
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          console.error(error);
+          throw new DatabaseError(error.message);
         }
 
-        // Evaluate the segment filters
-        const result = await evaluateSegment(
-          {
-            attributes: person.attributes ?? {},
-            actionIds: personActionClassIds,
-            deviceType,
-            environmentId,
-            personId: person.id,
-            userId: personUserId,
-          },
-          segment.filters
-        );
-
-        return result ? survey : null;
-      });
-
-      const resolvedSurveys = await Promise.all(surveyPromises);
-      surveys = resolvedSurveys.filter((survey) => !!survey) as TSurvey[];
-
-      if (!surveys) {
-        throw new ResourceNotFoundError("Survey", environmentId);
+        throw error;
       }
-      return surveys;
     },
     [`getSyncSurveys-${environmentId}-${personId}`],
     {
@@ -946,13 +1020,10 @@ export const getSyncSurveys = async (
         displayCache.tag.byPersonId(personId),
         surveyCache.tag.byEnvironmentId(environmentId),
         productCache.tag.byEnvironmentId(environmentId),
+        attributeCache.tag.byPersonId(personId),
       ],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
-
-  return surveys.map((survey) => formatDateFields(survey as TSurvey, ZSurvey));
-};
 
 export const getSurveyIdByResultShareKey = async (resultShareKey: string): Promise<string | null> => {
   try {
@@ -991,9 +1062,8 @@ export async function getAllDbCountries() {
 }
 
 export const loadNewSegmentInSurvey = async (surveyId: string, newSegmentId: string): Promise<TSurvey> => {
+  validateInputs([surveyId, ZId], [newSegmentId, ZId]);
   try {
-    validateInputs([surveyId, ZId], [newSegmentId, ZId]);
-
     const currentSurvey = await getSurvey(surveyId);
     if (!currentSurvey) {
       throw new ResourceNotFoundError("survey", surveyId);
@@ -1029,9 +1099,10 @@ export const loadNewSegmentInSurvey = async (surveyId: string, newSegmentId: str
       };
     }
 
+    // TODO: Fix this, this happens because the survey type "web" is no longer in the zod types but its required in the schema for migration
+    // @ts-expect-error
     const modifiedSurvey: TSurvey = {
       ...prismaSurvey, // Properties from prismaSurvey
-      triggers: prismaSurvey.triggers.map((trigger) => trigger.actionClass.name),
       segment: surveySegment,
     };
 
@@ -1045,8 +1116,8 @@ export const loadNewSegmentInSurvey = async (surveyId: string, newSegmentId: str
   }
 };
 
-export const getSurveysBySegmentId = async (segmentId: string): Promise<TSurvey[]> => {
-  const surveys = await unstable_cache(
+export const getSurveysBySegmentId = (segmentId: string): Promise<TSurvey[]> =>
+  cache(
     async () => {
       try {
         const surveysPrisma = await prisma.survey.findMany({
@@ -1057,20 +1128,7 @@ export const getSurveysBySegmentId = async (segmentId: string): Promise<TSurvey[
         const surveys: TSurvey[] = [];
 
         for (const surveyPrisma of surveysPrisma) {
-          let segment: TSegment | null = null;
-
-          if (surveyPrisma.segment) {
-            segment = {
-              ...surveyPrisma.segment,
-              surveys: surveyPrisma.segment.surveys.map((survey) => survey.id),
-            };
-          }
-
-          const transformedSurvey: TSurvey = {
-            ...surveyPrisma,
-            triggers: surveyPrisma.triggers.map((trigger) => trigger.actionClass.name),
-            segment,
-          };
+          const transformedSurvey = transformPrismaSurvey(surveyPrisma);
           surveys.push(transformedSurvey);
         }
 
@@ -1086,9 +1144,5 @@ export const getSurveysBySegmentId = async (segmentId: string): Promise<TSurvey[
     [`getSurveysBySegmentId-${segmentId}`],
     {
       tags: [surveyCache.tag.bySegmentId(segmentId), segmentCache.tag.byId(segmentId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
-
-  return surveys;
-};

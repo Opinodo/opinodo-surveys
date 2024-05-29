@@ -179,6 +179,7 @@ model TagsOnResponses {
 
 enum SurveyStatus {
   draft
+  scheduled
   inProgress
   paused
   completed
@@ -201,7 +202,7 @@ model Display {
   status     DisplayStatus?
 
   @@index([surveyId])
-  @@index([personId])
+  @@index([personId, createdAt])
 }
 
 model SurveyTrigger {
@@ -239,10 +240,10 @@ model SurveyAttributeFilter {
 }
 
 enum SurveyType {
-  email
   link
-  mobile
   web
+  website
+  app
 }
 
 enum displayOptions {
@@ -289,8 +290,9 @@ model Survey {
   attributeFilters    SurveyAttributeFilter[]
   displays            Display[]
   autoClose           Int?
-  delay               Int                     @default(0)
   autoComplete        Int?
+  delay               Int                     @default(0)
+  runOnDate           DateTime?
   closeOnDate         DateTime?
   /// @zod.custom(imports.ZSurveyClosedMessage)
   /// [SurveyClosedMessage]
@@ -323,7 +325,7 @@ model Survey {
   countries        Country[] @relation("SurveyCountries")
   limitedCountries Boolean   @default(false)
 
-  @@index([environmentId])
+  @@index([environmentId, updatedAt])
   @@index([segmentId])
 }
 
@@ -347,6 +349,7 @@ model ActionClass {
   name          String
   description   String?
   type          ActionType
+  key           String?
   /// @zod.custom(imports.ZActionClassNoCodeConfig)
   /// [ActionClassNoCodeConfig]
   noCodeConfig  Json?
@@ -355,7 +358,9 @@ model ActionClass {
   surveys       SurveyTrigger[]
   actions       Action[]
 
+  @@unique([key, environmentId])
   @@unique([name, environmentId])
+  @@index([environmentId, createdAt])
 }
 
 model Action {
@@ -372,7 +377,7 @@ model Action {
 
   @@index([personId, actionClassId, createdAt])
   @@index([actionClassId, createdAt])
-  @@index([personId])
+  @@index([personId, createdAt])
 }
 
 enum EnvironmentType {
@@ -384,6 +389,7 @@ enum IntegrationType {
   googleSheets
   notion
   airtable
+  slack
 }
 
 model Integration {
@@ -451,6 +457,9 @@ model Product {
   defaultRewardInUSD           Float           @default(0)
   defaultRedirectOnCompleteUrl String?
   defaultRedirectOnFailUrl     String?
+  /// @zod.custom(imports.ZLogo)
+  /// [Logo]
+  logo                         Json?
 
   @@unique([teamId, name])
   @@index([teamId])

@@ -13,12 +13,12 @@ export type TCardArrangementOptions = z.infer<typeof ZCardArrangementOptions>;
 
 export const ZCardArrangement = z.object({
   linkSurveys: ZCardArrangementOptions,
-  inAppSurveys: ZCardArrangementOptions,
+  appSurveys: ZCardArrangementOptions,
 });
 
 export const ZSurveyStylingBackground = z.object({
   bg: z.string().nullish(),
-  bgType: z.enum(["animation", "color", "image"]).nullish(),
+  bgType: z.enum(["animation", "color", "image", "upload"]).nullish(),
   brightness: z.number().nullish(),
 });
 
@@ -38,4 +38,5 @@ export const ZBaseStyling = z.object({
   cardArrangement: ZCardArrangement.nullish(),
   background: ZSurveyStylingBackground.nullish(),
   hideProgressBar: z.boolean().nullish(),
+  isLogoHidden: z.boolean().nullish(),
 });

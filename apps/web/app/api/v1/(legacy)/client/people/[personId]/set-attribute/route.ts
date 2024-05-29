@@ -2,15 +2,15 @@ import { responses } from "@/app/lib/api/response";
 import { transformErrorToDetails } from "@/app/lib/api/validator";
 
 import { getActionClasses } from "@formbricks/lib/actionClass/service";
-import { createAttributeClass, getAttributeClassByName } from "@formbricks/lib/attributeClass/service";
+import { updateAttributes } from "@formbricks/lib/attribute/service";
 import logger from "@formbricks/lib/log";
 import { personCache } from "@formbricks/lib/person/cache";
-import { getPerson, updatePersonAttribute } from "@formbricks/lib/person/service";
+import { getPerson } from "@formbricks/lib/person/service";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
 import { surveyCache } from "@formbricks/lib/survey/cache";
 import { getSyncSurveys } from "@formbricks/lib/survey/service";
 import { getTeamByEnvironmentId } from "@formbricks/lib/team/service";
-import { TJsStateSync, ZJsPeopleAttributeInput } from "@formbricks/types/js";
+import { ZJsPeopleAttributeInput } from "@formbricks/types/js";
 
 interface Context {
   params: {
@@ -19,11 +19,11 @@ interface Context {
   };
 }
 
-export async function OPTIONS(): Promise<Response> {
+export const OPTIONS = async (): Promise<Response> => {
   return responses.successResponse({}, true);
-}
+};
 
-export async function POST(req: Request, context: Context): Promise<Response> {
+export const POST = async (req: Request, context: Context): Promise<Response> => {
   try {
     const { personId, environmentId } = context.params;
     const jsonInput = await req.json();
@@ -47,19 +47,7 @@ export async function POST(req: Request, context: Context): Promise<Response> {
       return responses.notFoundResponse("Person", personId, true);
     }
 
-    let attributeClass = await getAttributeClassByName(environmentId, key);
-
-    // create new attribute class if not found
-    if (attributeClass === null) {
-      attributeClass = await createAttributeClass(environmentId, key, "code");
-    }
-
-    if (!attributeClass) {
-      return responses.internalServerErrorResponse("Unable to create attribute class", true);
-    }
-
-    // upsert attribute (update or create)
-    await updatePersonAttribute(personId, attributeClass.id, value);
+    await updateAttributes(personId, { [key]: value });
 
     personCache.revalidate({
       id: personId,
@@ -87,7 +75,7 @@ export async function POST(req: Request, context: Context): Promise<Response> {
     }
 
     // return state
-    const state: TJsStateSync = {
+    const state = {
       person: { id: person.id, userId: person.userId },
       surveys,
       noCodeActionClasses: noCodeActionClasses.filter((actionClass) => actionClass.type === "noCode"),
@@ -99,4 +87,4 @@ export async function POST(req: Request, context: Context): Promise<Response> {
     logger.error(error);
     return responses.internalServerErrorResponse(`Unable to complete request: ${error.message}`, true);
   }
-}
+};

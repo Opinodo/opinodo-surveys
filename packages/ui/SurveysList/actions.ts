@@ -6,11 +6,13 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@formbricks/database";
 import { authOptions } from "@formbricks/lib/authOptions";
 import { hasUserEnvironmentAccess } from "@formbricks/lib/environment/auth";
+import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import { canUserAccessSurvey, verifyUserRoleAccess } from "@formbricks/lib/survey/auth";
 import { surveyCache } from "@formbricks/lib/survey/cache";
 import { deleteSurvey, duplicateSurvey, getSurvey, getSurveys } from "@formbricks/lib/survey/service";
 import { generateSurveySingleUseId } from "@formbricks/lib/utils/singleUseSurveys";
 import { AuthorizationError, ResourceNotFoundError } from "@formbricks/types/errors";
+import { TSurveyFilterCriteria } from "@formbricks/types/surveys";
 
 export const getSurveyAction = async (surveyId: string) => {
   const session = await getServerSession(authOptions);
@@ -22,7 +24,7 @@ export const getSurveyAction = async (surveyId: string) => {
   return await getSurvey(surveyId);
 };
 
-export async function duplicateSurveyAction(environmentId: string, surveyId: string) {
+export const duplicateSurveyAction = async (environmentId: string, surveyId: string) => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
@@ -31,13 +33,13 @@ export async function duplicateSurveyAction(environmentId: string, surveyId: str
 
   const duplicatedSurvey = await duplicateSurvey(environmentId, surveyId, session.user.id);
   return duplicatedSurvey;
-}
+};
 
-export async function copyToOtherEnvironmentAction(
+export const copyToOtherEnvironmentAction = async (
   environmentId: string,
   surveyId: string,
   targetEnvironmentId: string
-) {
+) => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
@@ -85,7 +87,9 @@ export async function copyToOtherEnvironmentAction(
   for (const trigger of existingSurvey.triggers) {
     const targetEnvironmentTrigger = await prisma.actionClass.findFirst({
       where: {
-        name: trigger.actionClass.name,
+        ...(trigger.actionClass.type === "code"
+          ? { key: trigger.actionClass.key }
+          : { name: trigger.actionClass.name }),
         environment: {
           id: targetEnvironmentId,
         },
@@ -103,9 +107,13 @@ export async function copyToOtherEnvironmentAction(
           },
           description: trigger.actionClass.description,
           type: trigger.actionClass.type,
-          noCodeConfig: trigger.actionClass.noCodeConfig
-            ? structuredClone(trigger.actionClass.noCodeConfig)
-            : undefined,
+          ...(trigger.actionClass.type === "code"
+            ? { key: trigger.actionClass.key }
+            : {
+                noCodeConfig: trigger.actionClass.noCodeConfig
+                  ? structuredClone(trigger.actionClass.noCodeConfig)
+                  : undefined,
+              }),
         },
       });
       targetEnvironmentTriggers.push(newTrigger.id);
@@ -158,7 +166,6 @@ export async function copyToOtherEnvironmentAction(
       status: "draft",
       questions: structuredClone(existingSurvey.questions),
       thankYouCard: structuredClone(existingSurvey.thankYouCard),
-      inlineTriggers: JSON.parse(JSON.stringify(existingSurvey.inlineTriggers)),
       triggers: {
         create: targetEnvironmentTriggers.map((actionClassId) => ({
           actionClassId: actionClassId,
@@ -195,7 +202,7 @@ export async function copyToOtherEnvironmentAction(
     environmentId: targetEnvironmentId,
   });
   return newSurvey;
-}
+};
 
 export const deleteSurveyAction = async (surveyId: string) => {
   const session = await getServerSession(authOptions);
@@ -212,7 +219,7 @@ export const deleteSurveyAction = async (surveyId: string) => {
   await deleteSurvey(surveyId);
 };
 
-export async function generateSingleUseIdAction(surveyId: string, isEncrypted: boolean): Promise<string> {
+export const generateSingleUseIdAction = async (surveyId: string, isEncrypted: boolean): Promise<string> => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
@@ -221,14 +228,19 @@ export async function generateSingleUseIdAction(surveyId: string, isEncrypted: b
   if (!hasUserSurveyAccess) throw new AuthorizationError("Not authorized");
 
   return generateSurveySingleUseId(isEncrypted);
-}
+};
 
-export async function getSurveysAction(environmentId: string, limit?: number, offset?: number) {
+export const getSurveysAction = async (
+  environmentId: string,
+  limit?: number,
+  offset?: number,
+  filterCriteria?: TSurveyFilterCriteria
+) => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
   const isAuthorized = await hasUserEnvironmentAccess(session.user.id, environmentId);
   if (!isAuthorized) throw new AuthorizationError("Not authorized");
 
-  return await getSurveys(environmentId, limit, offset);
-}
+  return await getSurveys(environmentId, limit, offset, filterCriteria);
+};

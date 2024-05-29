@@ -63,6 +63,10 @@ Zone.Identifier
 # uploads
 packages/lib/uploads
 
+# Vite Timestamps
+vite.config.*.timestamp-*
+
+
 # Pino Logs
 formbricks.log
 .idea/

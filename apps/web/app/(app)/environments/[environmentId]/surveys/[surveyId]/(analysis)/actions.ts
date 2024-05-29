@@ -7,44 +7,28 @@ import { authOptions } from "@formbricks/lib/authOptions";
 import { getResponseCountBySurveyId, getResponses, getSurveySummary } from "@formbricks/lib/response/service";
 import { canUserAccessSurvey } from "@formbricks/lib/survey/auth";
 import { AuthorizationError } from "@formbricks/types/errors";
-import { TResponse, TResponseFilterCriteria, TSurveySummary } from "@formbricks/types/responses";
+import { TResponse, TResponseFilterCriteria } from "@formbricks/types/responses";
+import { TSurveySummary } from "@formbricks/types/surveys";
 
-export default async function revalidateSurveyIdPath(environmentId: string, surveyId: string) {
+export const revalidateSurveyIdPath = async (environmentId: string, surveyId: string) => {
   revalidatePath(`/environments/${environmentId}/surveys/${surveyId}`);
-}
+};
 
-export async function getMoreResponses(
+export const getResponsesAction = async (
   surveyId: string,
-  page: number,
-  batchSize?: number
-): Promise<TResponse[]> {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new AuthorizationError("Not authorized");
-
-  const isAuthorized = await canUserAccessSurvey(session.user.id, surveyId);
-  if (!isAuthorized) throw new AuthorizationError("Not authorized");
-
-  batchSize = batchSize ?? 10;
-  const responses = await getResponses(surveyId, page, batchSize);
-  return responses;
-}
-
-export async function getResponsesAction(
-  surveyId: string,
-  page: number,
-  batchSize?: number,
+  limit: number = 10,
+  offset: number = 0,
   filterCriteria?: TResponseFilterCriteria
-): Promise<TResponse[]> {
+): Promise<TResponse[]> => {
   const session = await getServerSession(authOptions);
   if (!session) throw new AuthorizationError("Not authorized");
 
   const isAuthorized = await canUserAccessSurvey(session.user.id, surveyId);
   if (!isAuthorized) throw new AuthorizationError("Not authorized");
 
-  batchSize = batchSize ?? 10;
-  const responses = await getResponses(surveyId, page, batchSize, filterCriteria);
+  const responses = await getResponses(surveyId, limit, offset, filterCriteria);
   return responses;
-}
+};
 
 export const getSurveySummaryAction = async (
   surveyId: string,

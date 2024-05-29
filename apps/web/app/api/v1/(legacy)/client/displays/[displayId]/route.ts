@@ -5,14 +5,14 @@ import { updateDisplayLegacy } from "@formbricks/lib/display/service";
 import logger from "@formbricks/lib/log";
 import { ZDisplayLegacyUpdateInput } from "@formbricks/types/displays";
 
-export async function OPTIONS(): Promise<Response> {
+export const OPTIONS = async (): Promise<Response> => {
   return responses.successResponse({}, true);
-}
+};
 
-export async function PUT(
+export const PUT = async (
   request: Request,
   { params }: { params: { displayId: string } }
-): Promise<Response> {
+): Promise<Response> => {
   const { displayId } = params;
   if (!displayId) {
     return responses.badRequestResponse("Missing displayId", undefined, true);
@@ -34,4 +34,4 @@ export async function PUT(
     logger.error(error);
     return responses.internalServerErrorResponse(error.message, true);
   }
-}
+};

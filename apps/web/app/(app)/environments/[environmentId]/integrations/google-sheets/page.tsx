@@ -1,4 +1,4 @@
-import GoogleSheetWrapper from "@/app/(app)/environments/[environmentId]/integrations/google-sheets/components/GoogleSheetWrapper";
+import { GoogleSheetWrapper } from "@/app/(app)/environments/[environmentId]/integrations/google-sheets/components/GoogleSheetWrapper";
 
 import {
   GOOGLE_SHEETS_CLIENT_ID,
@@ -7,16 +7,16 @@ import {
   WEBAPP_URL,
 } from "@formbricks/lib/constants";
 import { getEnvironment } from "@formbricks/lib/environment/service";
-import { getSpreadSheets } from "@formbricks/lib/googleSheet/service";
 import { getIntegrations } from "@formbricks/lib/integration/service";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
 import { getSurveys } from "@formbricks/lib/survey/service";
-import { TIntegrationItem } from "@formbricks/types/integration";
 import { TIntegrationGoogleSheets } from "@formbricks/types/integration/googleSheet";
-import GoBackButton from "@formbricks/ui/GoBackButton";
+import { GoBackButton } from "@formbricks/ui/GoBackButton";
+import { PageContentWrapper } from "@formbricks/ui/PageContentWrapper";
+import { PageHeader } from "@formbricks/ui/PageHeader";
 
-export default async function GoogleSheet({ params }) {
-  const enabled = !!(GOOGLE_SHEETS_CLIENT_ID && GOOGLE_SHEETS_CLIENT_SECRET && GOOGLE_SHEETS_REDIRECT_URL);
+const Page = async ({ params }) => {
+  const isEnabled = !!(GOOGLE_SHEETS_CLIENT_ID && GOOGLE_SHEETS_CLIENT_SECRET && GOOGLE_SHEETS_REDIRECT_URL);
   const [surveys, integrations, environment] = await Promise.all([
     getSurveys(params.environmentId),
     getIntegrations(params.environmentId),
@@ -33,23 +33,22 @@ export default async function GoogleSheet({ params }) {
   const googleSheetIntegration: TIntegrationGoogleSheets | undefined = integrations?.find(
     (integration): integration is TIntegrationGoogleSheets => integration.type === "googleSheets"
   );
-  let spreadSheetArray: TIntegrationItem[] = [];
-  if (googleSheetIntegration && googleSheetIntegration.config.key) {
-    spreadSheetArray = await getSpreadSheets(params.environmentId);
-  }
+
   return (
-    <>
+    <PageContentWrapper>
       <GoBackButton url={`${WEBAPP_URL}/environments/${params.environmentId}/integrations`} />
+      <PageHeader pageTitle="Google Sheets Integration" />
       <div className="h-[75vh] w-full">
         <GoogleSheetWrapper
-          enabled={enabled}
+          isEnabled={isEnabled}
           environment={environment}
           surveys={surveys}
-          spreadSheetArray={spreadSheetArray}
           googleSheetIntegration={googleSheetIntegration}
           webAppUrl={WEBAPP_URL}
         />
       </div>
-    </>
+    </PageContentWrapper>
   );
-}
+};
+
+export default Page;

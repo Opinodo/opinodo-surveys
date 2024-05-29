@@ -1,9 +1,9 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
-import { unstable_cache } from "next/cache";
 
 import { prisma } from "@formbricks/database";
+import { TAttributes } from "@formbricks/types/attributes";
 import { ZOptionalNumber, ZString } from "@formbricks/types/common";
 import { ZId } from "@formbricks/types/environment";
 import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbricks/types/errors";
@@ -14,20 +14,31 @@ import {
   TResponseInput,
   TResponseLegacyInput,
   TResponseUpdateInput,
+  TSurveyMetaFieldFilter,
   TSurveyPersonAttributes,
-  TSurveySummary,
-  ZResponse,
   ZResponseFilterCriteria,
   ZResponseInput,
   ZResponseLegacyInput,
-  ZResponseNote,
   ZResponseUpdateInput,
 } from "@formbricks/types/responses";
+import { TSurveySummary } from "@formbricks/types/surveys";
 import { TTag } from "@formbricks/types/tags";
 
-import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL, WEBAPP_URL } from "../constants";
+import { getAttributes } from "../attribute/service";
+import { cache } from "../cache";
+import { ITEMS_PER_PAGE, WEBAPP_URL } from "../constants";
+import { displayCache } from "../display/cache";
 import { deleteDisplayByResponseId, getDisplayCountBySurveyId } from "../display/service";
-import { createPerson, getPerson, getPersonByUserId, transformPrismaPerson } from "../person/service";
+import { createPerson, getPerson, getPersonByUserId } from "../person/service";
+import { responseNoteCache } from "../responseNote/cache";
+import { getResponseNotes } from "../responseNote/service";
+import { putFile } from "../storage/service";
+import { getSurvey } from "../survey/service";
+import { captureTelemetry } from "../telemetry";
+import { convertToCsv, convertToXlsxBuffer } from "../utils/fileConversion";
+import { checkForRecallInHeadline } from "../utils/recall";
+import { validateInputs } from "../utils/validate";
+import { responseCache } from "./cache";
 import {
   buildWhereClause,
   calculateTtcTotal,
@@ -37,17 +48,7 @@ import {
   getResponsesJson,
   getSurveySummaryDropOff,
   getSurveySummaryMeta,
-} from "../response/util";
-import { responseNoteCache } from "../responseNote/cache";
-import { getResponseNotes } from "../responseNote/service";
-import { putFile } from "../storage/service";
-import { getSurvey } from "../survey/service";
-import { captureTelemetry } from "../telemetry";
-import { formatDateFields } from "../utils/datetime";
-import { convertToCsv, convertToXlsxBuffer } from "../utils/fileConversion";
-import { checkForRecallInHeadline } from "../utils/recall";
-import { validateInputs } from "../utils/validate";
-import { responseCache } from "./cache";
+} from "./utils";
 
 const RESPONSES_PER_PAGE = 10;
 
@@ -68,19 +69,6 @@ export const responseSelection = {
     select: {
       id: true,
       userId: true,
-      createdAt: true,
-      updatedAt: true,
-      environmentId: true,
-      attributes: {
-        select: {
-          value: true,
-          attributeClass: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
     },
   },
   tags: {
@@ -114,11 +102,8 @@ export const responseSelection = {
   },
 };
 
-export const getResponsesByPersonId = async (
-  personId: string,
-  page?: number
-): Promise<Array<TResponse> | null> => {
-  const responses = await unstable_cache(
+export const getResponsesByPersonId = (personId: string, page?: number): Promise<Array<TResponse> | null> =>
+  cache(
     async () => {
       validateInputs([personId, ZId], [page, ZOptionalNumber]);
 
@@ -148,7 +133,6 @@ export const getResponsesByPersonId = async (
             responses.push({
               ...response,
               notes: responseNotes,
-              person: response.person ? transformPrismaPerson(response.person) : null,
               tags: response.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
             });
           })
@@ -166,21 +150,11 @@ export const getResponsesByPersonId = async (
     [`getResponsesByPersonId-${personId}-${page}`],
     {
       tags: [responseCache.tag.byPersonId(personId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
 
-  return responses.map((response) => ({
-    ...formatDateFields(response, ZResponse),
-    notes: response.notes.map((note) => formatDateFields(note, ZResponseNote)),
-  }));
-};
-
-export const getResponseBySingleUseId = async (
-  surveyId: string,
-  singleUseId: string
-): Promise<TResponse | null> => {
-  const response = await unstable_cache(
+export const getResponseBySingleUseId = (surveyId: string, singleUseId: string): Promise<TResponse | null> =>
+  cache(
     async () => {
       validateInputs([surveyId, ZId], [singleUseId, ZString]);
 
@@ -198,7 +172,6 @@ export const getResponseBySingleUseId = async (
 
         const response: TResponse = {
           ...responsePrisma,
-          person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
           tags: responsePrisma.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
         };
 
@@ -214,26 +187,29 @@ export const getResponseBySingleUseId = async (
     [`getResponseBySingleUseId-${surveyId}-${singleUseId}`],
     {
       tags: [responseCache.tag.bySingleUseId(surveyId, singleUseId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
-
-  return response
-    ? {
-        ...formatDateFields(response, ZResponse),
-        notes: response.notes.map((note) => formatDateFields(note, ZResponseNote)),
-      }
-    : null;
-};
 
 export const createResponse = async (responseInput: TResponseInput): Promise<TResponse> => {
   validateInputs([responseInput, ZResponseInput]);
   captureTelemetry("response created");
 
-  const { environmentId, language, userId, surveyId, finished, failed, data, meta, singleUseId } =
-    responseInput;
+  const {
+    environmentId,
+    language,
+    userId,
+    surveyId,
+    finished,
+    failed,
+    data,
+    meta,
+    singleUseId,
+    ttc: initialTtc,
+  } = responseInput;
+
   try {
     let person: TPerson | null = null;
+    let attributes: TAttributes | null = null;
 
     if (userId) {
       person = await getPersonByUserId(environmentId, userId);
@@ -243,34 +219,42 @@ export const createResponse = async (responseInput: TResponseInput): Promise<TRe
       }
     }
 
-    const responsePrisma = await prisma.response.create({
-      data: {
-        survey: {
+    if (person?.id) {
+      attributes = await getAttributes(person?.id as string);
+    }
+
+    const ttc = initialTtc ? (finished ? calculateTtcTotal(initialTtc) : initialTtc) : {};
+
+    const prismaData: Prisma.ResponseCreateInput = {
+      survey: {
+        connect: {
+          id: surveyId,
+        },
+      },
+      finished: finished,
+      failed: failed,
+      data: data,
+      language: language,
+      ...(person?.id && {
+        person: {
           connect: {
-            id: surveyId,
+            id: person.id,
           },
         },
-        finished: finished,
-        failed: failed,
-        data: data,
-        language: language,
-        ...(person?.id && {
-          person: {
-            connect: {
-              id: person.id,
-            },
-          },
-          personAttributes: person?.attributes,
-        }),
-        ...(meta && ({ meta } as Prisma.JsonObject)),
-        singleUseId,
-      },
+        personAttributes: attributes,
+      }),
+      ...(meta && ({ meta } as Prisma.JsonObject)),
+      singleUseId,
+      ttc: ttc,
+    };
+
+    const responsePrisma = await prisma.response.create({
+      data: prismaData,
       select: responseSelection,
     });
 
     const response: TResponse = {
       ...responsePrisma,
-      person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
       tags: responsePrisma.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
     };
 
@@ -302,6 +286,7 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
 
   try {
     let person: TPerson | null = null;
+    let attributes: TAttributes | null = null;
 
     if (responseInput.personId) {
       person = await getPerson(responseInput.personId);
@@ -315,6 +300,11 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
             _total: ttcTemp[questionId], // Add _total property with the same value
           }
         : ttcTemp;
+
+    if (person?.id) {
+      attributes = await getAttributes(person?.id as string);
+    }
+
     const responsePrisma = await prisma.response.create({
       data: {
         survey: {
@@ -332,7 +322,7 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
               id: responseInput.personId,
             },
           },
-          personAttributes: person?.attributes,
+          personAttributes: attributes,
         }),
 
         ...(responseInput.meta && ({ meta: responseInput?.meta } as Prisma.JsonObject)),
@@ -341,9 +331,9 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
       },
       select: responseSelection,
     });
+
     const response: TResponse = {
       ...responsePrisma,
-      person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
       tags: responsePrisma.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
     };
 
@@ -366,8 +356,8 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
   }
 };
 
-export const getResponse = async (responseId: string): Promise<TResponse | null> => {
-  const response = await unstable_cache(
+export const getResponse = (responseId: string): Promise<TResponse | null> =>
+  cache(
     async () => {
       validateInputs([responseId, ZId]);
 
@@ -385,7 +375,6 @@ export const getResponse = async (responseId: string): Promise<TResponse | null>
 
         const response: TResponse = {
           ...responsePrisma,
-          person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
           tags: responsePrisma.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
         };
 
@@ -401,20 +390,11 @@ export const getResponse = async (responseId: string): Promise<TResponse | null>
     [`getResponse-${responseId}`],
     {
       tags: [responseCache.tag.byId(responseId), responseNoteCache.tag.byResponseId(responseId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
 
-  return response
-    ? ({
-        ...formatDateFields(response, ZResponse),
-        notes: response.notes.map((note) => formatDateFields(note, ZResponseNote)),
-      } as TResponse)
-    : null;
-};
-
-export const getResponsePersonAttributes = async (surveyId: string): Promise<TSurveyPersonAttributes> => {
-  const responses = await unstable_cache(
+export const getResponsePersonAttributes = (surveyId: string): Promise<TSurveyPersonAttributes> =>
+  cache(
     async () => {
       validateInputs([surveyId, ZId]);
 
@@ -452,32 +432,88 @@ export const getResponsePersonAttributes = async (surveyId: string): Promise<TSu
         throw error;
       }
     },
-    [`getAttributesFromResponses-${surveyId}`],
+    [`getResponsePersonAttributes-${surveyId}`],
     {
       tags: [responseCache.tag.bySurveyId(surveyId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
 
-  return responses;
-};
+export const getResponseMeta = (surveyId: string): Promise<TSurveyMetaFieldFilter> =>
+  cache(
+    async () => {
+      validateInputs([surveyId, ZId]);
 
-export const getResponses = async (
+      try {
+        const responseMeta = await prisma.response.findMany({
+          where: {
+            surveyId: surveyId,
+          },
+          select: {
+            meta: true,
+          },
+        });
+
+        const meta: { [key: string]: Set<string> } = {};
+
+        responseMeta.forEach((response) => {
+          Object.entries(response.meta).forEach(([key, value]) => {
+            // skip url
+            if (key === "url") return;
+
+            // Handling nested objects (like userAgent)
+            if (typeof value === "object" && value !== null) {
+              Object.entries(value).forEach(([nestedKey, nestedValue]) => {
+                if (typeof nestedValue === "string" && nestedValue) {
+                  if (!meta[nestedKey]) {
+                    meta[nestedKey] = new Set();
+                  }
+                  meta[nestedKey].add(nestedValue);
+                }
+              });
+            } else if (typeof value === "string" && value) {
+              if (!meta[key]) {
+                meta[key] = new Set();
+              }
+              meta[key].add(value);
+            }
+          });
+        });
+
+        // Convert Set to Array
+        const result = Object.fromEntries(
+          Object.entries(meta).map(([key, valueSet]) => [key, Array.from(valueSet)])
+        );
+
+        return result;
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new DatabaseError(error.message);
+        }
+        throw error;
+      }
+    },
+    [`getResponseMeta-${surveyId}`],
+    {
+      tags: [responseCache.tag.bySurveyId(surveyId)],
+    }
+  )();
+
+export const getResponses = (
   surveyId: string,
-  page?: number,
-  batchSize?: number,
+  limit?: number,
+  offset?: number,
   filterCriteria?: TResponseFilterCriteria
-): Promise<TResponse[]> => {
-  const responses = await unstable_cache(
+): Promise<TResponse[]> =>
+  cache(
     async () => {
       validateInputs(
         [surveyId, ZId],
-        [page, ZOptionalNumber],
-        [batchSize, ZOptionalNumber],
+        [limit, ZOptionalNumber],
+        [offset, ZOptionalNumber],
         [filterCriteria, ZResponseFilterCriteria.optional()]
       );
-      batchSize = batchSize ?? RESPONSES_PER_PAGE;
 
+      limit = limit ?? RESPONSES_PER_PAGE;
       try {
         const responses = await prisma.response.findMany({
           where: {
@@ -490,15 +526,14 @@ export const getResponses = async (
               createdAt: "desc",
             },
           ],
-          take: page ? batchSize : undefined,
-          skip: page ? batchSize * (page - 1) : undefined,
+          take: limit ? limit : undefined,
+          skip: offset ? offset : undefined,
         });
 
         const transformedResponses: TResponse[] = await Promise.all(
           responses.map((responsePrisma) => {
             return {
               ...responsePrisma,
-              person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
               tags: responsePrisma.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
             };
           })
@@ -513,73 +548,72 @@ export const getResponses = async (
         throw error;
       }
     },
-    [`getResponses-${surveyId}-${page}-${batchSize}-${JSON.stringify(filterCriteria)}`],
+    [`getResponses-${surveyId}-${limit}-${offset}-${JSON.stringify(filterCriteria)}`],
     {
       tags: [responseCache.tag.bySurveyId(surveyId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
-  return responses.map((response) => ({
-    ...formatDateFields(response, ZResponse),
-    notes: response.notes.map((note) => formatDateFields(note, ZResponseNote)),
-  }));
-};
 
 export const getSurveySummary = (
   surveyId: string,
   filterCriteria?: TResponseFilterCriteria
-): Promise<TSurveySummary> => {
-  const summary = unstable_cache(
+): Promise<TSurveySummary> =>
+  cache(
     async () => {
       validateInputs([surveyId, ZId], [filterCriteria, ZResponseFilterCriteria.optional()]);
 
-      const survey = await getSurvey(surveyId);
+      try {
+        const survey = await getSurvey(surveyId);
 
-      if (!survey) {
-        throw new ResourceNotFoundError("Survey", surveyId);
+        if (!survey) {
+          throw new ResourceNotFoundError("Survey", surveyId);
+        }
+
+        const batchSize = 3000;
+        const responseCount = await getResponseCountBySurveyId(surveyId, filterCriteria);
+        const pages = Math.ceil(responseCount / batchSize);
+
+        const responsesArray = await Promise.all(
+          Array.from({ length: pages }, (_, i) => {
+            return getResponses(surveyId, batchSize, i * batchSize, filterCriteria);
+          })
+        );
+        const responses = responsesArray.flat();
+
+        const displayCount = await getDisplayCountBySurveyId(surveyId, {
+          createdAt: filterCriteria?.createdAt,
+        });
+
+        const dropOff = getSurveySummaryDropOff(survey, responses, displayCount);
+        const meta = getSurveySummaryMeta(responses, displayCount);
+        const questionWiseSummary = getQuestionWiseSummary(
+          checkForRecallInHeadline(survey, "default"),
+          responses,
+          dropOff
+        );
+
+        return { meta, dropOff, summary: questionWiseSummary };
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new DatabaseError(error.message);
+        }
+
+        throw error;
       }
-
-      const batchSize = 3000;
-      const responseCount = await getResponseCountBySurveyId(surveyId, filterCriteria);
-      const pages = Math.ceil(responseCount / batchSize);
-
-      const responsesArray = await Promise.all(
-        Array.from({ length: pages }, (_, i) => {
-          return getResponses(surveyId, i + 1, batchSize, filterCriteria);
-        })
-      );
-      const responses = responsesArray.flat();
-
-      const displayCount = await getDisplayCountBySurveyId(surveyId, {
-        createdAt: filterCriteria?.createdAt,
-      });
-
-      const meta = getSurveySummaryMeta(responses, displayCount);
-      const dropOff = getSurveySummaryDropOff(survey, responses, displayCount);
-      const questionWiseSummary = getQuestionWiseSummary(
-        checkForRecallInHeadline(survey, "default"),
-        responses
-      );
-
-      return { meta, dropOff, summary: questionWiseSummary };
     },
     [`getSurveySummary-${surveyId}-${JSON.stringify(filterCriteria)}`],
     {
-      tags: [responseCache.tag.bySurveyId(surveyId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
+      tags: [responseCache.tag.bySurveyId(surveyId), displayCache.tag.bySurveyId(surveyId)],
     }
   )();
-
-  return summary;
-};
 
 export const getResponseDownloadUrl = async (
   surveyId: string,
   format: "csv" | "xlsx",
   filterCriteria?: TResponseFilterCriteria
 ): Promise<string> => {
+  validateInputs([surveyId, ZId], [format, ZString], [filterCriteria, ZResponseFilterCriteria.optional()]);
   try {
-    validateInputs([surveyId, ZId], [format, ZString], [filterCriteria, ZResponseFilterCriteria.optional()]);
     const survey = await getSurvey(surveyId);
 
     if (!survey) {
@@ -595,7 +629,7 @@ export const getResponseDownloadUrl = async (
 
     const responsesArray = await Promise.all(
       Array.from({ length: pages }, (_, i) => {
-        return getResponses(surveyId, i + 1, batchSize, filterCriteria);
+        return getResponses(surveyId, batchSize, i * batchSize, filterCriteria);
       })
     );
     const responses = responsesArray.flat();
@@ -644,13 +678,14 @@ export const getResponseDownloadUrl = async (
   }
 };
 
-export const getResponsesByEnvironmentId = async (
+export const getResponsesByEnvironmentId = (
   environmentId: string,
-  page?: number
-): Promise<TResponse[]> => {
-  const responses = await unstable_cache(
+  limit?: number,
+  offset?: number
+): Promise<TResponse[]> =>
+  cache(
     async () => {
-      validateInputs([environmentId, ZId], [page, ZOptionalNumber]);
+      validateInputs([environmentId, ZId], [limit, ZOptionalNumber], [offset, ZOptionalNumber]);
 
       try {
         const responses = await prisma.response.findMany({
@@ -666,15 +701,14 @@ export const getResponsesByEnvironmentId = async (
               createdAt: "desc",
             },
           ],
-          take: page ? ITEMS_PER_PAGE : undefined,
-          skip: page ? ITEMS_PER_PAGE * (page - 1) : undefined,
+          take: limit ? limit : undefined,
+          skip: offset ? offset : undefined,
         });
 
         const transformedResponses: TResponse[] = await Promise.all(
           responses.map(async (responsePrisma) => {
             return {
               ...responsePrisma,
-              person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
               tags: responsePrisma.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
             };
           })
@@ -689,18 +723,11 @@ export const getResponsesByEnvironmentId = async (
         throw error;
       }
     },
-    [`getResponsesByEnvironmentId-${environmentId}`],
+    [`getResponsesByEnvironmentId-${environmentId}-${limit}-${offset}`],
     {
       tags: [responseCache.tag.byEnvironmentId(environmentId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
-
-  return responses.map((response) => ({
-    ...formatDateFields(response, ZResponse),
-    notes: response.notes.map((note) => formatDateFields(note, ZResponseNote)),
-  }));
-};
 
 export const updateResponse = async (
   responseId: string,
@@ -753,7 +780,6 @@ export const updateResponse = async (
 
     const response: TResponse = {
       ...responsePrisma,
-      person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
       tags: responsePrisma.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
     };
 
@@ -791,7 +817,6 @@ export const deleteResponse = async (responseId: string): Promise<TResponse> => 
     const response: TResponse = {
       ...responsePrisma,
       notes: responseNotes,
-      person: responsePrisma.person ? transformPrismaPerson(responsePrisma.person) : null,
       tags: responsePrisma.tags.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
     };
 
@@ -820,11 +845,11 @@ export const deleteResponse = async (responseId: string): Promise<TResponse> => 
   }
 };
 
-export const getResponseCountBySurveyId = async (
+export const getResponseCountBySurveyId = (
   surveyId: string,
   filterCriteria?: TResponseFilterCriteria
 ): Promise<number> =>
-  unstable_cache(
+  cache(
     async () => {
       validateInputs([surveyId, ZId], [filterCriteria, ZResponseFilterCriteria.optional()]);
 
@@ -837,12 +862,15 @@ export const getResponseCountBySurveyId = async (
         });
         return responseCount;
       } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          throw new DatabaseError(error.message);
+        }
+
         throw error;
       }
     },
     [`getResponseCountBySurveyId-${surveyId}-${JSON.stringify(filterCriteria)}`],
     {
       tags: [responseCache.tag.bySurveyId(surveyId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();

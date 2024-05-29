@@ -8,27 +8,26 @@
   font-size: 16px;
 }
 
-/* Firefox */
-#fbjs * {
-  scrollbar-width: thin;
-  scrollbar-color: #e2e8f0;
-}
-
 /* Chrome, Edge, and Safari */
 #fbjs *::-webkit-scrollbar {
-  width: 8px;
-  border-radius: 99px;
+  width: 6px;
+  background: transparent;
 }
 
 #fbjs *::-webkit-scrollbar-track {
-  background: #e2e8f0;
-  border-radius: 99px;
+  background: transparent;
 }
 
 #fbjs *::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border: 3px solid #cbd5e1;
-  border-radius: 99px;
+  background-color: var(--fb-brand-color);
+  border: none;
+  border-radius: 10px;
+}
+
+/* Firefox */
+#fbjs * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fb-brand-color) transparent;
 }
 
 /* this is for styling the HtmlBody component */
@@ -40,6 +39,7 @@
 /* without this, it wont override the color */
 p.fb-editor-paragraph {
   color: var(--fb-subheading-color) !important;
+  overflow-wrap: break-word;
 }
 
 .fb-survey-shadow {
@@ -82,7 +82,7 @@ p.fb-editor-paragraph {
   --fb-accent-background-color: var(--slate-200);
   --fb-accent-background-color-selected: var(--slate-100);
   --fb-input-background-color: var(--slate-50);
-  --fb-input-background-color-selected: var(--slate-100);
+  --fb-input-background-color-selected: var(--slate-200);
   --fb-placeholder-color: var(--slate-400);
   --fb-shadow-color: var(--slate-300);
   --fb-rating-fill: var(--yellow-300);
@@ -102,5 +102,20 @@ p.fb-editor-paragraph {
   }
   to {
     width: 0%;
+  }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* Internet Explorer 10+ */
+  scrollbar-width: thin !important;     /* Firefox */
+  scrollbar-color: transparent transparent !important; /* Firefox */
+
+  /* Chrome, Edge, and Safari */
+  &::-webkit-scrollbar {
+    width: 0 !important;
+    background: transparent !important;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: transparent !important;
   }
 }

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import z from "zod";
 
 import { cn } from "@formbricks/lib/cn";
+import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import {
   convertOperatorToText,
   convertOperatorToTitle,
@@ -485,7 +486,7 @@ const PersonSegmentFilter = ({
   );
 };
 
-const BasicSegmentFilter = ({
+export const BasicSegmentFilter = ({
   resource,
   connector,
   environmentId,
@@ -545,5 +546,3 @@ const BasicSegmentFilter = ({
       return null;
   }
 };
-
-export default BasicSegmentFilter;

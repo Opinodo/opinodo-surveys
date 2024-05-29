@@ -9,7 +9,7 @@ import { AIRTABLE_CLIENT_ID, WEBAPP_URL } from "@formbricks/lib/constants";
 import { hasUserEnvironmentAccess } from "@formbricks/lib/environment/auth";
 import logger from "@formbricks/lib/log";
 
-async function getEmail(token: string) {
+const getEmail = async (token: string) => {
   const req_ = await fetch("https://api.airtable.com/v0/meta/whoami", {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -19,9 +19,9 @@ async function getEmail(token: string) {
   const res_ = await req_.json();
 
   return z.string().parse(res_?.email);
-}
+};
 
-export async function GET(req: NextRequest) {
+export const GET = async (req: NextRequest) => {
   const url = req.url;
   const queryParams = new URLSearchParams(url.split("?")[1]); // Split the URL and get the query parameters
   const environmentId = queryParams.get("state"); // Get the value of the 'state' parameter
@@ -77,4 +77,4 @@ export async function GET(req: NextRequest) {
     responses.internalServerErrorResponse(error);
   }
   responses.badRequestResponse("unknown error occurred");
-}
+};

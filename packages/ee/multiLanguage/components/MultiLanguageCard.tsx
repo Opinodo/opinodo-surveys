@@ -4,10 +4,12 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 import { ArrowUpRight, Languages } from "lucide-react";
 import Link from "next/link";
 import { FC, useState } from "react";
+import toast from "react-hot-toast";
 
 import { cn } from "@formbricks/lib/cn";
+import { extractLanguageCodes, translateSurvey } from "@formbricks/lib/i18n/utils";
 import { TLanguage, TProduct } from "@formbricks/types/product";
-import { TSurvey, TSurveyLanguage } from "@formbricks/types/surveys";
+import { TSurvey, TSurveyLanguage, ZSurvey } from "@formbricks/types/surveys";
 import { Button } from "@formbricks/ui/Button";
 import { ConfirmationModal } from "@formbricks/ui/ConfirmationModal";
 import { Label } from "@formbricks/ui/Label";
@@ -69,6 +71,18 @@ export const MultiLanguageCard: FC<MultiLanguageCardProps> = ({
     }
   };
 
+  const updateSurveyTranslations = (survey: TSurvey, updatedLanguages: TSurveyLanguage[]) => {
+    const translatedSurveyResult = translateSurvey(survey, extractLanguageCodes(updatedLanguages));
+    try {
+      const parsedSurvey = ZSurvey.parse(translatedSurveyResult);
+      if (parsedSurvey) {
+        setLocalSurvey({ ...parsedSurvey, languages: updatedLanguages });
+      }
+    } catch (error) {
+      toast.error("Some error occured while translating the survey");
+    }
+  };
+
   const updateSurveyLanguages = (language: TLanguage) => {
     let updatedLanguages = localSurvey.languages;
     const languageIndex = localSurvey.languages.findIndex(
@@ -81,9 +95,16 @@ export const MultiLanguageCard: FC<MultiLanguageCardProps> = ({
       );
     } else {
       // Add the new language
-      updatedLanguages = [...updatedLanguages, { enabled: true, default: false, language }];
+      updatedLanguages = [
+        ...updatedLanguages,
+        {
+          enabled: true,
+          default: false,
+          language,
+        },
+      ];
     }
-    updateSurvey({ languages: updatedLanguages });
+    updateSurveyTranslations(localSurvey, updatedLanguages);
   };
 
   const updateSurvey = (data: { languages: TSurveyLanguage[] }) => {
@@ -108,7 +129,11 @@ export const MultiLanguageCard: FC<MultiLanguageCardProps> = ({
 
       if (!languageExists) {
         // If the language doesn't exist, add it as the default
-        newLanguages.push({ enabled: true, default: true, language });
+        newLanguages.push({
+          enabled: true,
+          default: true,
+          language,
+        });
       }
 
       setDefaultLanguage(language);
@@ -127,7 +152,7 @@ export const MultiLanguageCard: FC<MultiLanguageCardProps> = ({
           buttonText: "Remove translations",
           buttonVariant: "warn",
           onConfirm: () => {
-            setLocalSurvey({ ...localSurvey, languages: [] });
+            updateSurveyTranslations(localSurvey, []);
             setIsMultiLanguageActivated(false);
             setDefaultLanguage(undefined);
             setConfirmationModalInfo({ ...confirmationModalInfo, open: false });
@@ -176,8 +201,7 @@ export const MultiLanguageCard: FC<MultiLanguageCardProps> = ({
               <Switch
                 id="multi-lang-toggle"
                 checked={isMultiLanguageActivated}
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   handleActivationSwitchLogic();
                 }}
                 disabled={!isMultiLanguageAllowed || product.languages.length === 0}
@@ -229,7 +253,7 @@ export const MultiLanguageCard: FC<MultiLanguageCardProps> = ({
                   </div>
                 )}
 
-                <Link href={`/environments/${environmentId}/settings/language`} target="_blank">
+                <Link href={`/environments/${environmentId}/product/languages`} target="_blank">
                   <Button className="mt-2" variant="secondary" size="sm">
                     Manage Languages <ArrowUpRight className="ml-2 h-4 w-4" />
                   </Button>

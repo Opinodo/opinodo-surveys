@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, PauseIcon, PencilIcon } from "lucide-react";
+import { CheckIcon, ClockIcon, PauseIcon, PencilIcon } from "lucide-react";
 
 import { TSurvey } from "@formbricks/types/surveys";
 
@@ -11,7 +11,7 @@ interface SurveyStatusIndicatorProps {
   tooltip?: boolean;
 }
 
-export function SurveyStatusIndicator({ status, tooltip }: SurveyStatusIndicatorProps) {
+export const SurveyStatusIndicator = ({ status, tooltip }: SurveyStatusIndicatorProps) => {
   if (tooltip) {
     return (
       <TooltipProvider>
@@ -22,6 +22,11 @@ export function SurveyStatusIndicator({ status, tooltip }: SurveyStatusIndicator
                 <span className="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500"></span>
               </span>
+            )}
+            {status === "scheduled" && (
+              <div className=" rounded-full bg-slate-300 p-1">
+                <ClockIcon className="h-3 w-3 text-slate-600" />
+              </div>
             )}
             {status === "paused" && (
               <div className=" rounded-full bg-slate-300 p-1">
@@ -48,6 +53,13 @@ export function SurveyStatusIndicator({ status, tooltip }: SurveyStatusIndicator
                     <span className="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
                     <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500"></span>
                   </span>
+                </>
+              ) : status === "scheduled" ? (
+                <>
+                  <span className="text-slate-800">Survey scheduled.</span>
+                  <div className=" rounded-full bg-slate-300 p-1">
+                    <ClockIcon className="h-3 w-3 text-slate-600" />
+                  </div>
                 </>
               ) : status === "paused" ? (
                 <>
@@ -78,6 +90,11 @@ export function SurveyStatusIndicator({ status, tooltip }: SurveyStatusIndicator
             <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500"></span>
           </span>
         )}
+        {status === "scheduled" && (
+          <div className="rounded-full bg-slate-300 p-1">
+            <ClockIcon className="h-3 w-3 text-slate-600" />
+          </div>
+        )}
         {status === "paused" && (
           <div className="rounded-full bg-slate-300 p-1">
             <PauseIcon className="h-3 w-3 text-slate-600" />
@@ -95,4 +112,4 @@ export function SurveyStatusIndicator({ status, tooltip }: SurveyStatusIndicator
         )}
       </span>
     );
-}
+};

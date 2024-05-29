@@ -3,22 +3,17 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
-import { unstable_cache } from "next/cache";
 
 import { prisma } from "@formbricks/database";
-import {
-  TActionClass,
-  TActionClassInput,
-  ZActionClass,
-  ZActionClassInput,
-} from "@formbricks/types/actionClasses";
+import { TActionClass, TActionClassInput, ZActionClassInput } from "@formbricks/types/actionClasses";
 import { ZOptionalNumber, ZString } from "@formbricks/types/common";
 import { ZId } from "@formbricks/types/environment";
 import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 
-import { ITEMS_PER_PAGE, SERVICES_REVALIDATION_INTERVAL } from "../constants";
+import { cache } from "../cache";
+import { ITEMS_PER_PAGE } from "../constants";
 import logger from "../log";
-import { formatDateFields } from "../utils/datetime";
+import { structuredClone } from "../pollyfills/structuredClone";
 import { validateInputs } from "../utils/validate";
 import { actionClassCache } from "./cache";
 
@@ -29,17 +24,18 @@ const select = {
   name: true,
   description: true,
   type: true,
+  key: true,
   noCodeConfig: true,
   environmentId: true,
 };
 
-export const getActionClasses = async (environmentId: string, page?: number): Promise<TActionClass[]> => {
-  const actionClasses = await unstable_cache(
+export const getActionClasses = (environmentId: string, page?: number): Promise<TActionClass[]> =>
+  cache(
     async () => {
       validateInputs([environmentId, ZId], [page, ZOptionalNumber]);
 
       try {
-        const actionClasses = await prisma.actionClass.findMany({
+        return await prisma.actionClass.findMany({
           where: {
             environmentId: environmentId,
           },
@@ -50,7 +46,6 @@ export const getActionClasses = async (environmentId: string, page?: number): Pr
             createdAt: "asc",
           },
         });
-        return actionClasses.map((actionClass) => formatDateFields(actionClass, ZActionClass));
       } catch (error) {
         throw new DatabaseError(`Database error when fetching actions for environment ${environmentId}`);
       }
@@ -58,17 +53,15 @@ export const getActionClasses = async (environmentId: string, page?: number): Pr
     [`getActionClasses-${environmentId}-${page}`],
     {
       tags: [actionClassCache.tag.byEnvironmentId(environmentId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
-  return actionClasses.map((actionClass) => formatDateFields(actionClass, ZActionClass));
-};
 
-export const getActionClassByEnvironmentIdAndName = async (
+// This function is used to get an action by its name and environmentId(it can return private actions as well)
+export const getActionClassByEnvironmentIdAndName = (
   environmentId: string,
   name: string
-): Promise<TActionClass | null> => {
-  const actionClass = await unstable_cache(
+): Promise<TActionClass | null> =>
+  cache(
     async () => {
       validateInputs([environmentId, ZId], [name, ZString]);
 
@@ -86,17 +79,14 @@ export const getActionClassByEnvironmentIdAndName = async (
         throw new DatabaseError(`Database error when fetching action`);
       }
     },
-    [`getActionClass-${environmentId}-${name}`],
+    [`getActionClassByEnvironmentIdAndName-${environmentId}-${name}`],
     {
       tags: [actionClassCache.tag.byNameAndEnvironmentId(name, environmentId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
-  return actionClass ? formatDateFields(actionClass, ZActionClass) : null;
-};
 
-export const getActionClass = async (actionClassId: string): Promise<TActionClass | null> => {
-  const actionClass = await unstable_cache(
+export const getActionClass = (actionClassId: string): Promise<TActionClass | null> =>
+  cache(
     async () => {
       validateInputs([actionClassId, ZId]);
 
@@ -116,11 +106,8 @@ export const getActionClass = async (actionClassId: string): Promise<TActionClas
     [`getActionClass-${actionClassId}`],
     {
       tags: [actionClassCache.tag.byId(actionClassId)],
-      revalidate: SERVICES_REVALIDATION_INTERVAL,
     }
   )();
-  return actionClass ? formatDateFields(actionClass, ZActionClass) : null;
-};
 
 export const deleteActionClass = async (
   environmentId: string,
@@ -163,6 +150,7 @@ export const createActionClass = async (
         name: actionClass.name,
         description: actionClass.description,
         type: actionClass.type,
+        key: actionClass.type === "code" ? actionClass.key : undefined,
         noCodeConfig: actionClass.noCodeConfig ? structuredClone(actionClass.noCodeConfig) : undefined,
         environment: { connect: { id: environmentId } },
       },
@@ -178,6 +166,12 @@ export const createActionClass = async (
     return actionClassPrisma;
   } catch (error) {
     logger.error(error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new DatabaseError(
+        `Action with ${error.meta?.target?.[0]} ${actionClass[error.meta?.target?.[0]]} already exists`
+      );
+    }
+
     throw new DatabaseError(`Database error when creating an action for environment ${environmentId}`);
   }
 };
@@ -198,9 +192,14 @@ export const updateActionClass = async (
         name: inputActionClass.name,
         description: inputActionClass.description,
         type: inputActionClass.type,
-        noCodeConfig: inputActionClass.noCodeConfig
-          ? structuredClone(inputActionClass.noCodeConfig)
-          : undefined,
+
+        ...(inputActionClass.type === "code"
+          ? { key: inputActionClass.key }
+          : {
+              noCodeConfig: inputActionClass.noCodeConfig
+                ? structuredClone(inputActionClass.noCodeConfig)
+                : undefined,
+            }),
       },
       select,
     });
@@ -214,6 +213,12 @@ export const updateActionClass = async (
 
     return result;
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new DatabaseError(
+        `Action with ${error.meta?.target?.[0]} ${inputActionClass[error.meta?.target?.[0]]} already exists`
+      );
+    }
+
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       throw new DatabaseError(error.message);
     }

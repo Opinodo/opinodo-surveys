@@ -8,9 +8,6 @@ export const env = createEnv({
    */
   server: {
     AIRTABLE_CLIENT_ID: z.string().optional(),
-    AWS_ACCESS_KEY_ID: z.string().optional(),
-    AWS_SECRET_ACCESS_KEY: z.string().optional(),
-    AWS_REGION: z.string().optional(),
     AZUREAD_CLIENT_ID: z.string().optional(),
     AZUREAD_CLIENT_SECRET: z.string().optional(),
     AZUREAD_TENANT_ID: z.string().optional(),
@@ -21,6 +18,7 @@ export const env = createEnv({
     DEBUG: z.enum(["1", "0"]).optional(),
     DEFAULT_TEAM_ID: z.string().optional(),
     DEFAULT_TEAM_ROLE: z.enum(["owner", "admin", "editor", "developer", "viewer"]).optional(),
+    E2E_TESTING: z.enum(["1", "0"]).optional(),
     EMAIL_AUTH_DISABLED: z.enum(["1", "0"]).optional(),
     EMAIL_VERIFICATION_DISABLED: z.enum(["1", "0"]).optional(),
     ENCRYPTION_KEY: z.string().length(64).or(z.string().length(32)),
@@ -52,6 +50,8 @@ export const env = createEnv({
     OIDC_SIGNING_ALGORITHM: z.string().optional(),
     OPENTELEMETRY_LISTENER_URL: z.string().optional(),
     ONBOARDING_DISABLED: z.enum(["1", "0"]).optional(),
+    REDIS_URL: z.string().optional(),
+    REDIS_HTTP_URL: z.string().optional(),
     PASSWORD_RESET_DISABLED: z.enum(["1", "0"]).optional(),
     PRIVACY_URL: z
       .string()
@@ -66,6 +66,8 @@ export const env = createEnv({
     S3_ENDPOINT_URL: z.string().optional(),
     SHORT_URL_BASE: z.string().url().optional().or(z.string().length(0)),
     SIGNUP_DISABLED: z.enum(["1", "0"]).optional(),
+    SLACK_CLIENT_ID: z.string().optional(),
+    SLACK_CLIENT_SECRET: z.string().optional(),
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PASSWORD: z.string().min(1).optional(),
     SMTP_PORT: z.string().min(1).optional(),
@@ -82,6 +84,7 @@ export const env = createEnv({
     UPLOADS_DIR: z.string().min(1).optional(),
     VERCEL_URL: z.string().optional(),
     WEBAPP_URL: z.string().url().optional(),
+    UNSPLASH_ACCESS_KEY: z.string().optional(),
   },
 
   /*
@@ -109,9 +112,6 @@ export const env = createEnv({
    */
   runtimeEnv: {
     AIRTABLE_CLIENT_ID: process.env.AIRTABLE_CLIENT_ID,
-    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
-    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-    AWS_REGION: process.env.AWS_REGION,
     AZUREAD_CLIENT_ID: process.env.AZUREAD_CLIENT_ID,
     AZUREAD_CLIENT_SECRET: process.env.AZUREAD_CLIENT_SECRET,
     AZUREAD_TENANT_ID: process.env.AZUREAD_TENANT_ID,
@@ -122,6 +122,7 @@ export const env = createEnv({
     DEBUG: process.env.DEBUG,
     DEFAULT_TEAM_ID: process.env.DEFAULT_TEAM_ID,
     DEFAULT_TEAM_ROLE: process.env.DEFAULT_TEAM_ROLE,
+    E2E_TESTING: process.env.E2E_TESTING,
     EMAIL_AUTH_DISABLED: process.env.EMAIL_AUTH_DISABLED,
     EMAIL_VERIFICATION_DISABLED: process.env.EMAIL_VERIFICATION_DISABLED,
     ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
@@ -155,6 +156,8 @@ export const env = createEnv({
     OIDC_ISSUER: process.env.OIDC_ISSUER,
     OIDC_SIGNING_ALGORITHM: process.env.OIDC_SIGNING_ALGORITHM,
     ONBOARDING_DISABLED: process.env.ONBOARDING_DISABLED,
+    REDIS_URL: process.env.REDIS_URL,
+    REDIS_HTTP_URL: process.env.REDIS_HTTP_URL,
     PASSWORD_RESET_DISABLED: process.env.PASSWORD_RESET_DISABLED,
     PRIVACY_URL: process.env.PRIVACY_URL,
     RATE_LIMITING_DISABLED: process.env.RATE_LIMITING_DISABLED,
@@ -165,6 +168,8 @@ export const env = createEnv({
     S3_ENDPOINT_URL: process.env.S3_ENDPOINT_URL,
     SHORT_URL_BASE: process.env.SHORT_URL_BASE,
     SIGNUP_DISABLED: process.env.SIGNUP_DISABLED,
+    SLACK_CLIENT_ID: process.env.SLACK_CLIENT_ID,
+    SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET,
     SMTP_HOST: process.env.SMTP_HOST,
     SMTP_PASSWORD: process.env.SMTP_PASSWORD,
     SMTP_PORT: process.env.SMTP_PORT,
@@ -177,5 +182,6 @@ export const env = createEnv({
     UPLOADS_DIR: process.env.UPLOADS_DIR,
     VERCEL_URL: process.env.VERCEL_URL,
     WEBAPP_URL: process.env.WEBAPP_URL,
+    UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
   },
 });

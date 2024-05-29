@@ -12,9 +12,9 @@ import { Button } from "@formbricks/ui/Button";
 import { Dialog, DialogContent } from "@formbricks/ui/Dialog";
 import { ShareSurveyLink } from "@formbricks/ui/ShareSurveyLink";
 
-import EmailTab from "./shareEmbedTabs/EmailTab";
-import LinkTab from "./shareEmbedTabs/LinkTab";
-import WebpageTab from "./shareEmbedTabs/WebpageTab";
+import { EmailTab } from "./shareEmbedTabs/EmailTab";
+import { LinkTab } from "./shareEmbedTabs/LinkTab";
+import { WebpageTab } from "./shareEmbedTabs/WebpageTab";
 
 interface ShareEmbedSurveyProps {
   survey: TSurvey;
@@ -23,7 +23,7 @@ interface ShareEmbedSurveyProps {
   webAppUrl: string;
   user: TUser;
 }
-export default function ShareEmbedSurvey({ survey, open, setOpen, webAppUrl, user }: ShareEmbedSurveyProps) {
+export const ShareEmbedSurvey = ({ survey, open, setOpen, webAppUrl, user }: ShareEmbedSurveyProps) => {
   const router = useRouter();
   const environmentId = survey.environmentId;
   const isSingleUseLinkSurvey = survey.singleUse?.enabled ?? false;
@@ -54,7 +54,7 @@ export default function ShareEmbedSurvey({ survey, open, setOpen, webAppUrl, use
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className=" w-full max-w-xl bg-white p-0 md:max-w-3xl lg:h-[700px] lg:max-w-5xl">
+      <DialogContent className="w-full max-w-xl bg-white p-0 md:max-w-3xl lg:h-[700px] lg:max-w-5xl">
         {showInitialPage ? (
           <div className="h-full max-w-full overflow-hidden">
             <div className="flex h-[200px] w-full flex-col items-center justify-center space-y-6 p-8 text-center lg:h-2/5">
@@ -124,7 +124,7 @@ export default function ShareEmbedSurvey({ survey, open, setOpen, webAppUrl, use
                 ))}
               </div>
               <div className="col-span-4 h-full overflow-y-auto bg-slate-50 px-4 py-6 lg:col-span-3 lg:p-6">
-                <div className="">
+                <div>
                   {activeId === "email" ? (
                     <EmailTab surveyId={survey.id} email={email} />
                   ) : activeId === "webpage" ? (
@@ -161,4 +161,4 @@ export default function ShareEmbedSurvey({ survey, open, setOpen, webAppUrl, use
       </DialogContent>
     </Dialog>
   );
-}
+};

@@ -95,5 +95,3 @@ export class SurveyState {
     this.responseAcc = { finished: false, failed: false, data: {}, ttc: {} };
   }
 }
-
-export default SurveyState;

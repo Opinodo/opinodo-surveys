@@ -6,16 +6,17 @@ import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
 import { cn } from "@formbricks/lib/cn";
+import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import { TActionClass } from "@formbricks/types/actionClasses";
 import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TBaseFilter, TSegment, TSegmentWithSurveyNames, ZSegmentFilters } from "@formbricks/types/segment";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
-import ConfirmDeleteSegmentModal from "@formbricks/ui/Targeting/ConfirmDeleteSegmentModal";
+import { ConfirmDeleteSegmentModal } from "@formbricks/ui/Targeting/ConfirmDeleteSegmentModal";
 
 import { deleteSegmentAction, updateSegmentAction } from "../lib/actions";
-import AddFilterModal from "./AddFilterModal";
-import SegmentEditor from "./SegmentEditor";
+import { AddFilterModal } from "./AddFilterModal";
+import { SegmentEditor } from "./SegmentEditor";
 
 type TSegmentSettingsTabProps = {
   environmentId: string;
@@ -26,7 +27,7 @@ type TSegmentSettingsTabProps = {
   actionClasses: TActionClass[];
 };
 
-const SegmentSettings = ({
+export const SegmentSettings = ({
   environmentId,
   initialSegment,
   setOpen,
@@ -245,5 +246,3 @@ const SegmentSettings = ({
     </>
   );
 };
-
-export default SegmentSettings;

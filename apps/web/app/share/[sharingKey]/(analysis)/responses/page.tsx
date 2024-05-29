@@ -1,16 +1,17 @@
-import ResponsePage from "@/app/share/[sharingKey]/(analysis)/responses/components/ResponsePage";
+import { SurveyAnalysisNavigation } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/components/SurveyAnalysisNavigation";
+import { ResponsePage } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/responses/components/ResponsePage";
 import { notFound } from "next/navigation";
 
-import { RESPONSES_PER_PAGE, REVALIDATION_INTERVAL, WEBAPP_URL } from "@formbricks/lib/constants";
+import { RESPONSES_PER_PAGE, WEBAPP_URL } from "@formbricks/lib/constants";
 import { getEnvironment } from "@formbricks/lib/environment/service";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
-import { getResponsePersonAttributes } from "@formbricks/lib/response/service";
+import { getResponseCountBySurveyId } from "@formbricks/lib/response/service";
 import { getSurvey, getSurveyIdByResultShareKey } from "@formbricks/lib/survey/service";
 import { getTagsByEnvironmentId } from "@formbricks/lib/tag/service";
+import { PageContentWrapper } from "@formbricks/ui/PageContentWrapper";
+import { PageHeader } from "@formbricks/ui/PageHeader";
 
-export const revalidate = REVALIDATION_INTERVAL;
-
-export default async function Page({ params }) {
+const Page = async ({ params }) => {
   const surveyId = await getSurveyIdByResultShareKey(params.sharingKey);
 
   if (!surveyId) {
@@ -34,21 +35,31 @@ export default async function Page({ params }) {
   }
 
   const tags = await getTagsByEnvironmentId(environment.id);
-  const attributes = await getResponsePersonAttributes(surveyId);
+  const totalResponseCount = await getResponseCountBySurveyId(surveyId);
 
   return (
-    <>
-      <ResponsePage
-        environment={environment}
-        survey={survey}
-        surveyId={surveyId}
-        webAppUrl={WEBAPP_URL}
-        product={product}
-        sharingKey={params.sharingKey}
-        environmentTags={tags}
-        attributes={attributes}
-        responsesPerPage={RESPONSES_PER_PAGE}
-      />
-    </>
+    <div className="flex w-full justify-center">
+      <PageContentWrapper className="w-full">
+        <PageHeader pageTitle={survey.name}>
+          <SurveyAnalysisNavigation
+            surveyId={survey.id}
+            environmentId={environment.id}
+            activeId="summary"
+            responseCount={totalResponseCount}
+          />
+        </PageHeader>
+        <ResponsePage
+          environment={environment}
+          survey={survey}
+          surveyId={surveyId}
+          webAppUrl={WEBAPP_URL}
+          environmentTags={tags}
+          responsesPerPage={RESPONSES_PER_PAGE}
+          totalResponseCount={totalResponseCount}
+        />
+      </PageContentWrapper>
+    </div>
   );
-}
+};
+
+export default Page;

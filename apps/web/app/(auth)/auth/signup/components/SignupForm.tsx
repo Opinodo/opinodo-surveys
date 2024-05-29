@@ -3,7 +3,7 @@
 import { AzureButton } from "@/app/(auth)/auth/components/AzureButton";
 import { GithubButton } from "@/app/(auth)/auth/components/GithubButton";
 import { GoogleButton } from "@/app/(auth)/auth/components/GoogleButton";
-import IsPasswordValid from "@/app/(auth)/auth/components/IsPasswordValid";
+import { IsPasswordValid } from "@/app/(auth)/auth/components/IsPasswordValid";
 import { OpenIdButton } from "@/app/(auth)/auth/components/OpenIdButton";
 import { createUser } from "@/app/lib/users/users";
 import { XCircleIcon } from "lucide-react";
@@ -183,24 +183,31 @@ export const SignupForm = ({
                   <IsPasswordValid password={password} setIsValid={setIsValid} />
                 </div>
               )}
-              <Button
-                onClick={(e: any) => {
-                  e.preventDefault();
-                  if (!showLogin) {
+              {showLogin && (
+                <Button
+                  type="submit"
+                  variant="darkCTA"
+                  className="w-full justify-center"
+                  loading={signingUp}
+                  disabled={formRef.current ? !isButtonEnabled || !isValid : !isButtonEnabled}>
+                  Continue with Email
+                </Button>
+              )}
+
+              {!showLogin && (
+                <Button
+                  type="button"
+                  onClick={() => {
                     setShowLogin(true);
                     setButtonEnabled(false);
                     // Add a slight delay before focusing the input field to ensure it's visible
                     setTimeout(() => nameRef.current?.focus(), 100);
-                  } else if (formRef.current) {
-                    formRef.current.requestSubmit();
-                  }
-                }}
-                variant="darkCTA"
-                className="w-full justify-center"
-                loading={signingUp}
-                disabled={formRef.current ? !isButtonEnabled || !isValid : !isButtonEnabled}>
-                Continue with Email
-              </Button>
+                  }}
+                  variant="darkCTA"
+                  className="w-full justify-center">
+                  Continue with Email
+                </Button>
+              )}
             </form>
           )}
           {googleOAuthEnabled && (

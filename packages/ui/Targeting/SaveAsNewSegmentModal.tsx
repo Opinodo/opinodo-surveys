@@ -1,7 +1,7 @@
 "use client";
 
 import { UsersIcon } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
@@ -28,7 +28,7 @@ type SaveAsNewSegmentModalForm = {
   description?: string;
 };
 
-const SaveAsNewSegmentModal: React.FC<SaveAsNewSegmentModalProps> = ({
+export const SaveAsNewSegmentModal = ({
   open,
   setOpen,
   localSurvey,
@@ -37,7 +37,7 @@ const SaveAsNewSegmentModal: React.FC<SaveAsNewSegmentModalProps> = ({
   setIsSegmentEditorOpen,
   onCreateSegment,
   onUpdateSegment,
-}) => {
+}: SaveAsNewSegmentModalProps) => {
   const {
     register,
     formState: { errors },
@@ -56,28 +56,8 @@ const SaveAsNewSegmentModal: React.FC<SaveAsNewSegmentModalProps> = ({
   const handleSaveSegment: SubmitHandler<SaveAsNewSegmentModalForm> = async (data) => {
     if (!segment || !segment?.filters.length) return;
 
-    try {
-      // if the segment is private, update it to add title, description and make it public
-      // otherwise, create a new segment
-
+    const createSegment = async () => {
       setIsLoading(true);
-      if (!!segment && segment?.isPrivate) {
-        const updatedSegment = await onUpdateSegment(segment.environmentId, segment.id, {
-          ...segment,
-          title: data.title,
-          description: data.description,
-          isPrivate: false,
-          filters: segment?.filters,
-        });
-
-        toast.success("Segment updated successfully");
-        setSegment(updatedSegment);
-
-        setIsSegmentEditorOpen(false);
-        handleReset();
-        return;
-      }
-
       const createdSegment = await onCreateSegment({
         environmentId: localSurvey.environmentId,
         surveyId: localSurvey.id,
@@ -93,6 +73,44 @@ const SaveAsNewSegmentModal: React.FC<SaveAsNewSegmentModalProps> = ({
       setIsLoading(false);
       toast.success("Segment created successfully");
       handleReset();
+    };
+
+    const updateSegment = async () => {
+      if (!!segment && segment?.isPrivate) {
+        const updatedSegment = await onUpdateSegment(segment.environmentId, segment.id, {
+          ...segment,
+          title: data.title,
+          description: data.description,
+          isPrivate: false,
+          filters: segment?.filters,
+        });
+
+        toast.success("Segment updated successfully");
+        setSegment(updatedSegment);
+
+        setIsSegmentEditorOpen(false);
+        handleReset();
+      }
+    };
+
+    try {
+      // if the segment is private, update it to add title, description and make it public
+      // otherwise, create a new segment
+
+      setIsLoading(true);
+
+      if (!!segment) {
+        if (segment.id === "temp") {
+          await createSegment();
+        } else {
+          await updateSegment();
+        }
+
+        return;
+      }
+
+      await createSegment();
+      return;
     } catch (err: any) {
       toast.error(err.message);
       setIsLoading(false);
@@ -179,5 +197,3 @@ const SaveAsNewSegmentModal: React.FC<SaveAsNewSegmentModalProps> = ({
     </Modal>
   );
 };
-
-export default SaveAsNewSegmentModal;

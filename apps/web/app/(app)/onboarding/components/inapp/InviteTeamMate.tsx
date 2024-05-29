@@ -1,7 +1,6 @@
 "use client";
 
-import OnboardingTitle from "@/app/(app)/onboarding/components/OnboardingTitle";
-import { ArrowRight } from "lucide-react";
+import { OnboardingTitle } from "@/app/(app)/onboarding/components/OnboardingTitle";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
@@ -23,12 +22,12 @@ const DEFAULT_INVITE_MESSAGE =
   "I'm looking into Formbricks to run targeted surveys. Can you help me set it up? 🙏";
 const INITIAL_FORM_STATE = { email: "", inviteMessage: DEFAULT_INVITE_MESSAGE };
 
-function isValidEmail(email) {
+const isValidEmail = (email) => {
   const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
   return regex.test(email);
-}
+};
 
-function InviteMessageInput({ value, onChange }) {
+const InviteMessageInput = ({ value, onChange }) => {
   return (
     <textarea
       rows={5}
@@ -38,9 +37,9 @@ function InviteMessageInput({ value, onChange }) {
       onChange={onChange}
     />
   );
-}
+};
 
-export function InviteTeamMate({ team, environmentId, setCurrentStep }: InviteTeamMateProps) {
+export const InviteTeamMate = ({ team, environmentId, setCurrentStep }: InviteTeamMateProps) => {
   const [formState, setFormState] = useState(INITIAL_FORM_STATE);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -109,22 +108,23 @@ export function InviteTeamMate({ team, environmentId, setCurrentStep }: InviteTe
             <Button id="onboarding-inapp-invite-back" variant="minimal" onClick={() => goBackToConnectPage()}>
               Back
             </Button>
-            <Button id="onboarding-inapp-invite-send-invite" variant="darkCTA" onClick={handleInvite}>
-              Invite
-            </Button>
+            <div className="space-x-2">
+              <Button
+                id="onboarding-inapp-invite-have-a-look-first"
+                className="font-normal text-slate-400"
+                variant="minimal"
+                onClick={goToProduct}
+                loading={isLoading}>
+                Skip
+              </Button>
+              <Button id="onboarding-inapp-invite-send-invite" variant="darkCTA" onClick={handleInvite}>
+                Invite
+              </Button>
+            </div>
           </div>
         </div>
-        <div className="mt-auto flex justify-center">
-          <Button
-            id="onboarding-inapp-invite-have-a-look-first"
-            className="font-normal text-slate-400"
-            variant="minimal"
-            onClick={goToProduct}
-            loading={isLoading}>
-            I want to have a look around first <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+        <div className="mt-auto flex justify-center"></div>
       </div>
     </div>
   );
-}
+};

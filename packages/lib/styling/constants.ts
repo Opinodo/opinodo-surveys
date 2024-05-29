@@ -122,6 +122,7 @@ export const PREVIEW_SURVEY = {
   displayOption: "displayOnce",
   recontactDays: null,
   autoClose: null,
+  runOnDate: null,
   closeOnDate: null,
   delay: 0,
   displayPercentage: null,
@@ -138,5 +139,4 @@ export const PREVIEW_SURVEY = {
   resultShareKey: null,
   languages: [],
   triggers: [],
-  inlineTriggers: null,
 } as TSurvey;

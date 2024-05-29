@@ -7,12 +7,12 @@ interface LegalFooterProps {
   surveyUrl: string;
 }
 
-export default function LegalFooter({
+export const LegalFooter = ({
   IMPRINT_URL,
   PRIVACY_URL,
   IS_FORMBRICKS_CLOUD,
   surveyUrl,
-}: LegalFooterProps) {
+}: LegalFooterProps) => {
   if (!IMPRINT_URL && !PRIVACY_URL && !IS_FORMBRICKS_CLOUD) return null;
 
   const createMailToLink = (surveyLink) => {
@@ -24,8 +24,8 @@ export default function LegalFooter({
   };
 
   return (
-    <div className={`absolute bottom-0 h-12 w-full`}>
-      <div className="mx-auto max-w-lg p-3 text-center text-xs text-slate-400">
+    <div className="absolute bottom-0 h-10 w-full">
+      <div className="mx-auto max-w-lg p-2 text-center text-xs text-slate-400 text-opacity-50">
         {IMPRINT_URL && (
           <Link href={IMPRINT_URL} target="_blank" className="hover:underline">
             Imprint
@@ -46,4 +46,4 @@ export default function LegalFooter({
       </div>
     </div>
   );
-}
+};

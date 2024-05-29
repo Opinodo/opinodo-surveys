@@ -6,6 +6,7 @@ import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import { extractLanguageCodes, getEnabledLanguages, getLocalizedValue } from "@formbricks/lib/i18n/utils";
+import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import { useSyncScroll } from "@formbricks/lib/utils/hooks/useSyncScroll";
 import {
   extractId,
@@ -21,18 +22,19 @@ import { TI18nString, TSurvey, TSurveyChoice, TSurveyQuestion } from "@formbrick
 
 import { LanguageIndicator } from "../../ee/multiLanguage/components/LanguageIndicator";
 import { createI18nString } from "../../lib/i18n/utils";
-import FileInput from "../FileInput";
+import { FileInput } from "../FileInput";
 import { Input } from "../Input";
 import { Label } from "../Label";
 import { FallbackInput } from "./components/FallbackInput";
-import RecallQuestionSelect from "./components/RecallQuestionSelect";
+import { RecallQuestionSelect } from "./components/RecallQuestionSelect";
 import { isValueIncomplete } from "./lib/utils";
 import {
   determineImageUploaderVisibility,
   getCardText,
-  getChoiceIndex,
   getChoiceLabel,
+  getIndex,
   getLabelById,
+  getMatrixLabel,
   getPlaceHolderById,
 } from "./utils";
 
@@ -44,6 +46,7 @@ interface QuestionFormInputProps {
   updateQuestion?: (questionIdx: number, data: Partial<TSurveyQuestion>) => void;
   updateSurvey?: (data: Partial<TSurveyQuestion>) => void;
   updateChoice?: (choiceIdx: number, data: Partial<TSurveyChoice>) => void;
+  updateMatrixLabel?: (index: number, type: "row" | "column", data: Partial<TSurveyQuestion>) => void;
   isInvalid: boolean;
   selectedLanguageCode: string;
   setSelectedLanguageCode: (languageCode: string) => void;
@@ -64,6 +67,7 @@ export const QuestionFormInput = ({
   updateQuestion,
   updateSurvey,
   updateChoice,
+  updateMatrixLabel,
   isInvalid,
   label,
   selectedLanguageCode,
@@ -75,11 +79,16 @@ export const QuestionFormInput = ({
   fail,
 }: QuestionFormInputProps) => {
   const question: TSurveyQuestion = localSurvey.questions[questionIdx];
-  const questionId = question?.id;
   const isChoice = id.includes("choice");
+  const isMatrixLabelRow = id.includes("row");
+  const isMatrixLabelColumn = id.includes("column");
   const isThankYouCard = questionIdx === localSurvey.questions.length;
   const isWelcomeCard = questionIdx === -1;
-  const choiceIdx = getChoiceIndex(id, isChoice);
+  const index = getIndex(id, isChoice || isMatrixLabelColumn || isMatrixLabelRow);
+
+  const questionId = useMemo(() => {
+    return isWelcomeCard ? "start" : isThankYouCard ? "end" : question.id;
+  }, [isWelcomeCard, isThankYouCard, question?.id]);
 
   const enabledLanguages = useMemo(
     () => getEnabledLanguages(localSurvey.languages ?? []),
@@ -96,8 +105,8 @@ export const QuestionFormInput = ({
   );
 
   const getElementTextBasedOnType = (): TI18nString => {
-    if (isChoice && typeof choiceIdx === "number") {
-      return getChoiceLabel(question, choiceIdx, surveyLanguageCodes);
+    if (isChoice && typeof index === "number") {
+      return getChoiceLabel(question, index, surveyLanguageCodes);
     }
 
     if (isThankYouCard || isWelcomeCard) {
@@ -105,6 +114,10 @@ export const QuestionFormInput = ({
         return getCardText(localSurvey, id, isThankYouCard, surveyLanguageCodes, true);
       }
       return getCardText(localSurvey, id, isThankYouCard, surveyLanguageCodes);
+    }
+
+    if ((isMatrixLabelColumn || isMatrixLabelRow) && typeof index === "number") {
+      return getMatrixLabel(question, index, surveyLanguageCodes, isMatrixLabelRow ? "row" : "column");
     }
 
     return (
@@ -116,7 +129,7 @@ export const QuestionFormInput = ({
   const [text, setText] = useState(getElementTextBasedOnType());
   const [renderedText, setRenderedText] = useState<JSX.Element[]>();
   const [showImageUploader, setShowImageUploader] = useState<boolean>(
-    determineImageUploaderVisibility(questionId, localSurvey)
+    determineImageUploaderVisibility(questionIdx, localSurvey)
   );
   const [showQuestionSelect, setShowQuestionSelect] = useState(false);
   const [showFallbackInput, setShowFallbackInput] = useState(false);
@@ -311,6 +324,8 @@ export const QuestionFormInput = ({
   // questions -> updateQuestion
   // thankYouCard, welcomeCard-> updateSurvey
   // choice -> updateChoice
+  // matrixLabel -> updateMatrixLabel
+
   const handleUpdate = (updatedText: string) => {
     const translatedText = createUpdatedText(updatedText);
 
@@ -318,6 +333,8 @@ export const QuestionFormInput = ({
       updateChoiceDetails(translatedText);
     } else if (isThankYouCard || isWelcomeCard || fail) {
       updateSurveyDetails(translatedText);
+    } else if (isMatrixLabelRow || isMatrixLabelColumn) {
+      updateMatrixLabelDetails(translatedText);
     } else {
       updateQuestionDetails(translatedText);
     }
@@ -331,14 +348,20 @@ export const QuestionFormInput = ({
   };
 
   const updateChoiceDetails = (translatedText: TI18nString) => {
-    if (updateChoice && typeof choiceIdx === "number") {
-      updateChoice(choiceIdx, { label: translatedText });
+    if (updateChoice && typeof index === "number") {
+      updateChoice(index, { label: translatedText });
     }
   };
 
   const updateSurveyDetails = (translatedText: TI18nString) => {
     if (updateSurvey) {
       updateSurvey({ [id]: translatedText });
+    }
+  };
+
+  const updateMatrixLabelDetails = (translatedText: TI18nString) => {
+    if (updateMatrixLabel && typeof index === "number") {
+      updateMatrixLabel(index, isMatrixLabelRow ? "row" : "column", translatedText);
     }
   };
 
@@ -354,26 +377,41 @@ export const QuestionFormInput = ({
     else return question.imageUrl;
   };
 
+  const getVideoUrl = () => {
+    if (isThankYouCard) return localSurvey.thankYouCard.videoUrl;
+    else if (isWelcomeCard) return localSurvey.welcomeCard.videoUrl;
+    else return question.videoUrl;
+  };
+
   return (
     <div className="w-full">
       <div className="w-full">
         <div className="mb-2 mt-3">
-          <Label htmlFor={id}>{label ?? getLabelById(id)}</Label>
+          <Label htmlFor={id}>{label || getLabelById(id)}</Label>
         </div>
-        <div className="flex flex-col gap-6">
+
+        <div className="flex flex-col gap-4 bg-white">
           {showImageUploader && id === "headline" && (
             <FileInput
               id="question-image"
               allowedFileExtensions={["png", "jpeg", "jpg"]}
               environmentId={localSurvey.environmentId}
-              onFileUpload={(url: string[] | undefined) => {
-                if (isThankYouCard && updateSurvey && url) {
-                  updateSurvey({ imageUrl: url[0] });
-                } else if (updateQuestion && url) {
-                  updateQuestion(questionIdx, { imageUrl: url[0] });
+              onFileUpload={(url: string[] | undefined, fileType: "image" | "video") => {
+                if (url) {
+                  const update =
+                    fileType === "video"
+                      ? { videoUrl: url[0], imageUrl: "" }
+                      : { imageUrl: url[0], videoUrl: "" };
+                  if (isThankYouCard && updateSurvey) {
+                    updateSurvey(update);
+                  } else if (updateQuestion) {
+                    updateQuestion(questionIdx, update);
+                  }
                 }
               }}
               fileUrl={getFileUrl()}
+              videoUrl={getVideoUrl()}
+              isVideoAllowed={true}
             />
           )}
           <div className="flex items-center space-x-2">
@@ -402,7 +440,7 @@ export const QuestionFormInput = ({
                 placeholder={placeholder ? placeholder : getPlaceHolderById(id)}
                 id={id}
                 name={id}
-                aria-label={label ? label : getLabelById(id)}
+                aria-label={label || getLabelById(id)}
                 autoComplete={showQuestionSelect ? "off" : "on"}
                 value={recallToHeadline(text, localSurvey, false, selectedLanguageCode)[selectedLanguageCode]}
                 ref={inputRef}
@@ -442,7 +480,7 @@ export const QuestionFormInput = ({
                 />
               )}
             </div>
-            {id === "headline" && (
+            {id === "headline" && !isWelcomeCard && (
               <ImagePlusIcon
                 aria-label="Toggle image uploader"
                 className="ml-2 h-4 w-4 cursor-pointer text-slate-400 hover:text-slate-500"
@@ -464,7 +502,7 @@ export const QuestionFormInput = ({
           />
         )}
       </div>
-      {selectedLanguageCode !== "default" && value && value["default"] && (
+      {selectedLanguageCode !== "default" && value && typeof value["default"] !== undefined && (
         <div className="mt-1 text-xs text-gray-500">
           <strong>Translate:</strong> {recallToHeadline(value, localSurvey, false, "default")["default"]}
         </div>

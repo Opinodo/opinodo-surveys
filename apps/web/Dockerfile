@@ -18,7 +18,7 @@ RUN turbo prune @formbricks/web --docker
 FROM base AS installer
 
 # Enable corepack and prepare pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable
 
 # Install necessary build tools and compilers
 RUN apk update && apk add --no-cache g++ cmake make gcc python3 openssl-dev jq
@@ -29,6 +29,7 @@ ENV NEXTAUTH_SECRET="placeholder_for_next_auth_of_64_chars_get_overwritten_at_ru
 ENV ENCRYPTION_KEY="placeholder_for_build_key_of_64_chars_get_overwritten_at_runtime"
 
 ARG NEXT_PUBLIC_SENTRY_DSN
+ARG SENTRY_AUTH_TOKEN
 
 # Set the working directory
 WORKDIR /app
@@ -57,7 +58,7 @@ RUN jq -r '.devDependencies.prisma' packages/database/package.json > /prisma_ver
 ## step 3: setup production runner
 #
 FROM base AS runner
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable
 
 RUN apk add --no-cache curl \
     && apk add --no-cache supercronic \
@@ -90,5 +91,5 @@ RUN mkdir -p /home/nextjs/apps/web/uploads/
 VOLUME /home/nextjs/apps/web/uploads/
 
 CMD supercronic -quiet /app/docker/cronjobs & \
-    (cd packages/database && pnpm db:migrate:deploy) && \
+    (cd packages/database && npm run db:migrate:deploy) && \
     exec node apps/web/server.js

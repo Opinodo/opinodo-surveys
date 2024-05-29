@@ -23,8 +23,9 @@ import {
 
 import { Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "vitest";
+import { testInputValidation } from "vitestSetup";
 
-import { DatabaseError, ResourceNotFoundError, ValidationError } from "@formbricks/types/errors";
+import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 import {
   TResponse,
   TResponseFilterCriteria,
@@ -33,7 +34,7 @@ import {
 } from "@formbricks/types/responses";
 import { TTag } from "@formbricks/types/tags";
 
-import { selectPerson, transformPrismaPerson } from "../../person/service";
+import { selectPerson } from "../../person/service";
 import { mockSurveyOutput } from "../../survey/tests/__mock__/survey.mock";
 import {
   createResponse,
@@ -50,7 +51,7 @@ import {
   getSurveySummary,
   updateResponse,
 } from "../service";
-import { buildWhereClause } from "../util";
+import { buildWhereClause } from "../utils";
 import { constantsForTests } from "./constants";
 
 const expectedResponseWithoutPerson: TResponse = {
@@ -61,7 +62,7 @@ const expectedResponseWithoutPerson: TResponse = {
 
 const expectedResponseWithPerson: TResponse = {
   ...mockResponse,
-  person: transformPrismaPerson(mockPerson),
+  person: mockPerson,
   tags: mockTags?.map((tagPrisma: { tag: TTag }) => tagPrisma.tag),
 };
 
@@ -135,13 +136,6 @@ beforeEach(() => {
   prisma.response.count.mockResolvedValue(1);
 });
 
-// utility function to test input validation for all services
-const testInputValidation = async (service: Function, ...args: any[]): Promise<void> => {
-  it("it should throw a ValidationError if the inputs are invalid", async () => {
-    await expect(service(...args)).rejects.toThrow(ValidationError);
-  });
-};
-
 describe("Tests for getResponsesByPersonId", () => {
   describe("Happy Path", () => {
     it("Returns all responses associated with a given person ID", async () => {
@@ -160,7 +154,7 @@ describe("Tests for getResponsesByPersonId", () => {
   });
 
   describe("Sad Path", () => {
-    testInputValidation(getResponsesByPersonId, "123", 1);
+    testInputValidation(getResponsesByPersonId, "123#", 1);
 
     it("Throws a DatabaseError error if there is a PrismaClientKnownRequestError", async () => {
       const mockErrorMessage = "Mock error message";
@@ -192,7 +186,7 @@ describe("Tests for getResponsesBySingleUseId", () => {
   });
 
   describe("Sad Path", () => {
-    testInputValidation(getResponseBySingleUseId, "123", "123");
+    testInputValidation(getResponseBySingleUseId, "123#", "123#");
 
     it("Throws DatabaseError on PrismaClientKnownRequestError occurrence", async () => {
       const mockErrorMessage = "Mock error message";
@@ -218,6 +212,7 @@ describe("Tests for getResponsesBySingleUseId", () => {
 describe("Tests for createResponse service", () => {
   describe("Happy Path", () => {
     it("Creates a response linked to an existing user", async () => {
+      prisma.attribute.findMany.mockResolvedValue([]);
       const response = await createResponse(mockResponseInputWithUserId);
       expect(response).toEqual(expectedResponseWithPerson);
     });
@@ -230,6 +225,7 @@ describe("Tests for createResponse service", () => {
     it("Creates a new person and response when the person does not exist", async () => {
       prisma.person.findFirst.mockResolvedValue(null);
       prisma.person.create.mockResolvedValue(mockPerson);
+      prisma.attribute.findMany.mockResolvedValue([]);
       const response = await createResponse(mockResponseInputWithUserId);
 
       expect(response).toEqual(expectedResponseWithPerson);
@@ -258,6 +254,7 @@ describe("Tests for createResponse service", () => {
       });
 
       prisma.response.create.mockRejectedValue(errToThrow);
+      prisma.attribute.findMany.mockResolvedValue([]);
 
       await expect(createResponse(mockResponseInputWithUserId)).rejects.toThrow(DatabaseError);
     });
@@ -294,7 +291,7 @@ describe("Tests for getResponse service", () => {
   });
 
   describe("Sad Path", () => {
-    testInputValidation(getResponse, "123");
+    testInputValidation(getResponse, "123#");
 
     it("Throws ResourceNotFoundError if no response is found", async () => {
       prisma.response.findUnique.mockResolvedValue(null);
@@ -340,7 +337,7 @@ describe("Tests for getAttributesFromResponses service", () => {
   });
 
   describe("Sad Path", () => {
-    testInputValidation(getResponsePersonAttributes, "1");
+    testInputValidation(getResponsePersonAttributes, "123#");
 
     it("Throws DatabaseError on PrismaClientKnownRequestError", async () => {
       const mockErrorMessage = "Mock error message";
@@ -593,7 +590,7 @@ describe("Tests for getResponsesByEnvironmentId", () => {
   });
 
   describe("Sad Path", () => {
-    testInputValidation(getResponsesByEnvironmentId, "123");
+    testInputValidation(getResponsesByEnvironmentId, "123#");
 
     it("Throws DatabaseError on PrismaClientKnownRequestError", async () => {
       const mockErrorMessage = "Mock error message";
@@ -638,7 +635,7 @@ describe("Tests for updateResponse Service", () => {
   });
 
   describe("Sad Path", () => {
-    testInputValidation(updateResponse, "123", {});
+    testInputValidation(updateResponse, "123#", {});
 
     it("Throws ResourceNotFoundError if no response is found", async () => {
       prisma.response.findUnique.mockResolvedValue(null);
@@ -679,7 +676,7 @@ describe("Tests for deleteResponse service", () => {
   });
 
   describe("Sad Path", () => {
-    testInputValidation(deleteResponse, "123");
+    testInputValidation(deleteResponse, "123#");
 
     it("Throws DatabaseError on PrismaClientKnownRequestError", async () => {
       const mockErrorMessage = "Mock error message";
@@ -717,7 +714,7 @@ describe("Tests for getResponseCountBySurveyId service", () => {
   });
 
   describe("Sad Path", () => {
-    testInputValidation(getResponseCountBySurveyId, "123");
+    testInputValidation(getResponseCountBySurveyId, "123#");
 
     it("Throws a generic Error for other unexpected issues", async () => {
       const mockErrorMessage = "Mock error message";
