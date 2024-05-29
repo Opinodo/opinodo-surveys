@@ -47,6 +47,7 @@ export enum TSurveyQuestionType {
   Date = "date",
   Matrix = "matrix",
   Address = "address",
+  Ad = "ad",
 }
 
 export const ZSurveyWelcomeCard = z
@@ -215,6 +216,11 @@ export const ZSurveyCTALogic = ZSurveyLogicBase.extend({
   value: z.undefined(),
 });
 
+export const ZSurveyAdLogic = ZSurveyLogicBase.extend({
+  condition: z.enum(["clicked", "submitted", "skipped"]).optional(),
+  value: z.undefined(),
+});
+
 export const ZSurveyRatingLogic = ZSurveyLogicBase.extend({
   condition: z
     .enum([
@@ -252,6 +258,7 @@ export const ZSurveyLogic = z.union([
   ZSurveyMultipleChoiceLogic,
   ZSurveyNPSLogic,
   ZSurveyCTALogic,
+  ZSurveyAdLogic,
   ZSurveyRatingLogic,
   ZSurveyPictureSelectionLogic,
   ZSurveyFileUploadLogic,
@@ -354,6 +361,16 @@ export const ZSurveyCTAQuestion = ZSurveyQuestionBase.extend({
 
 export type TSurveyCTAQuestion = z.infer<typeof ZSurveyCTAQuestion>;
 
+export const ZSurveyAdQuestion = ZSurveyQuestionBase.extend({
+  type: z.literal(TSurveyQuestionType.Ad),
+  html: ZI18nString.optional(),
+  buttonUrl: z.string().optional(),
+  dismissButtonLabel: ZI18nString.optional(),
+  logic: z.array(ZSurveyAdLogic).optional(),
+});
+
+export type TSurveyAdQuestion = z.infer<typeof ZSurveyAdQuestion>;
+
 export const ZSurveyRatingQuestion = ZSurveyQuestionBase.extend({
   type: z.literal(TSurveyQuestionType.Rating),
   scale: z.enum(["number", "smiley", "star"]),
@@ -426,6 +443,7 @@ export const ZSurveyQuestion = z.union([
   ZSurveyMultipleChoiceQuestion,
   ZSurveyNPSQuestion,
   ZSurveyCTAQuestion,
+  ZSurveyAdQuestion,
   ZSurveyRatingQuestion,
   ZSurveyPictureSelectionQuestion,
   ZSurveyDateQuestion,
@@ -686,6 +704,21 @@ export const ZSurveyQuestionSummaryCta = z.object({
 
 export type TSurveyQuestionSummaryCta = z.infer<typeof ZSurveyQuestionSummaryCta>;
 
+export const ZSurveyQuestionSummaryAd = z.object({
+  type: z.literal("ad"),
+  question: ZSurveyAdQuestion,
+  impressionCount: z.number(),
+  clickCount: z.number(),
+  skipCount: z.number(),
+  responseCount: z.number(),
+  ctr: z.object({
+    count: z.number(),
+    percentage: z.number(),
+  }),
+});
+
+export type TSurveyQuestionSummaryAd = z.infer<typeof ZSurveyQuestionSummaryAd>;
+
 export const ZSurveyQuestionSummaryConsent = z.object({
   type: z.literal("consent"),
   question: ZSurveyConsentQuestion,
@@ -827,6 +860,7 @@ export const ZSurveyQuestionSummary = z.union([
   ZSurveyQuestionSummaryRating,
   ZSurveyQuestionSummaryNps,
   ZSurveyQuestionSummaryCta,
+  ZSurveyQuestionSummaryAd,
   ZSurveyQuestionSummaryConsent,
   ZSurveyQuestionSummaryDate,
   ZSurveyQuestionSummaryFileUpload,

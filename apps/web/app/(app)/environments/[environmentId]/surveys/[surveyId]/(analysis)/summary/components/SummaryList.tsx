@@ -1,4 +1,5 @@
 import { EmptyAppSurveys } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/components/EmptyInAppSurveys";
+import { AdSummary } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/components/AdSummary";
 import { CTASummary } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/components/CTASummary";
 import { CalSummary } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/components/CalSummary";
 import { ConsentSummary } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/components/ConsentSummary";
@@ -82,6 +83,9 @@ export const SummaryList = ({
           }
           if (questionSummary.type === TSurveyQuestionType.CTA) {
             return <CTASummary key={questionSummary.question.id} questionSummary={questionSummary} />;
+          }
+          if (questionSummary.type === TSurveyQuestionType.Ad) {
+            return <AdSummary key={questionSummary.question.id} questionSummary={questionSummary} />;
           }
           if (questionSummary.type === TSurveyQuestionType.Rating) {
             return <RatingSummary key={questionSummary.question.id} questionSummary={questionSummary} />;

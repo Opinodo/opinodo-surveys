@@ -32,6 +32,7 @@ import { Label } from "@formbricks/ui/Label";
 import { QuestionFormInput } from "@formbricks/ui/QuestionFormInput";
 import { Switch } from "@formbricks/ui/Switch";
 
+import { AdQuestionForm } from "./AdQuestionForm";
 import { AddressQuestionForm } from "./AddressQuestionForm";
 import { AdvancedSettings } from "./AdvancedSettings";
 import { CTAQuestionForm } from "./CTAQuestionForm";
@@ -296,6 +297,8 @@ export const QuestionCard = ({
               setSelectedLanguageCode={setSelectedLanguageCode}
               isInvalid={isInvalid}
             />
+          ) : question.type === TSurveyQuestionType.Ad ? (
+            <AdQuestionForm />
           ) : question.type === TSurveyQuestionType.Rating ? (
             <RatingQuestionForm
               localSurvey={localSurvey}
