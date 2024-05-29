@@ -298,15 +298,7 @@ export const QuestionCard = ({
               isInvalid={isInvalid}
             />
           ) : question.type === TSurveyQuestionType.Ad ? (
-            <AdQuestionForm
-              localSurvey={localSurvey}
-              question={question}
-              questionIdx={questionIdx}
-              updateQuestion={updateQuestion}
-              selectedLanguageCode={selectedLanguageCode}
-              setSelectedLanguageCode={setSelectedLanguageCode}
-              isInvalid={isInvalid}
-            />
+            <AdQuestionForm />
           ) : question.type === TSurveyQuestionType.Rating ? (
             <RatingQuestionForm
               localSurvey={localSurvey}
