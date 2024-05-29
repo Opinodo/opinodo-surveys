@@ -8,6 +8,7 @@ import { TLanguage } from "@formbricks/types/product";
 import {
   TI18nString,
   TSurvey,
+  TSurveyAdQuestion,
   TSurveyCTAQuestion,
   TSurveyChoice,
   TSurveyConsentQuestion,
@@ -19,6 +20,7 @@ import {
   TSurveyRatingQuestion,
   TSurveyThankYouCard,
   TSurveyWelcomeCard,
+  ZSurveyAdQuestion,
   ZSurveyCTAQuestion,
   ZSurveyCalQuestion,
   ZSurveyConsentQuestion,
@@ -183,6 +185,18 @@ const translateQuestion = (
         (clonedQuestion as TSurveyCTAQuestion).html = createI18nString(question.html ?? "", languages);
       }
       return ZSurveyCTAQuestion.parse(clonedQuestion);
+
+    case "ad":
+      if (typeof question.dismissButtonLabel !== "undefined") {
+        (clonedQuestion as TSurveyAdQuestion).dismissButtonLabel = createI18nString(
+          question.dismissButtonLabel ?? "",
+          languages
+        );
+      }
+      if (typeof question.html !== "undefined") {
+        (clonedQuestion as TSurveyAdQuestion).html = createI18nString(question.html ?? "", languages);
+      }
+      return ZSurveyAdQuestion.parse(clonedQuestion);
 
     case "consent":
       if (typeof question.html !== "undefined") {

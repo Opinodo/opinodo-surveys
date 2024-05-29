@@ -12,11 +12,13 @@ import {
   PhoneIcon,
   PresentationIcon,
   Rows3Icon,
+  ScanEyeIcon,
   StarIcon,
 } from "lucide-react";
 
 import {
   TSurveyQuestionType as QuestionId,
+  TSurveyAdQuestion,
   TSurveyAddressQuestion,
   TSurveyCTAQuestion,
   TSurveyCalQuestion,
@@ -146,6 +148,20 @@ export const questionTypes: TSurveyQuestionType[] = [
       buttonExternal: false,
       dismissButtonLabel: { default: "Skip" },
     } as Partial<TSurveyCTAQuestion>,
+  },
+  {
+    id: QuestionId.Ad,
+    label: "Ad",
+    description: "Show an advertisement",
+    icon: ScanEyeIcon,
+    preset: {
+      headline: { default: "Check out our new product!" },
+      html: {
+        default:
+          '<p class="fb-editor-paragraph" dir="ltr"><span>We would love to understand your user experience better. Sharing your insight helps a lot.</span></p>',
+      },
+      dismissButtonLabel: { default: "Skip" },
+    } as Partial<TSurveyAdQuestion>,
   },
   {
     id: QuestionId.Consent,

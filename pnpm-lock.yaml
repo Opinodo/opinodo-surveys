@@ -11,6 +11,9 @@ importers:
       '@changesets/cli':
         specifier: ^2.27.2
         version: 2.27.3
+      '@ctrl/react-adsense':
+        specifier: ^1.7.0
+        version: 1.7.0
       iso-639-1:
         specifier: ^3.1.2
         version: 3.1.2
@@ -1973,6 +1976,12 @@ packages:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
     dev: true
+
+  /@ctrl/react-adsense@1.7.0:
+    resolution: {integrity: sha512-TrDGbAo8KRPHnX/Jtv9CkMV90vK7M/sz8KNECTQgcsHO4e5GyNZL3jqCY4WA0MCwfT48NH34qzyV9e2SWsceLw==}
+    dependencies:
+      tslib: 2.6.2
+    dev: false
 
   /@dnd-kit/accessibility@3.1.0(react@18.3.1):
     resolution: {integrity: sha512-ea7IkhKvlJUv9iSHJOnxinBcoOI3ppGnnL+VDJ75O45Nss6HtZd8IdN8touXPDtASfeI2T2LImb8VOZcL47wjQ==}
