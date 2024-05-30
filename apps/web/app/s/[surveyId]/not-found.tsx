@@ -1,10 +1,4 @@
 import { HelpCircleIcon } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-
-import { Button } from "@formbricks/ui/Button";
-
-import footerLogo from "./lib/footerlogo.svg";
 
 const NotFound = () => {
   return (
@@ -14,15 +8,8 @@ const NotFound = () => {
         <HelpCircleIcon className="h-20 w-20" />,
         <h1 className="text-4xl font-bold text-slate-800">Survey not found.</h1>
         <p className="text-lg leading-10 text-slate-500">There is no survey with this ID.</p>
-        <Button variant="darkCTA" className="mt-2" href="https://formbricks.com">
-          Create your own
-        </Button>
       </div>
-      <div>
-        <Link href="https://formbricks.com">
-          <Image src={footerLogo} alt="Brand logo" className="mx-auto w-40" />
-        </Link>
-      </div>
+      <div></div>
     </div>
   );
 };

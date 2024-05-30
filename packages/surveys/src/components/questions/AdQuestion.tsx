@@ -59,8 +59,9 @@ export const AdQuestion = ({
           <Adsense
             client="ca-pub-1574672111746393"
             slot="3700116888"
-            style={{ width: 500, height: 300 }}
-            format=""
+            format="auto"
+            responsive="true"
+            style={{ display: "block", height: "300px" }}
           />
         </div>
       </ScrollableContainer>
