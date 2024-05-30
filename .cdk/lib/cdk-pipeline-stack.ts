@@ -55,7 +55,7 @@ export class CdkPipelineStack extends Stack {
                         },
                     },
                     buildImage:  LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
-                    computeType: ComputeType.LARGE
+                    computeType: ComputeType.X2_LARGE
                 }
             }
         });
