@@ -55,7 +55,7 @@ export class CdkPipelineStack extends Stack {
                         },
                         "NODE_OPTIONS": {
                             type: BuildEnvironmentVariableType.PLAINTEXT,
-                            value: "--max-old-space-size=16384"
+                            value: "--max_old_space_size=16384"
                         },
                     },
                     buildImage:  LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
