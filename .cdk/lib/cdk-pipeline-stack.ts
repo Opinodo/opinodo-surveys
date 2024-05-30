@@ -53,9 +53,13 @@ export class CdkPipelineStack extends Stack {
                             type: BuildEnvironmentVariableType.SECRETS_MANAGER,
                             value: "opinodo/DockerHubCredentials:password",
                         },
+                        "NODE_OPTIONS": {
+                            type: BuildEnvironmentVariableType.PLAINTEXT,
+                            value: "--max-old-space-size=8192"
+                        },
                     },
                     buildImage:  LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
-                    computeType: ComputeType.X2_LARGE
+                    computeType: ComputeType.LARGE
                 }
             }
         });
