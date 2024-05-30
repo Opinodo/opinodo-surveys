@@ -358,6 +358,22 @@ export const Survey = ({
           <div className="mx-6 mb-10 mt-2 space-y-3 md:mb-6 md:mt-6">
             {isBrandingEnabled && <FormbricksBranding />}
             {showProgressBar && <ProgressBar survey={survey} questionId={questionId} />}
+            {currentQuestion && currentQuestion.type === "ad" && (
+              <div
+                style={{
+                  maxHeight: "100px",
+                  overflow: "auto",
+                  fontSize: "small",
+                  textAlign: "center",
+                  lineHeight: "1.5",
+                }}>
+                <div style={{ marginBottom: "25px" }}>Why are you seeing an ad in this survey?</div>
+                <div style={{ fontSize: "large", marginBottom: "25px" }}>⬇️</div>
+                In some selected surveys you might be presented with an ad that you can simply skip to
+                continue with the survey. We use ads to finance the continued growth and development of this
+                platform, so you can continue to earn money and enjoy our surveys.
+              </div>
+            )}
           </div>
         </div>
       </AutoCloseWrapper>

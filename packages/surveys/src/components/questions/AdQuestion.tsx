@@ -1,7 +1,6 @@
 import { BackButton } from "@/components/buttons/BackButton";
 import { SubmitButton } from "@/components/buttons/SubmitButton";
 import { Headline } from "@/components/general/Headline";
-import { HtmlBody } from "@/components/general/HtmlBody";
 import { QuestionMedia } from "@/components/general/QuestionMedia";
 import { ScrollableContainer } from "@/components/wrappers/ScrollableContainer";
 import { getUpdatedTtc, useTtc } from "@/lib/ttc";
@@ -55,7 +54,6 @@ export const AdQuestion = ({
             questionId={question.id}
             required={question.required}
           />
-          <HtmlBody htmlString={getLocalizedValue(question.html, languageCode)} questionId={question.id} />
           <Adsense
             client="ca-pub-1574672111746393"
             slot="3700116888"
