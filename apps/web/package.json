@@ -6,7 +6,7 @@
     "clean": "rimraf .turbo node_modules .next",
     "dev": "NODE_OPTIONS='-r next-logger' next dev -p 3000",
     "go": "NODE_OPTIONS='-r next-logger' next dev -p 3000",
-    "build": "next build",
+    "build": "NODE_OPTIONS='--max_old_space_size=4096' next build",
     "build:dev": "next build",
     "start": "NODE_OPTIONS='-r next-logger' next start",
     "lint": "next lint"
