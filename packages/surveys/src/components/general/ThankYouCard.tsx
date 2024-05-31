@@ -33,10 +33,6 @@ export const ThankYouCard = ({
   failed,
   isInIframe,
 }: ThankYouCardProps) => {
-  // useEffect(() => {
-  //   window.gtag("event", "complete");
-  // }, []);
-
   const media = imageUrl || videoUrl ? <QuestionMedia imgUrl={imageUrl} videoUrl={videoUrl} /> : null;
   const checkmark = (
     <div className="text-brand flex flex-col items-center justify-center">
