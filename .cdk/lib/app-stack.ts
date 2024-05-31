@@ -242,7 +242,6 @@ export class AppStack extends Stack {
             numCacheNodes: 1,
             cacheNodeType: props.cacheNodeType,
             clusterName: `${projectName}-redis`,
-            transitEncryptionEnabled: true,
             vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
             cacheSubnetGroupName: subnetGroup.ref,
         });
