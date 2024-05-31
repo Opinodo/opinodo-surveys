@@ -7,7 +7,7 @@ interface RevalidateProps {
 export const storageCache = {
   tag: {
     byFileKey(filekey: string): string {
-      return `storage-filekey-${filekey}`;
+      return `{storages}-storage-filekey-${filekey}`;
     },
   },
   revalidate({ fileKey }: RevalidateProps): void {

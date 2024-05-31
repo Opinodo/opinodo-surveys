@@ -11,19 +11,19 @@ interface RevalidateProps {
 export const surveyCache = {
   tag: {
     byId(id: string) {
-      return `surveys-${id}`;
+      return `{surveys}-surveys-${id}`;
     },
     byEnvironmentId(environmentId: string): string {
-      return `environments-${environmentId}-surveys`;
+      return `{surveys}-environments-${environmentId}-surveys`;
     },
     byAttributeClassId(attributeClassId: string) {
-      return `attributeFilters-${attributeClassId}-surveys`;
+      return `{surveys}-attributeFilters-${attributeClassId}-surveys`;
     },
     byActionClassId(actionClassId: string) {
-      return `actionClasses-${actionClassId}-surveys`;
+      return `{surveys}-actionClasses-${actionClassId}-surveys`;
     },
     bySegmentId(segmentId: string) {
-      return `segments-${segmentId}-surveys`;
+      return `{surveys}-segments-${segmentId}-surveys`;
     },
   },
   revalidate({ id, attributeClassId, actionClassId, environmentId, segmentId }: RevalidateProps): void {

@@ -11,13 +11,13 @@ interface RevalidateProps {
 export const webhookCache = {
   tag: {
     byId(id: string) {
-      return `webhooks-${id}`;
+      return `{webhooks}-webhooks-${id}`;
     },
     byEnvironmentId(environmentId: string) {
-      return `environments-${environmentId}-webhooks`;
+      return `{webhooks}-environments-${environmentId}-webhooks`;
     },
     byEnvironmentIdAndSource(environmentId: string, source: TWebhookInput["source"]) {
-      return `environments-${environmentId}-sources-${source}-webhooks`;
+      return `{webhooks}-environments-${environmentId}-sources-${source}-webhooks`;
     },
   },
   revalidate({ id, environmentId, source }: RevalidateProps): void {

@@ -8,10 +8,10 @@ interface RevalidateProps {
 export const responseNoteCache = {
   tag: {
     byId(id: string) {
-      return `responseNotes-${id}`;
+      return `{responseNotes}-responseNotes-${id}`;
     },
     byResponseId(responseId: string) {
-      return `responses-${responseId}-responseNote`;
+      return `{responseNotes}-responses-${responseId}-responseNote`;
     },
   },
   revalidate({ id, responseId }: RevalidateProps): void {

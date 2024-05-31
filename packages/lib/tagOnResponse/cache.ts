@@ -9,10 +9,10 @@ interface RevalidateProps {
 export const tagOnResponseCache = {
   tag: {
     byResponseIdAndTagId(responseId: string, tagId: string) {
-      return `responses-${responseId}-tagOnResponses-${tagId}`;
+      return `{tagOnResponses}-responses-${responseId}-tagOnResponses-${tagId}`;
     },
     byEnvironmentId(environmentId: string) {
-      return `environments-${environmentId}-tagOnResponses`;
+      return `{tagOnResponses}-environments-${environmentId}-tagOnResponses`;
     },
   },
   revalidate({ tagId, responseId, environmentId }: RevalidateProps): void {

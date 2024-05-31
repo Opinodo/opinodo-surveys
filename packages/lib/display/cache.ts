@@ -10,16 +10,16 @@ interface RevalidateProps {
 export const displayCache = {
   tag: {
     byId(id: string) {
-      return `displays-${id}`;
+      return `{displays}-displays-${id}`;
     },
     bySurveyId(surveyId: string) {
-      return `surveys-${surveyId}-displays`;
+      return `{displays}-surveys-${surveyId}-displays`;
     },
     byPersonId(personId: string) {
-      return `people-${personId}-displays`;
+      return `{displays}-people-${personId}-displays`;
     },
     byEnvironmentId(environmentId: string) {
-      return `environments-${environmentId}-displays`;
+      return `{displays}-environments-${environmentId}-displays`;
     },
   },
   revalidate({ id, surveyId, personId, environmentId }: RevalidateProps): void {

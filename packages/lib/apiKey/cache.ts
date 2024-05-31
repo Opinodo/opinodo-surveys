@@ -9,13 +9,13 @@ interface RevalidateProps {
 export const apiKeyCache = {
   tag: {
     byId(id: string) {
-      return `apiKeys-${id}`;
+      return `{apiKeys}-apiKeys-${id}`;
     },
     byEnvironmentId(environmentId: string) {
-      return `environments-${environmentId}-apiKeys`;
+      return `{apiKeys}-environments-${environmentId}-apiKeys`;
     },
     byHashedKey(hashedKey: string) {
-      return `apiKeys-${hashedKey}-apiKey`;
+      return `{apiKeys}-apiKeys-${hashedKey}-apiKey`;
     },
   },
   revalidate({ id, environmentId, hashedKey }: RevalidateProps): void {

@@ -11,13 +11,13 @@ interface RevalidateProps {
 export const attributeCache = {
   tag: {
     byEnvironmentIdAndUserId(environmentId: string, userId: string): string {
-      return `environments-${environmentId}-personByUserId-${userId}-attributes`;
+      return `{attributes}-environments-${environmentId}-personByUserId-${userId}-attributes`;
     },
     byPersonId(personId: string): string {
-      return `person-${personId}-attributes`;
+      return `{attributes}-person-${personId}-attributes`;
     },
     byNameAndPersonId(name: string, personId: string): string {
-      return `person-${personId}-attribute-${name}`;
+      return `{attributes}-person-${personId}-attribute-${name}`;
     },
   },
   revalidate({ environmentId, userId, personId, name }: RevalidateProps): void {

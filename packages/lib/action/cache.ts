@@ -8,10 +8,10 @@ interface RevalidateProps {
 export const actionCache = {
   tag: {
     byEnvironmentId(environmentId: string): string {
-      return `environments-${environmentId}-actions`;
+      return `{actions}-environments-${environmentId}-actions`;
     },
     byPersonId(personId: string): string {
-      return `environments-${personId}-actions`;
+      return `{actions}-environments-${personId}-actions`;
     },
   },
   revalidate({ environmentId, personId }: RevalidateProps): void {
