@@ -8,10 +8,10 @@ interface RevalidateProps {
 export const userCache = {
   tag: {
     byId(id: string) {
-      return `{users}-users-${id}`;
+      return `{users-${id}}`;
     },
     byEmail(email: string) {
-      return `{users}-users-${email}`;
+      return `{users-${email}}`;
     },
   },
   revalidate({ id, email }: RevalidateProps): void {

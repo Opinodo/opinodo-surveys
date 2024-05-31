@@ -9,13 +9,13 @@ interface RevalidateProps {
 export const actionClassCache = {
   tag: {
     byNameAndEnvironmentId(name: string, environmentId: string): string {
-      return `{actionClasses}-environments-${environmentId}-actionClass-${name}`;
+      return `{environments-${environmentId}}-actionClass-${name}`;
     },
     byEnvironmentId(environmentId: string): string {
-      return `{actionClasses}-environments-${environmentId}-actionClasses`;
+      return `{environments-${environmentId}}-actionClasses`;
     },
     byId(id: string): string {
-      return `{actionClasses}-actionClasses-${id}`;
+      return `{actionClasses-${id}}`;
     },
   },
   revalidate({ environmentId, name, id }: RevalidateProps): void {

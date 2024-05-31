@@ -9,13 +9,13 @@ interface RevalidateProps {
 export const personCache = {
   tag: {
     byId(id: string): string {
-      return `{people}-people-${id}`;
+      return `people-${id}`;
     },
     byEnvironmentId(environmentId: string): string {
-      return `{people}-environments-${environmentId}-people`;
+      return `environments-${environmentId}-people`;
     },
     byEnvironmentIdAndUserId(environmentId: string, userId: string): string {
-      return `{people}-environments-${environmentId}-personByUserId-${userId}`;
+      return `environments-${environmentId}-personByUserId-${userId}`;
     },
   },
   revalidate({ id, environmentId, userId }: RevalidateProps): void {
@@ -42,7 +42,7 @@ interface ActivePersonRevalidateProps {
 export const activePersonCache = {
   tag: {
     byId(personId: string): string {
-      return `people-${personId}-active`;
+      return `{people-${personId}}-active`;
     },
   },
   revalidate({ id }: ActivePersonRevalidateProps): void {

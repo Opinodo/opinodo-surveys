@@ -9,13 +9,13 @@ interface RevalidateProps {
 export const segmentCache = {
   tag: {
     byId(id: string) {
-      return `{segments}-segment-${id}`;
+      return `{segment-${id}}`;
     },
     byEnvironmentId(environmentId: string): string {
-      return `{segments}-environments-${environmentId}-segements`;
+      return `{environments-${environmentId}}-segements`;
     },
     byAttributeClassName(attributeClassName: string): string {
-      return `{segments}-attribute-${attributeClassName}-segements`;
+      return `{attribute-${attributeClassName}}-segements`;
     },
   },
   revalidate({ id, environmentId, attributeClassName }: RevalidateProps): void {

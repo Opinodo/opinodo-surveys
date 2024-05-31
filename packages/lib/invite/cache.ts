@@ -8,10 +8,10 @@ interface RevalidateProps {
 export const inviteCache = {
   tag: {
     byId(id: string) {
-      return `{invites}-invites-${id}`;
+      return `{invites-${id}}`;
     },
     byTeamId(teamId: string) {
-      return `{invites}-teams-${teamId}-invites`;
+      return `{teams-${teamId}}-invites`;
     },
   },
   revalidate({ id, teamId }: RevalidateProps): void {

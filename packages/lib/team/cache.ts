@@ -9,13 +9,13 @@ interface RevalidateProps {
 export const teamCache = {
   tag: {
     byId(id: string) {
-      return `{teams}-teams-${id}`;
+      return `{teams-${id}}`;
     },
     byUserId(userId: string) {
-      return `{teams}-users-${userId}-teams`;
+      return `{users-${userId}}-teams`;
     },
     byEnvironmentId(environmentId: string) {
-      return `{teams}-environments-${environmentId}-teams`;
+      return `{environments-${environmentId}}-teams`;
     },
   },
   revalidate({ id, userId, environmentId }: RevalidateProps): void {

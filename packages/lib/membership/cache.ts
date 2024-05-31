@@ -8,10 +8,10 @@ interface RevalidateProps {
 export const membershipCache = {
   tag: {
     byTeamId(teamId: string) {
-      return `{memberships}-teams-${teamId}-memberships`;
+      return `{teams-${teamId}}-memberships`;
     },
     byUserId(userId: string) {
-      return `{memberships}-users-${userId}-memberships`;
+      return `{users-${userId}}-memberships`;
     },
   },
   revalidate({ teamId, userId }: RevalidateProps): void {
