@@ -6,11 +6,18 @@ import { createClient } from "redis";
 CacheHandler.onCreation(async () => {
   let redisHandler;
   if (process.env.REDIS_URL) {
+    console.log("Connecting to Redis...");
+
     const client = createClient({
       url: process.env.REDIS_URL,
     });
+
+    client.on("connect", () => {
+      console.log("Connected to Redis.");
+    });
+
     client.on("error", (e) => {
-      console.error("Error in conncting to Redis client", e);
+      console.error("Error in connecting to Redis client", e);
     });
 
     await client.connect();

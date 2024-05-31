@@ -5,7 +5,6 @@ import { QuestionMedia } from "@/components/general/QuestionMedia";
 import { RedirectCountDown } from "@/components/general/RedirectCountdown";
 import { Subheader } from "@/components/general/Subheader";
 import { ScrollableContainer } from "@/components/wrappers/ScrollableContainer";
-import { useEffect } from "react";
 
 interface ThankYouCardProps {
   headline?: string;
@@ -21,12 +20,6 @@ interface ThankYouCardProps {
   isInIframe: boolean;
 }
 
-declare global {
-  interface Window {
-    gtag: any;
-  }
-}
-
 export const ThankYouCard = ({
   headline,
   subheader,
@@ -40,9 +33,9 @@ export const ThankYouCard = ({
   failed,
   isInIframe,
 }: ThankYouCardProps) => {
-  useEffect(() => {
-    window.gtag("event", "complete");
-  }, []);
+  // useEffect(() => {
+  //   window.gtag("event", "complete");
+  // }, []);
 
   const media = imageUrl || videoUrl ? <QuestionMedia imgUrl={imageUrl} videoUrl={videoUrl} /> : null;
   const checkmark = (
