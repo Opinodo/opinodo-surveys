@@ -520,7 +520,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       segment: surveySegment,
     };
 
-    logger.info("Survey updated", { modifiedSurvey: modifiedSurvey });
+    logger.info("Survey updated", { surveyId: modifiedSurvey.id });
 
     surveyCache.revalidate({
       id: modifiedSurvey.id,
@@ -648,7 +648,7 @@ export const createSurvey = async (environmentId: string, surveyBody: TSurveyInp
       select: selectSurvey,
     });
 
-    logger.info("New Survey Created", survey);
+    logger.info("New Survey Created", { surveyId: survey.id });
 
     // if the survey created is an "app" survey, we also create a private segment for it.
     if (survey.type === "app") {
