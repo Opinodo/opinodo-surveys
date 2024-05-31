@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "turbo run clean && rimraf node_modules .turbo coverage out",
-    "build": "NODE_OPTIONS='--max_old_space_size=4096' turbo run build",
+    "build": "turbo run build",
     "build:dev": "turbo run build:dev",
     "post-install": "turbo run post-install",
     "db:migrate:dev": "turbo run db:migrate:dev",
