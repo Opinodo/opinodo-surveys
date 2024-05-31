@@ -218,7 +218,7 @@ export class AppStack extends Stack {
 
         const redisSecurityGroup = new ec2.SecurityGroup(
           this,
-          `${projectName}-redisSecurityGroup`,
+          `${projectName}-redisCacheSecurityGroup`,
           {
               vpc: props.vpc,
               allowAllOutbound: true,
@@ -237,11 +237,11 @@ export class AppStack extends Stack {
             subnetIds: props.vpc.publicSubnets.map((subnet) => subnet.subnetId),
         });
 
-        const redis = new elasticcache.CfnCacheCluster (this, `${projectName}-redisCache`, {
+        const redis = new elasticcache.CfnCacheCluster (this, `${projectName}-redis`, {
             engine: "redis" ,
             numCacheNodes: 1,
             cacheNodeType: props.cacheNodeType,
-            clusterName: `${projectName}-redisCache`,
+            clusterName: `${projectName}-redis`,
             transitEncryptionEnabled: true,
             vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
             cacheSubnetGroupName: subnetGroup.ref,
