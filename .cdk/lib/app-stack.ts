@@ -29,6 +29,7 @@ interface ECSStackProps extends StackProps {
     environmentName: string;
     certificateArn: string;
     envFileName: string;
+    cacheNodeType: string;
 }
 
 export class AppStack extends Stack {
@@ -230,11 +231,20 @@ export class AppStack extends Stack {
           "Allow access to redis from the web service"
         );
 
-        const redis = new elasticcache.CfnServerlessCache(this, `${projectName}-redisCache`, {
+        // Create a subnet group
+        const subnetGroup = new elasticcache.CfnSubnetGroup(this, 'RedisSubnetGroup', {
+            description: 'Subnet group for Redis',
+            subnetIds: props.vpc.publicSubnets.map((subnet) => subnet.subnetId),
+        });
+
+        const redis = new elasticcache.CfnCacheCluster (this, `${projectName}-redisCache`, {
             engine: "redis" ,
-            serverlessCacheName: `${projectName}-redisCache`,
-            subnetIds: props.vpc.publicSubnets.map((ps) => ps.subnetId),
-            securityGroupIds: [redisSecurityGroup.securityGroupId],
+            numCacheNodes: 1,
+            cacheNodeType: props.cacheNodeType,
+            clusterName: `${projectName}-redisCache`,
+            transitEncryptionEnabled: true,
+            vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
+            cacheSubnetGroupName: subnetGroup.ref,
         });
 
 

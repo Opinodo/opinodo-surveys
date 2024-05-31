@@ -14,6 +14,7 @@ export interface baseStageProps extends StageProps {
     certificateArn: string;
     taskCPU: number;
     taskMemory: number;
+    cacheNodeType: string;
 }
 
 export class BaseStage extends Stage {
@@ -40,7 +41,8 @@ export class BaseStage extends Stage {
             certificateArn: props.certificateArn,
             envFileName: props.envFileName,
             taskCPU: props.taskCPU,
-            taskMemory: props.taskMemory
+            taskMemory: props.taskMemory,
+            cacheNodeType: props.cacheNodeType
         });
 
         // this.albAddress = new CfnOutput(appStack, 'AlbAddress', {

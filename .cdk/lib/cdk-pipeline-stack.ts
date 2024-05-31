@@ -75,6 +75,7 @@ export class CdkPipelineStack extends Stack {
             taskMemory: 512,
             taskCPU: 256,
             certificateArn: Params.STAGING_CERTIFICATE_ARN,
+            cacheNodeType: "cache.t3.micro",
             env: {
                 account: Params.STAGING_ACCOUNT_ID,
                 region: Params.AWS_REGION
@@ -91,6 +92,7 @@ export class CdkPipelineStack extends Stack {
             taskCPU: 4096,
             dbAllocatedStorage: 200,
             dbMaxAllocatedStorage: 1024,
+            cacheNodeType: "cache.t3.micro",
             certificateArn: Params.PROD_CERTIFICATE_ARN,
             env: {
                 account: Params.PROD_ACCOUNT_ID,

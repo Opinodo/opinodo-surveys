@@ -26,6 +26,7 @@ const app = new cdk.App();
 //     projectName: "opinodo-surveys-app",
 //     environmentName: "sandbox",
 //     envFileName: "production.env",
+//     cacheNodeType:"cache.t3.micro",
 //     certificateArn: "arn:aws:acm:eu-central-1:599781234736:certificate/0f801ab4-cd43-4b53-92c3-79e88b032dc4",
 //     env: {account: '599781234736', region: 'eu-central-1'}
 // });
