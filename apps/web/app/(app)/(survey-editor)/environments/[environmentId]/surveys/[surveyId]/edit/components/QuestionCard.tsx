@@ -20,6 +20,7 @@ import {
   PhoneIcon,
   PresentationIcon,
   Rows3Icon,
+  ScanEyeIcon,
   StarIcon,
 } from "lucide-react";
 import { useState } from "react";
@@ -196,6 +197,8 @@ export const QuestionCard = ({
                   <PresentationIcon className="h-5 w-5" />
                 ) : question.type === TSurveyQuestionType.CTA ? (
                   <MousePointerClickIcon className="h-5 w-5" />
+                ) : question.type === TSurveyQuestionType.Ad ? (
+                  <ScanEyeIcon className="h-5 w-5" />
                 ) : question.type === TSurveyQuestionType.Rating ? (
                   <StarIcon className="h-5 w-5" />
                 ) : question.type === TSurveyQuestionType.Consent ? (

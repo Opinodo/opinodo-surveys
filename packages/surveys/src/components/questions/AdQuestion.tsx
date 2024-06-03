@@ -1,6 +1,5 @@
 import { BackButton } from "@/components/buttons/BackButton";
 import { SubmitButton } from "@/components/buttons/SubmitButton";
-import { Headline } from "@/components/general/Headline";
 import { QuestionMedia } from "@/components/general/QuestionMedia";
 import { ScrollableContainer } from "@/components/wrappers/ScrollableContainer";
 import { getUpdatedTtc, useTtc } from "@/lib/ttc";
@@ -49,11 +48,11 @@ export const AdQuestion = ({
       <ScrollableContainer>
         <div>
           {isMediaAvailable && <QuestionMedia imgUrl={question.imageUrl} videoUrl={question.videoUrl} />}
-          <Headline
-            headline={getLocalizedValue(question.headline, languageCode)}
-            questionId={question.id}
-            required={question.required}
-          />
+          <label htmlFor={question.id} className="text-heading mb-1.5 block text-base leading-6">
+            <div className={`flex items-center justify-between`}>
+              {getLocalizedValue(question.headline, languageCode)}
+            </div>
+          </label>
           <Adsense
             client="ca-pub-1574672111746393"
             slot="3700116888"
