@@ -23,9 +23,6 @@ importers:
       react-adsense:
         specifier: ^0.1.0
         version: 0.1.0(prop-types@15.8.1)(react@18.3.1)
-      react-helmet:
-        specifier: ^6.1.0
-        version: 6.1.0(react@18.3.1)
       react-select:
         specifier: ^5.8.0
         version: 5.8.0(react-dom@18.3.1)(react@18.3.1)
@@ -13919,10 +13916,6 @@ packages:
       react: 18.3.1
     dev: false
 
-  /react-fast-compare@3.2.2:
-    resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
-    dev: false
-
   /react-fit@2.0.1(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-Eip6ALs/+6Jv82Si0I9UnfysdwVlAhkkZRycgmMdnj7jwUg69SVFp84ICxwB8zszkfvJJ2MGAAo9KAYM8ZUykQ==}
     peerDependencies:
@@ -13941,18 +13934,6 @@ packages:
       react-dom: 18.3.1(react@18.3.1)
       warning: 4.0.3
     dev: true
-
-  /react-helmet@6.1.0(react@18.3.1):
-    resolution: {integrity: sha512-4uMzEY9nlDlgxr61NL3XbKRy1hEkXmKNXhjbAIOVw5vcFrsdYbH2FEwcNyWvWinl103nXgzYNlns9ca+8kFiWw==}
-    peerDependencies:
-      react: '>=16.3.0'
-    dependencies:
-      object-assign: 4.1.1
-      prop-types: 15.8.1
-      react: 18.3.1
-      react-fast-compare: 3.2.2
-      react-side-effect: 2.1.2(react@18.3.1)
-    dev: false
 
   /react-hook-form@7.51.5(react@18.3.1):
     resolution: {integrity: sha512-J2ILT5gWx1XUIJRETiA7M19iXHlG74+6O3KApzvqB/w8S5NQR7AbU8HVZrMALdmDgWpRPYiZJl0zx8Z4L2mP6Q==}
@@ -14049,14 +14030,6 @@ packages:
       use-isomorphic-layout-effect: 1.1.2(react@18.3.1)
     transitivePeerDependencies:
       - '@types/react'
-    dev: false
-
-  /react-side-effect@2.1.2(react@18.3.1):
-    resolution: {integrity: sha512-PVjOcvVOyIILrYoyGEpDN3vmYNLdy1CajSFNt4TDsVQC5KpTijDvWVoR+/7Rz2xT978D8/ZtFceXxzsPwZEDvw==}
-    peerDependencies:
-      react: ^16.3.0 || ^17.0.0 || ^18.0.0
-    dependencies:
-      react: 18.3.1
     dev: false
 
   /react-style-singleton@2.2.1(@types/react@18.3.2)(react@18.3.1):
