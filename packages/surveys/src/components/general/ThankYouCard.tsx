@@ -5,6 +5,7 @@ import { QuestionMedia } from "@/components/general/QuestionMedia";
 import { RedirectCountDown } from "@/components/general/RedirectCountdown";
 import { Subheader } from "@/components/general/Subheader";
 import { ScrollableContainer } from "@/components/wrappers/ScrollableContainer";
+import { useEffect } from "react";
 
 interface ThankYouCardProps {
   headline?: string;
@@ -18,6 +19,14 @@ interface ThankYouCardProps {
   isResponseSendingFinished: boolean;
   failed: boolean;
   isInIframe: boolean;
+}
+
+type gtagType = (eventName: string, eventParams?: any) => void;
+
+declare global {
+  interface Window {
+    gtag: gtagType;
+  }
 }
 
 export const ThankYouCard = ({
@@ -52,6 +61,10 @@ export const ThankYouCard = ({
       <span className="bg-brand mb-[10px] inline-block h-1 w-16 rounded-[100%]"></span>
     </div>
   );
+
+  useEffect(() => {
+    window.gtag("event", "complete");
+  }, []);
 
   return (
     <ScrollableContainer>
