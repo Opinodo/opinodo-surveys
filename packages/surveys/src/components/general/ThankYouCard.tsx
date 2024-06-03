@@ -21,14 +21,6 @@ interface ThankYouCardProps {
   isInIframe: boolean;
 }
 
-type gtagType = (eventName: string, eventParams?: any) => void;
-
-declare global {
-  interface Window {
-    gtag: gtagType;
-  }
-}
-
 export const ThankYouCard = ({
   headline,
   subheader,
@@ -63,7 +55,8 @@ export const ThankYouCard = ({
   );
 
   useEffect(() => {
-    window.gtag("event", "complete");
+    // @ts-ignore
+    gtag("event", "complete");
   }, []);
 
   return (
