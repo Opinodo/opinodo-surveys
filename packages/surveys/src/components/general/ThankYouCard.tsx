@@ -56,8 +56,14 @@ export const ThankYouCard = ({
   );
 
   useEffect(() => {
-    sendGTMEvent({ event: "complete", value: "testing gtag" });
-  }, []);
+    console.log("testing gtag");
+    if (isResponseSendingFinished) {
+      console.log("response sending finished gtag");
+      sendGTMEvent({ event: "complete", value: "testing gtag" });
+    } else {
+      console.log("response sending not finished gtag");
+    }
+  }, [isResponseSendingFinished]);
 
   return (
     <ScrollableContainer>
