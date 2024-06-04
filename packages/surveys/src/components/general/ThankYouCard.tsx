@@ -59,7 +59,7 @@ export const ThankYouCard = ({
     console.log("testing gtag");
     if (isResponseSendingFinished) {
       console.log("response sending finished gtag");
-      sendGTMEvent({ event: "complete", value: "testing gtag" });
+      sendGTMEvent({ event: "link-copied" });
     } else {
       console.log("response sending not finished gtag");
     }
