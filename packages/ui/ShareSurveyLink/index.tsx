@@ -63,7 +63,7 @@ export const ShareSurveyLink = ({ survey, webAppUrl, surveyUrl, setSurveyUrl }: 
             navigator.clipboard.writeText(surveyUrl);
             toast.success("URL copied to clipboard!");
             console.log("logujem");
-            sendGTMEvent({ event: "complete", value: "testing gtag" });
+            sendGTMEvent({ event: "complete" });
             console.log("logujem2");
           }}
           EndIcon={Copy}>
