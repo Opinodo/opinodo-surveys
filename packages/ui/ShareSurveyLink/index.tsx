@@ -1,3 +1,4 @@
+import { sendGTMEvent } from "@next/third-parties/google";
 import { Copy, RefreshCcw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -61,6 +62,9 @@ export const ShareSurveyLink = ({ survey, webAppUrl, surveyUrl, setSurveyUrl }: 
           onClick={() => {
             navigator.clipboard.writeText(surveyUrl);
             toast.success("URL copied to clipboard!");
+            console.log("logujem");
+            sendGTMEvent({ event: "marko", value: "testing gtag" });
+            console.log("logujem2");
           }}
           EndIcon={Copy}>
           Copy Link
