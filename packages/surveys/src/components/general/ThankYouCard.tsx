@@ -5,6 +5,7 @@ import { QuestionMedia } from "@/components/general/QuestionMedia";
 import { RedirectCountDown } from "@/components/general/RedirectCountdown";
 import { Subheader } from "@/components/general/Subheader";
 import { ScrollableContainer } from "@/components/wrappers/ScrollableContainer";
+import { sendGTMEvent } from "@next/third-parties/google";
 import { useEffect } from "react";
 
 interface ThankYouCardProps {
@@ -55,8 +56,7 @@ export const ThankYouCard = ({
   );
 
   useEffect(() => {
-    // @ts-ignore
-    gtag("event", "complete");
+    sendGTMEvent({ event: "complete", value: "testing gtag" });
   }, []);
 
   return (
