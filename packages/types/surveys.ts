@@ -363,9 +363,6 @@ export type TSurveyCTAQuestion = z.infer<typeof ZSurveyCTAQuestion>;
 
 export const ZSurveyAdQuestion = ZSurveyQuestionBase.extend({
   type: z.literal(TSurveyQuestionType.Ad),
-  html: ZI18nString.optional(),
-  buttonUrl: z.string().optional(),
-  dismissButtonLabel: ZI18nString.optional(),
   logic: z.array(ZSurveyAdLogic).optional(),
 });
 
