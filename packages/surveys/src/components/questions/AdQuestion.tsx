@@ -49,7 +49,9 @@ export const AdQuestion = ({
         <div>
           {isMediaAvailable && <QuestionMedia imgUrl={question.imageUrl} videoUrl={question.videoUrl} />}
           <label htmlFor={question.id} className="text-heading mb-1.5 block text-base leading-6">
-            <div className={`flex items-center justify-between`}>Sponsored links</div>
+            <div className={`flex items-center justify-between`}>
+              {getLocalizedValue(question.headline, languageCode)}
+            </div>
           </label>
           <Adsense
             client="ca-pub-1574672111746393"
@@ -73,6 +75,20 @@ export const AdQuestion = ({
           />
         )}
         <div className="flex w-full justify-end">
+          {!question.required && (
+            <button
+              tabIndex={0}
+              type="button"
+              onClick={() => {
+                const updatedTtcObj = getUpdatedTtc(ttc, question.id, performance.now() - startTime);
+                setTtc(updatedTtcObj);
+                onSubmit({ [question.id]: "dismissed" }, updatedTtcObj);
+                onChange({ [question.id]: "dismissed" });
+              }}
+              className="text-heading focus:ring-focus mr-4 flex items-center rounded-md px-3 py-3 text-base font-medium leading-4 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2">
+              {getLocalizedValue(question.dismissButtonLabel, languageCode) || "Skip"}
+            </button>
+          )}
           <SubmitButton
             buttonLabel={getLocalizedValue(question.buttonLabel, languageCode)}
             isLastQuestion={isLastQuestion}
