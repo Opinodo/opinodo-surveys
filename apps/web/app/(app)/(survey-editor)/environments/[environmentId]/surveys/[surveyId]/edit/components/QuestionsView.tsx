@@ -42,6 +42,7 @@ interface QuestionsViewProps {
   selectedLanguageCode: string;
   setSelectedLanguageCode: (languageCode: string) => void;
   isMultiLanguageAllowed?: boolean;
+  isFormbricksCloud: boolean;
 }
 
 export const QuestionsView = ({
@@ -55,6 +56,7 @@ export const QuestionsView = ({
   setSelectedLanguageCode,
   selectedLanguageCode,
   isMultiLanguageAllowed,
+  isFormbricksCloud,
 }: QuestionsViewProps) => {
   const internalQuestionIdMap = useMemo(() => {
     return localSurvey.questions.reduce((acc, question) => {
@@ -386,6 +388,7 @@ export const QuestionsView = ({
           activeQuestionId={activeQuestionId}
           isMultiLanguageAllowed={isMultiLanguageAllowed}
           setSelectedLanguageCode={setSelectedLanguageCode}
+          isFormbricksCloud={isFormbricksCloud}
         />
       </div>
     </div>
