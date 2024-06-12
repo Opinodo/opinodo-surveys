@@ -61,6 +61,7 @@ export const SettingsView = ({
         isInvalid={invalidQuestions ? invalidQuestions.includes("end") : false}
         setSelectedLanguageCode={setSelectedLanguageCode}
         selectedLanguageCode={selectedLanguageCode}
+        attributeClasses={attributeClasses}
       />
 
       {/*<HowToSendCard localSurvey={localSurvey} setLocalSurvey={setLocalSurvey} environment={environment} />*/}

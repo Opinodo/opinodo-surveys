@@ -7,6 +7,7 @@ import Select from "react-select";
 import { cn } from "@formbricks/lib/cn";
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
 import logger from "@formbricks/lib/log";
+import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";
@@ -24,6 +25,7 @@ interface SurveyGeneralSettingsProps {
   isInvalid: boolean;
   selectedLanguageCode: string;
   setSelectedLanguageCode: (languageCode: string) => void;
+  attributeClasses: TAttributeClass[];
 }
 
 const SURVEY_FAILED_HEADLINE = "Survey Failed";
@@ -36,6 +38,7 @@ export default function SurveyGeneralSettings({
   isInvalid,
   selectedLanguageCode,
   setSelectedLanguageCode,
+  attributeClasses,
 }: SurveyGeneralSettingsProps) {
   const [open, setOpen] = useState(true);
   const [customReward, setCustomReward] = useState(localSurvey.reward);
@@ -355,6 +358,7 @@ export default function SurveyGeneralSettings({
                     selectedLanguageCode={selectedLanguageCode}
                     setSelectedLanguageCode={setSelectedLanguageCode}
                     fail={true}
+                    attributeClasses={attributeClasses}
                   />
 
                   <QuestionFormInput
@@ -368,6 +372,7 @@ export default function SurveyGeneralSettings({
                     selectedLanguageCode={selectedLanguageCode}
                     setSelectedLanguageCode={setSelectedLanguageCode}
                     fail={true}
+                    attributeClasses={attributeClasses}
                   />
                   <div className="mt-4">
                     <div className="flex items-center space-x-1">
@@ -411,6 +416,7 @@ export default function SurveyGeneralSettings({
                             selectedLanguageCode={selectedLanguageCode}
                             setSelectedLanguageCode={setSelectedLanguageCode}
                             fail={true}
+                            attributeClasses={attributeClasses}
                           />
                         </div>
                         <div className="space-y-2">
