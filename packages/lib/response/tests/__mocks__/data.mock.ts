@@ -489,10 +489,10 @@ export const mockSurveySummaryOutput = {
   ],
   meta: {
     completedPercentage: 0,
-    completedResponses: 1,
+    completedResponses: 0,
     displayCount: 0,
-    dropOffPercentage: 0,
-    dropOffCount: 0,
+    dropOffPercentage: 100,
+    dropOffCount: 1,
     startsPercentage: 0,
     totalResponses: 1,
     ttcAverage: 0,
