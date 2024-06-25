@@ -1,7 +1,7 @@
 import SurveyGeneralSettings from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/components/SurveyGeneralSettings";
 import { SurveyPlacementCard } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/components/SurveyPlacementCard";
 
-import { AdvancedTargetingCard } from "@formbricks/ee/advancedTargeting/components/AdvancedTargetingCard";
+import { AdvancedTargetingCard } from "@formbricks/ee/advanced-targeting/components/advanced-targeting-card";
 import { TActionClass } from "@formbricks/types/actionClasses";
 import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TEnvironment } from "@formbricks/types/environment";
@@ -9,7 +9,6 @@ import { TMembershipRole } from "@formbricks/types/memberships";
 import { TProduct } from "@formbricks/types/product";
 import { TSegment } from "@formbricks/types/segment";
 import { TSurvey } from "@formbricks/types/surveys";
-
 // import { HowToSendCard } from "./HowToSendCard";
 import { RecontactOptionsCard } from "./RecontactOptionsCard";
 import { ResponseOptionsCard } from "./ResponseOptionsCard";
@@ -63,7 +62,12 @@ export const SettingsView = ({
         selectedLanguageCode={selectedLanguageCode}
       />
 
-      {/*<HowToSendCard localSurvey={localSurvey} setLocalSurvey={setLocalSurvey} environment={environment} />*/}
+      {/*<HowToSendCard
+        localSurvey={localSurvey}
+        setLocalSurvey={setLocalSurvey}
+        environment={environment}
+        product={product}
+      />*/}
 
       {localSurvey.type === "app" ? (
         !isUserTargetingAllowed ? (

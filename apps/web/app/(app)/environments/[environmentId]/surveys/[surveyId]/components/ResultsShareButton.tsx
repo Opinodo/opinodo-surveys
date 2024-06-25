@@ -18,7 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@formbricks/ui/DropdownMenu";
-
 import { ShareEmbedSurvey } from "../(analysis)/summary/components/ShareEmbedSurvey";
 import { ShareSurveyResults } from "../(analysis)/summary/components/ShareSurveyResults";
 

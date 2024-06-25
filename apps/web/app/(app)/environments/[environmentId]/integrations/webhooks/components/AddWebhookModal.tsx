@@ -17,7 +17,6 @@ import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
 import { Modal } from "@formbricks/ui/Modal";
-
 import { createWebhookAction } from "../actions";
 
 interface AddWebhookModalProps {

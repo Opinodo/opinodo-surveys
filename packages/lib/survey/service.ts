@@ -1,7 +1,5 @@
 import "server-only";
-
 import { Prisma } from "@prisma/client";
-
 import { prisma } from "@formbricks/database";
 import { TLegacySurvey } from "@formbricks/types/LegacySurvey";
 import { TActionClass } from "@formbricks/types/actionClasses";
@@ -11,7 +9,6 @@ import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbr
 import { TPerson } from "@formbricks/types/people";
 import { TSegment, ZSegmentFilters } from "@formbricks/types/segment";
 import { TSurvey, TSurveyFilterCriteria, TSurveyInput, ZSurvey } from "@formbricks/types/surveys";
-
 import { getActionsByPersonId } from "../action/service";
 import { getActionClasses } from "../actionClass/service";
 import { attributeCache } from "../attribute/cache";
@@ -22,6 +19,7 @@ import { displayCache } from "../display/cache";
 import { getDisplaysByPersonId } from "../display/service";
 import { reverseTranslateSurvey } from "../i18n/reverseTranslation";
 import logger from "../log";
+import { subscribeOrganizationMembersToSurveyResponses } from "../organization/service";
 import { personCache } from "../person/cache";
 import { getPerson } from "../person/service";
 import { structuredClone } from "../pollyfills/structuredClone";
@@ -31,7 +29,6 @@ import { responseCache } from "../response/cache";
 import { segmentCache } from "../segment/cache";
 import { createSegment, deleteSegment, evaluateSegment, getSegment, updateSegment } from "../segment/service";
 import { transformSegmentFiltersToAttributeFilters } from "../segment/utils";
-import { subscribeTeamMembersToSurveyResponses } from "../team/service";
 import { diffInDays } from "../utils/datetime";
 import { validateInputs } from "../utils/validate";
 import { surveyCache } from "./cache";
@@ -62,6 +59,7 @@ export const selectSurvey = {
   hiddenFields: true,
   displayOption: true,
   recontactDays: true,
+  displayLimit: true,
   autoClose: true,
   runOnDate: true,
   closeOnDate: true,
@@ -81,6 +79,7 @@ export const selectSurvey = {
   failureChance: true,
   countries: true,
   limitedCountries: true,
+  showLanguageSwitch: true,
   languages: {
     select: {
       default: true,
@@ -388,7 +387,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
         : [];
       const updatedLanguageIds =
         languages.length > 1 ? updatedSurvey.languages.map((l) => l.language.id) : [];
-      const enabledLangaugeIds = languages.map((language) => {
+      const enabledLanguageIds = languages.map((language) => {
         if (language.enabled) return language.language.id;
       });
 
@@ -406,7 +405,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
         where: { languageId: surveyLanguage.language.id },
         data: {
           default: surveyLanguage.language.id === defaultLanguageId,
-          enabled: enabledLangaugeIds.includes(surveyLanguage.language.id),
+          enabled: enabledLanguageIds.includes(surveyLanguage.language.id),
         },
       }));
 
@@ -415,7 +414,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
         data.languages.create = languagesToAdd.map((languageId) => ({
           languageId: languageId,
           default: languageId === defaultLanguageId,
-          enabled: enabledLangaugeIds.includes(languageId),
+          enabled: enabledLanguageIds.includes(languageId),
         }));
       }
 
@@ -423,7 +422,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       if (languagesToRemove.length > 0) {
         data.languages.deleteMany = languagesToRemove.map((languageId) => ({
           languageId: languageId,
-          enabled: enabledLangaugeIds.includes(languageId),
+          enabled: enabledLanguageIds.includes(languageId),
         }));
       }
     }
@@ -517,6 +516,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
     // @ts-expect-error
     const modifiedSurvey: TSurvey = {
       ...prismaSurvey, // Properties from prismaSurvey
+      displayPercentage: Number(prismaSurvey.displayPercentage) || null,
       segment: surveySegment,
     };
 
@@ -552,15 +552,10 @@ export const deleteSurvey = async (surveyId: string) => {
 
     logger.info("Survey deleted", { surveyId: surveyId });
 
-    if (deletedSurvey.type === "app") {
+    if (deletedSurvey.type === "app" && deletedSurvey.segment?.isPrivate) {
       const deletedSegment = await prisma.segment.delete({
         where: {
-          title: surveyId,
-          isPrivate: true,
-          environmentId_title: {
-            environmentId: deletedSurvey.environmentId,
-            title: surveyId,
-          },
+          id: deletedSurvey.segment.id,
         },
       });
 
@@ -691,12 +686,14 @@ export const createSurvey = async (environmentId: string, surveyBody: TSurveyInp
       }),
     };
 
-    await subscribeTeamMembersToSurveyResponses(environmentId, survey.id);
-
     surveyCache.revalidate({
       id: survey.id,
       environmentId: survey.environmentId,
     });
+
+    if (createdBy) {
+      await subscribeOrganizationMembersToSurveyResponses(survey.id, createdBy);
+    }
 
     return transformedSurvey;
   } catch (error) {
@@ -885,17 +882,35 @@ export const getSyncSurveys = (
 
         // filter surveys that meet the displayOption criteria
         surveys = surveys.filter((survey) => {
-          if (survey.displayOption === "respondMultiple") {
-            return true;
-          } else if (survey.displayOption === "displayOnce") {
-            return displays.filter((display) => display.surveyId === survey.id).length === 0;
-          } else if (survey.displayOption === "displayMultiple") {
-            return (
-              displays.filter((display) => display.surveyId === survey.id && display.responseId !== null)
-                .length === 0
-            );
-          } else {
-            throw Error("Invalid displayOption");
+          switch (survey.displayOption) {
+            case "respondMultiple":
+              return true;
+            case "displayOnce":
+              return displays.filter((display) => display.surveyId === survey.id).length === 0;
+            case "displayMultiple":
+              return (
+                displays
+                  .filter((display) => display.surveyId === survey.id)
+                  .filter((display) => display.responseId).length === 0
+              );
+            case "displaySome":
+              if (survey.displayLimit === null) {
+                return true;
+              }
+
+              if (
+                displays
+                  .filter((display) => display.surveyId === survey.id)
+                  .some((display) => display.responseId)
+              ) {
+                return false;
+              }
+
+              return (
+                displays.filter((display) => display.surveyId === survey.id).length < survey.displayLimit
+              );
+            default:
+              throw Error("Invalid displayOption");
           }
         });
 

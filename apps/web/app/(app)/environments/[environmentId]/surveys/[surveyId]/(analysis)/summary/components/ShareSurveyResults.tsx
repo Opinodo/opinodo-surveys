@@ -1,7 +1,6 @@
 import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react";
 import { Clipboard } from "lucide-react";
 import { toast } from "react-hot-toast";
-
 import { Button } from "@formbricks/ui/Button";
 import { Dialog, DialogContent } from "@formbricks/ui/Dialog";
 
@@ -81,8 +80,8 @@ export const ShareSurveyResults = ({
                 You are about to release these survey results to the public.
               </p>
               <p className="text-balanced mt-2 text-sm text-slate-500">
-                Your survey results will be public. Anyone outside your team can access them if they have the
-                link.
+                Your survey results will be public. Anyone outside your organization can access them if they
+                have the link.
               </p>
             </div>
             <Button

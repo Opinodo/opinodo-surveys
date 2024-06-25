@@ -1,5 +1,4 @@
 import { z } from "zod";
-
 import { ZAttributes } from "./attributes";
 import { ZId } from "./environment";
 import { ZSurvey, ZSurveyLogicCondition } from "./surveys";
@@ -33,6 +32,10 @@ export type TSurveyPersonAttributes = z.infer<typeof ZSurveyPersonAttributes>;
 export const ZSurveyMetaFieldFilter = z.record(z.array(z.string()));
 
 export type TSurveyMetaFieldFilter = z.infer<typeof ZSurveyMetaFieldFilter>;
+
+export const ZResponseHiddenFieldsFilter = z.record(z.array(z.string()));
+
+export type TResponseHiddenFieldsFilter = z.infer<typeof ZResponseHiddenFieldsFilter>;
 
 const ZResponseFilterCriteriaDataLessThan = z.object({
   op: z.literal(ZSurveyLogicCondition.Values.lessThan),
@@ -292,6 +295,9 @@ export const ZResponseWithSurvey = ZResponse.extend({
 
 export type TResponseWithSurvey = z.infer<typeof ZResponseWithSurvey>;
 
+export const ZResponseHiddenFieldValue = z.record(z.union([z.string(), z.number(), z.array(z.string())]));
+export type TResponseHiddenFieldValue = z.infer<typeof ZResponseHiddenFieldValue>;
+
 export const ZResponseUpdate = z.object({
   finished: z.boolean(),
   failed: z.boolean(),
@@ -305,6 +311,7 @@ export const ZResponseUpdate = z.object({
       action: z.string().optional(),
     })
     .optional(),
+  hiddenFields: ZResponseHiddenFieldValue.optional(),
 });
 
 export type TResponseUpdate = z.infer<typeof ZResponseUpdate>;

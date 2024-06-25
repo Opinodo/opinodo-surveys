@@ -4,7 +4,6 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 import { CheckIcon } from "lucide-react";
 import { KeyboardEventHandler, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-
 import { cn } from "@formbricks/lib/cn";
 import { TProduct } from "@formbricks/types/product";
 import { TSurvey } from "@formbricks/types/surveys";

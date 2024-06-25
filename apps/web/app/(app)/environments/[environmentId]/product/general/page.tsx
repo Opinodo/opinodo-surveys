@@ -1,31 +1,29 @@
 import { ProductConfigNavigation } from "@/app/(app)/environments/[environmentId]/product/components/ProductConfigNavigation";
+import packageJson from "@/package.json";
 import { getServerSession } from "next-auth";
-
 import { getMultiLanguagePermission } from "@formbricks/ee/lib/service";
 import { authOptions } from "@formbricks/lib/authOptions";
-import { getEnvironment } from "@formbricks/lib/environment/service";
-import { getMembershipByUserIdTeamId } from "@formbricks/lib/membership/service";
+import { IS_FORMBRICKS_CLOUD } from "@formbricks/lib/constants";
+import { getMembershipByUserIdOrganizationId } from "@formbricks/lib/membership/service";
 import { getAccessFlags } from "@formbricks/lib/membership/utils";
+import { getOrganizationByEnvironmentId } from "@formbricks/lib/organization/service";
 import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
-import { getTeamByEnvironmentId } from "@formbricks/lib/team/service";
 import { ErrorComponent } from "@formbricks/ui/ErrorComponent";
 import { PageContentWrapper } from "@formbricks/ui/PageContentWrapper";
 import { PageHeader } from "@formbricks/ui/PageHeader";
 import { SettingsId } from "@formbricks/ui/SettingsId";
-
 import { SettingsCard } from "../../settings/components/SettingsCard";
 import { DeleteProduct } from "./components/DeleteProduct";
 import { EditDefaultReward } from "./components/EditDefaultReward";
-import { EditProductName } from "./components/EditProductName";
+import { EditProductNameForm } from "./components/EditProductNameForm";
 import { EditRedirects } from "./components/EditRedirects";
-import { EditWaitingTime } from "./components/EditWaitingTime";
+import { EditWaitingTimeForm } from "./components/EditWaitingTimeForm";
 
 const Page = async ({ params }: { params: { environmentId: string } }) => {
-  const [, product, session, team] = await Promise.all([
-    getEnvironment(params.environmentId),
+  const [product, session, organization] = await Promise.all([
     getProductByEnvironmentId(params.environmentId),
     getServerSession(authOptions),
-    getTeamByEnvironmentId(params.environmentId),
+    getOrganizationByEnvironmentId(params.environmentId),
   ]);
 
   if (!product) {
@@ -34,11 +32,11 @@ const Page = async ({ params }: { params: { environmentId: string } }) => {
   if (!session) {
     throw new Error("Unauthorized");
   }
-  if (!team) {
-    throw new Error("Team not found");
+  if (!organization) {
+    throw new Error("Organization not found");
   }
 
-  const currentUserMembership = await getMembershipByUserIdTeamId(session?.user.id, team.id);
+  const currentUserMembership = await getMembershipByUserIdOrganizationId(session?.user.id, organization.id);
   const { isDeveloper, isViewer } = getAccessFlags(currentUserMembership?.role);
   const isProductNameEditDisabled = isDeveloper ? true : isViewer;
 
@@ -46,7 +44,8 @@ const Page = async ({ params }: { params: { environmentId: string } }) => {
     return <ErrorComponent />;
   }
 
-  const isMultiLanguageAllowed = await getMultiLanguagePermission(team);
+  const isMultiLanguageAllowed = await getMultiLanguagePermission(organization);
+  const currentProductChannel = product?.config.channel ?? null;
 
   return (
     <PageContentWrapper>
@@ -55,21 +54,24 @@ const Page = async ({ params }: { params: { environmentId: string } }) => {
           environmentId={params.environmentId}
           activeId="general"
           isMultiLanguageAllowed={isMultiLanguageAllowed}
+          productChannel={currentProductChannel}
         />
       </PageHeader>
 
       <SettingsCard title="Product Name" description="Change your products name.">
-        <EditProductName
+        <EditProductNameForm
           environmentId={params.environmentId}
           product={product}
           isProductNameEditDisabled={isProductNameEditDisabled}
         />
       </SettingsCard>
-      <SettingsCard
-        title="Recontact Waiting Time"
-        description="Control how frequently users can be surveyed across all surveys.">
-        <EditWaitingTime environmentId={params.environmentId} product={product} />
-      </SettingsCard>
+      {currentProductChannel !== "link" && (
+        <SettingsCard
+          title="Recontact Waiting Time"
+          description="Control how frequently users can be surveyed across all surveys.">
+          <EditWaitingTimeForm environmentId={params.environmentId} product={product} />
+        </SettingsCard>
+      )}
       <SettingsCard title="Default Reward" description="Define the default reward for a survey in dollars.">
         <EditDefaultReward environmentId={params.environmentId} product={product} />
       </SettingsCard>
@@ -83,7 +85,12 @@ const Page = async ({ params }: { params: { environmentId: string } }) => {
         description="Delete product with all surveys, responses, people, actions and attributes. This cannot be undone.">
         <DeleteProduct environmentId={params.environmentId} product={product} />
       </SettingsCard>
-      <SettingsId title="Product" id={product.id}></SettingsId>
+      <div>
+        <SettingsId title="Product ID" id={product.id}></SettingsId>
+        {!IS_FORMBRICKS_CLOUD && (
+          <SettingsId title="Formbricks version" id={packageJson.version}></SettingsId>
+        )}
+      </div>
     </PageContentWrapper>
   );
 };

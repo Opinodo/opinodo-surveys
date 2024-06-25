@@ -3,30 +3,25 @@
 import type { Session } from "next-auth";
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
-
 import { env } from "@formbricks/lib/env";
-import { TSubscriptionStatus } from "@formbricks/types/teams";
+import { TOrganizationBilling } from "@formbricks/types/organizations";
 
 const posthogEnabled = env.NEXT_PUBLIC_POSTHOG_API_KEY && env.NEXT_PUBLIC_POSTHOG_API_HOST;
 
 interface PosthogIdentifyProps {
   session: Session;
   environmentId?: string;
-  teamId?: string;
-  teamName?: string;
-  inAppSurveyBillingStatus?: TSubscriptionStatus;
-  linkSurveyBillingStatus?: TSubscriptionStatus;
-  userTargetingBillingStatus?: TSubscriptionStatus;
+  organizationId?: string;
+  organizationName?: string;
+  organizationBilling?: TOrganizationBilling;
 }
 
 export const PosthogIdentify = ({
   session,
   environmentId,
-  teamId,
-  teamName,
-  inAppSurveyBillingStatus,
-  linkSurveyBillingStatus,
-  userTargetingBillingStatus,
+  organizationId,
+  organizationName,
+  organizationBilling,
 }: PosthogIdentifyProps) => {
   const posthog = usePostHog();
 
@@ -41,25 +36,16 @@ export const PosthogIdentify = ({
       if (environmentId) {
         posthog.group("environment", environmentId, { name: environmentId });
       }
-      if (teamId) {
-        posthog.group("team", teamId, {
-          name: teamName,
-          inAppSurveyBillingStatus,
-          linkSurveyBillingStatus,
-          userTargetingBillingStatus,
+      if (organizationId) {
+        posthog.group("organization", organizationId, {
+          name: organizationName,
+          plan: organizationBilling?.plan,
+          responseLimit: organizationBilling?.limits.monthly.responses,
+          miuLimit: organizationBilling?.limits.monthly.miu,
         });
       }
     }
-  }, [
-    posthog,
-    session.user,
-    environmentId,
-    teamId,
-    teamName,
-    inAppSurveyBillingStatus,
-    linkSurveyBillingStatus,
-    userTargetingBillingStatus,
-  ]);
+  }, [posthog, session.user, environmentId, organizationId, organizationName, organizationBilling]);
 
   return null;
 };

@@ -3,7 +3,6 @@
 import { responses } from "@/app/lib/api/response";
 import { transformErrorToDetails } from "@/app/lib/api/validator";
 import { z } from "zod";
-
 import { getAttributesByUserId, updateAttributes } from "@formbricks/lib/attribute/service";
 import logger from "@formbricks/lib/log";
 import { createPerson, getPersonByUserId } from "@formbricks/lib/person/service";

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
-
 import { cn } from "@formbricks/lib/cn";
 import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import { isAdvancedSegment } from "@formbricks/lib/segment/utils";
@@ -14,14 +13,13 @@ import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TBaseFilter, TSegment, TSegmentCreateInput, TSegmentUpdateInput } from "@formbricks/types/segment";
 import { TSurvey } from "@formbricks/types/surveys";
 import { AlertDialog } from "@formbricks/ui/AlertDialog";
+import { BasicAddFilterModal } from "@formbricks/ui/BasicAddFilterModal";
+import { BasicSegmentEditor } from "@formbricks/ui/BasicSegmentEditor";
 import { Button } from "@formbricks/ui/Button";
-import { BasicAddFilterModal } from "@formbricks/ui/Targeting/BasicAddFilterModal";
-import { BasicSegmentEditor } from "@formbricks/ui/Targeting/BasicSegmentEditor";
-import { LoadSegmentModal } from "@formbricks/ui/Targeting/LoadSegmentModal";
-import { SaveAsNewSegmentModal } from "@formbricks/ui/Targeting/SaveAsNewSegmentModal";
-import { SegmentTitle } from "@formbricks/ui/Targeting/SegmentTitle";
-import { TargetingIndicator } from "@formbricks/ui/Targeting/TargetingIndicator";
-
+import { LoadSegmentModal } from "@formbricks/ui/LoadSegmentModal";
+import { SaveAsNewSegmentModal } from "@formbricks/ui/SaveAsNewSegmentModal";
+import { SegmentTitle } from "@formbricks/ui/SegmentTitle";
+import { TargetingIndicator } from "@formbricks/ui/TargetingIndicator";
 import {
   cloneBasicSegmentAction,
   createBasicSegmentAction,
@@ -355,6 +353,21 @@ export const TargetingCard = ({
                 onClick={() => setSaveAsNewSegmentModalOpen(true)}>
                 Save as new Segment
               </Button>
+            )}
+          </div>
+          <div className="-mt-1.5">
+            {isFormbricksCloud ? (
+              <UpgradePlanNotice
+                message="For advanced targeting, please"
+                textForUrl="upgrade to the User Identification plan."
+                url={`/environments/${environmentId}/settings/billing`}
+              />
+            ) : (
+              <UpgradePlanNotice
+                message="For advanced targeting, please"
+                textForUrl="request an Enterprise license."
+                url={`/environments/${environmentId}/settings/enterprise`}
+              />
             )}
           </div>
         </div>

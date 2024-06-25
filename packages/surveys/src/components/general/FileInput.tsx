@@ -1,8 +1,7 @@
 import { useMemo, useState } from "preact/hooks";
-// @ts-expect-error
 import { JSXInternal } from "preact/src/jsx";
-
 import { getOriginalFileNameFromUrl } from "@formbricks/lib/storage/utils";
+import { isFulfilled, isRejected } from "@formbricks/lib/utils/promises";
 import { TAllowedFileExtension } from "@formbricks/types/common";
 import { TUploadFileConfig } from "@formbricks/types/storage";
 
@@ -60,11 +59,22 @@ export const FileInput = ({
       const uploadPromises = filteredFiles.map((file) =>
         onFileUpload(file, { allowedFileExtensions, surveyId })
       );
-      const uploadedUrls = await Promise.all(uploadPromises);
+
+      const uploadedFiles = await Promise.allSettled(uploadPromises);
+
+      const rejectedFiles = uploadedFiles.filter(isRejected);
+      const uploadedFilesUrl = uploadedFiles.filter(isFulfilled).map((url) => url.value);
+
       setSelectedFiles((prevFiles) => [...prevFiles, ...filteredFiles]);
-      onUploadCallback(fileUrls ? [...fileUrls, ...uploadedUrls] : uploadedUrls);
+      onUploadCallback(fileUrls ? [...fileUrls, ...uploadedFilesUrl] : uploadedFilesUrl);
+
+      if (rejectedFiles.length > 0) {
+        if (rejectedFiles[0].reason?.name === "FileTooLargeError") {
+          alert(rejectedFiles[0].reason.message);
+        }
+      }
     } catch (err: any) {
-      alert(err.name === "FileTooLargeError" ? err.message : "Upload failed! Please try again.");
+      alert("Upload failed! Please try again.");
     } finally {
       setIsUploading(false);
     }
@@ -101,6 +111,7 @@ export const FileInput = ({
   const handleDragOver = (e: JSXInternal.TargetedDragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    // @ts-expect-error
     e.dataTransfer.dropEffect = "copy";
   };
 
@@ -108,6 +119,7 @@ export const FileInput = ({
     e.preventDefault();
     e.stopPropagation();
 
+    // @ts-expect-error
     handleFileSelection(e.dataTransfer.files);
   };
 

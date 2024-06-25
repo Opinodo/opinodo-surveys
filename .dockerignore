@@ -36,6 +36,8 @@ yarn-error.log*
 .github
 **/.turbo
 
+.env
+
 .cdk/cdk.out
 
 *.md

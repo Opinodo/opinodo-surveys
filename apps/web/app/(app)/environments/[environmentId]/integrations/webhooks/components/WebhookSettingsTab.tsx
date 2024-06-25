@@ -19,7 +19,6 @@ import { Button } from "@formbricks/ui/Button";
 import { DeleteDialog } from "@formbricks/ui/DeleteDialog";
 import { Input } from "@formbricks/ui/Input";
 import { Label } from "@formbricks/ui/Label";
-
 import { deleteWebhookAction, updateWebhookAction } from "../actions";
 
 interface ActionSettingsTabProps {

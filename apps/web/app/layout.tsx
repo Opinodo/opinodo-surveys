@@ -1,7 +1,6 @@
 import { GoogleTagManager } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Metadata } from "next";
-
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en">
+    <html lang="en" translate="no">
       <head>
         <script
           async

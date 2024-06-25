@@ -1,9 +1,7 @@
 import { CheckCircle2Icon, HelpCircleIcon, PauseCircleIcon } from "lucide-react";
 import Link from "next/link";
-
 import { TSurveyClosedMessage } from "@formbricks/types/surveys";
 import { Button } from "@formbricks/ui/Button";
-
 export const SurveyInactive = ({
   status,
   surveyClosedMessage,

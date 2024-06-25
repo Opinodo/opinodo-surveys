@@ -5,7 +5,6 @@ import { ArchiveIcon, ArchiveXIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-
 import { updateAttributeClass } from "@formbricks/lib/attributeClass/service";
 import { Button } from "@formbricks/ui/Button";
 import { Input } from "@formbricks/ui/Input";
@@ -45,7 +44,7 @@ export const AttributeSettingsTab = async ({ attributeClass, setOpen }: Attribut
           <Label className="text-slate-600">Name</Label>
           <Input
             type="text"
-            placeholder="e.g. Product Team Info"
+            placeholder="e.g. Product Organization Info"
             {...register("name", {
               disabled: attributeClass.type === "automatic" || attributeClass.type === "code" ? true : false,
             })}

@@ -1,5 +1,4 @@
 import z from "zod";
-
 import { ValidationError } from "@formbricks/types/errors";
 
 import logger from "../log";

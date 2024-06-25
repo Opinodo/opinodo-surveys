@@ -1,4 +1,5 @@
 import { FormbricksBranding } from "@/components/general/FormbricksBranding";
+import { LanguageSwitch } from "@/components/general/LanguageSwitch";
 import { ProgressBar } from "@/components/general/ProgressBar";
 import { QuestionConditional } from "@/components/general/QuestionConditional";
 import { ResponseErrorComponent } from "@/components/general/ResponseErrorComponent";
@@ -11,7 +12,6 @@ import { evaluateCondition } from "@/lib/logicEvaluator";
 import { parseRecallInformation, replaceRecallInfo } from "@/lib/recall";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
 import { SurveyBaseProps } from "@formbricks/types/formbricksSurveys";
 import type { TResponseData, TResponseDataValue, TResponseTtc } from "@formbricks/types/responses";
@@ -35,10 +35,13 @@ export const Survey = ({
   onFileUpload,
   responseCount,
   startAtQuestionId,
+  hiddenFieldsRecord,
   clickOutside,
   shouldResetQuestionId,
+  fullSizeCards = false,
+  autoFocus,
 }: SurveyBaseProps) => {
-  const isInIframe = window.self !== window.top;
+  const autoFocusEnabled = autoFocus !== undefined ? autoFocus : window.self === window.top;
 
   const [questionId, setQuestionId] = useState(() => {
     if (startAtQuestionId) {
@@ -49,16 +52,15 @@ export const Survey = ({
       return survey?.questions[0]?.id;
     }
   });
-  // );
   const [showError, setShowError] = useState(false);
   // flag state to store whether response processing has been completed or not, we ignore this check for survey editor preview and link survey preview where getSetIsResponseSendingFinished is undefined
   const [isResponseSendingFinished, setIsResponseSendingFinished] = useState(
     getSetIsResponseSendingFinished ? false : true
   );
-
+  const [selectedLanguage, setselectedLanguage] = useState(languageCode);
   const [loadingElement, setLoadingElement] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
-  const [responseData, setResponseData] = useState<TResponseData>({});
+  const [responseData, setResponseData] = useState<TResponseData>(hiddenFieldsRecord ?? {});
   const [ttc, setTtc] = useState<TResponseTtc>({});
   const cardArrangement = useMemo(() => {
     if (survey.type === "link") {
@@ -82,6 +84,9 @@ export const Survey = ({
   const showProgressBar = !styling.hideProgressBar;
   const getShowSurveyCloseButton = (offset: number) => {
     return offset === 0 && survey.type !== "link" && (clickOutside === undefined ? true : clickOutside);
+  };
+  const getShowLanguageSwitch = (offset: number) => {
+    return survey.showLanguageSwitch && survey.languages.length > 0 && offset <= 0;
   };
 
   useEffect(() => {
@@ -122,6 +127,10 @@ export const Survey = ({
     }
   }, [getSetIsResponseSendingFinished]);
 
+  useEffect(() => {
+    setselectedLanguage(languageCode);
+  }, [languageCode]);
+
   let currIdxTemp = currentQuestionIndex;
   let currQuesTemp = currentQuestion;
 
@@ -147,7 +156,7 @@ export const Survey = ({
           if (typeof responseValue === "string") {
             // Find the choice in currentQuestion.choices that matches the responseValue after localization
             choice = currentQuestion.choices.find((choice) => {
-              return getLocalizedValue(choice.label, languageCode) === responseValue;
+              return getLocalizedValue(choice.label, selectedLanguage) === responseValue;
             })?.label;
 
             // If a matching choice is found, get its default localized value
@@ -161,7 +170,7 @@ export const Survey = ({
             // Filter and map the choices in currentQuestion.choices that are included in responseValue after localization
             choice = currentQuestion.choices
               .filter((choice) => {
-                return responseValue.includes(getLocalizedValue(choice.label, languageCode));
+                return responseValue.includes(getLocalizedValue(choice.label, selectedLanguage));
               })
               .map((choice) => getLocalizedValue(choice.label, "default"));
           }
@@ -204,7 +213,7 @@ export const Survey = ({
     const surveyFailed = finished && random <= survey.failureChance;
     setFailed(surveyFailed);
     onChange(responseData);
-    onResponse({ data: responseData, ttc, finished, failed: surveyFailed });
+    onResponse({ data: responseData, ttc, finished, language: selectedLanguage, failed: surveyFailed });
     if (finished) {
       // Post a message to the parent window indicating that the survey is completed.
       window.parent.postMessage("formbricksSurveyCompleted", "*");
@@ -267,9 +276,10 @@ export const Survey = ({
             buttonLabel={survey.welcomeCard.buttonLabel}
             onSubmit={onSubmit}
             survey={survey}
-            languageCode={languageCode}
+            languageCode={selectedLanguage}
             responseCount={responseCount}
-            isInIframe={isInIframe}
+            autoFocusEnabled={autoFocusEnabled}
+            replaceRecallInfo={replaceRecallInfo}
           />
         );
       } else if (questionIdx === survey.questions.length) {
@@ -298,22 +308,22 @@ export const Survey = ({
         return (
           <ThankYouCard
             headline={replaceRecallInfo(
-              getLocalizedValue(survey.thankYouCard.headline, languageCode),
+              getLocalizedValue(survey.thankYouCard.headline, selectedLanguage),
               responseData
             )}
             subheader={replaceRecallInfo(
-              getLocalizedValue(survey.thankYouCard.subheader, languageCode),
+              getLocalizedValue(survey.thankYouCard.subheader, selectedLanguage),
               responseData
             )}
             isResponseSendingFinished={isResponseSendingFinished}
-            buttonLabel={getLocalizedValue(survey.thankYouCard.buttonLabel, languageCode)}
+            buttonLabel={getLocalizedValue(survey.thankYouCard.buttonLabel, selectedLanguage)}
             buttonLink={survey.thankYouCard.buttonLink}
             imageUrl={survey.thankYouCard.imageUrl}
             videoUrl={survey.thankYouCard.videoUrl}
             redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectUrl)}
             isRedirectDisabled={isRedirectDisabled}
+            autoFocusEnabled={autoFocusEnabled}
             failed={false}
-            isInIframe={isInIframe}
           />
         );
       } else {
@@ -322,7 +332,7 @@ export const Survey = ({
           question && (
             <QuestionConditional
               surveyId={survey.id}
-              question={parseRecallInformation(question, languageCode, responseData)}
+              question={parseRecallInformation(question, selectedLanguage, responseData)}
               value={responseData[question.id]}
               onChange={onChange}
               onSubmit={onSubmit}
@@ -334,8 +344,8 @@ export const Survey = ({
               skipPrefilled={skipPrefilled}
               prefilledQuestionValue={getQuestionPrefillData(question.id, offset)}
               isLastQuestion={question.id === survey.questions[survey.questions.length - 1].id}
-              languageCode={languageCode}
-              isInIframe={isInIframe}
+              languageCode={selectedLanguage}
+              autoFocusEnabled={autoFocusEnabled}
               currentQuestionId={questionId}
             />
           )
@@ -344,15 +354,25 @@ export const Survey = ({
     };
 
     return (
-      <AutoCloseWrapper survey={survey} onClose={onClose}>
-        {getShowSurveyCloseButton(offset) && <SurveyCloseButton onClose={onClose} />}
+      <AutoCloseWrapper survey={survey} onClose={onClose} offset={offset}>
         <div
           className={cn(
             "no-scrollbar md:rounded-custom rounded-t-custom bg-survey-bg flex h-full w-full flex-col justify-between overflow-hidden transition-all duration-1000 ease-in-out",
             cardArrangement === "simple" ? "fb-survey-shadow" : "",
             offset === 0 || cardArrangement === "simple" ? "opacity-100" : "opacity-0"
           )}>
-          <div ref={contentRef} className={cn(loadingElement ? "animate-pulse opacity-60" : "", "my-auto")}>
+          <div className="flex h-6 justify-end pr-2 pt-2">
+            {getShowLanguageSwitch(offset) && (
+              <LanguageSwitch
+                surveyLanguages={survey.languages}
+                setSelectedLanguageCode={setselectedLanguage}
+              />
+            )}
+            {getShowSurveyCloseButton(offset) && <SurveyCloseButton onClose={onClose} />}
+          </div>
+          <div
+            ref={contentRef}
+            className={cn(loadingElement ? "animate-pulse opacity-60" : "", fullSizeCards ? "" : "my-auto")}>
             {content()}
           </div>
           <div className="mx-6 mb-10 mt-2 space-y-3 md:mb-6 md:mt-6">
@@ -381,14 +401,17 @@ export const Survey = ({
   };
 
   return (
-    <StackedCardsContainer
-      cardArrangement={cardArrangement}
-      currentQuestionId={questionId}
-      getCardContent={getCardContent}
-      survey={survey}
-      styling={styling}
-      setQuestionId={setQuestionId}
-      shouldResetQuestionId={shouldResetQuestionId}
-    />
+    <>
+      <StackedCardsContainer
+        cardArrangement={cardArrangement}
+        currentQuestionId={questionId}
+        getCardContent={getCardContent}
+        survey={survey}
+        styling={styling}
+        setQuestionId={setQuestionId}
+        shouldResetQuestionId={shouldResetQuestionId}
+        fullSizeCards={fullSizeCards}
+      />
+    </>
   );
 };

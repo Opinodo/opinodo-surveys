@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-
 import { useMembershipRole } from "@formbricks/lib/membership/hooks/useMembershipRole";
 import { TActionClass } from "@formbricks/types/actionClasses";
+import { TProductConfigChannel } from "@formbricks/types/product";
 import { ErrorComponent } from "@formbricks/ui/ErrorComponent";
-
 import { ActionDetailModal } from "./ActionDetailModal";
 
 interface ActionClassesTableProps {
@@ -13,6 +12,7 @@ interface ActionClassesTableProps {
   actionClasses: TActionClass[];
   children: [JSX.Element, JSX.Element[]];
   isUserTargetingEnabled: boolean;
+  currentProductChannel: TProductConfigChannel;
 }
 
 export const ActionClassesTable = ({
@@ -20,21 +20,12 @@ export const ActionClassesTable = ({
   actionClasses,
   children: [TableHeading, actionRows],
   isUserTargetingEnabled,
+  currentProductChannel,
 }: ActionClassesTableProps) => {
   const [isActionDetailModalOpen, setActionDetailModalOpen] = useState(false);
   const { membershipRole, error } = useMembershipRole(environmentId);
 
-  const [activeActionClass, setActiveActionClass] = useState<TActionClass>({
-    environmentId,
-    id: "",
-    name: "",
-    type: "noCode",
-    key: "",
-    description: "",
-    noCodeConfig: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+  const [activeActionClass, setActiveActionClass] = useState<TActionClass>();
 
   const handleOpenActionDetailModalClick = (e, actionClass: TActionClass) => {
     e.preventDefault();
@@ -63,15 +54,18 @@ export const ActionClassesTable = ({
           ))}
         </div>
       </div>
-      <ActionDetailModal
-        environmentId={environmentId}
-        open={isActionDetailModalOpen}
-        setOpen={setActionDetailModalOpen}
-        actionClasses={actionClasses}
-        actionClass={activeActionClass}
-        membershipRole={membershipRole}
-        isUserTargetingEnabled={isUserTargetingEnabled}
-      />
+      {activeActionClass && (
+        <ActionDetailModal
+          environmentId={environmentId}
+          open={isActionDetailModalOpen}
+          setOpen={setActionDetailModalOpen}
+          actionClasses={actionClasses}
+          actionClass={activeActionClass}
+          membershipRole={membershipRole}
+          isUserTargetingEnabled={isUserTargetingEnabled}
+          currentProductChannel={currentProductChannel}
+        />
+      )}
     </>
   );
 };

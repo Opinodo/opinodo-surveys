@@ -9,13 +9,12 @@ import WebhookLogo from "@/images/webhook.png";
 import ZapierLogo from "@/images/zapier-small.png";
 import { getServerSession } from "next-auth";
 import Image from "next/image";
-
 import { authOptions } from "@formbricks/lib/authOptions";
 import { getEnvironment } from "@formbricks/lib/environment/service";
 import { getIntegrations } from "@formbricks/lib/integration/service";
-import { getMembershipByUserIdTeamId } from "@formbricks/lib/membership/service";
+import { getMembershipByUserIdOrganizationId } from "@formbricks/lib/membership/service";
 import { getAccessFlags } from "@formbricks/lib/membership/utils";
-import { getTeamByEnvironmentId } from "@formbricks/lib/team/service";
+import { getOrganizationByEnvironmentId } from "@formbricks/lib/organization/service";
 import { getWebhookCountBySource } from "@formbricks/lib/webhook/service";
 import { TIntegrationType } from "@formbricks/types/integration";
 import { Card } from "@formbricks/ui/Card";
@@ -29,7 +28,7 @@ const Page = async ({ params }) => {
   const [
     environment,
     integrations,
-    team,
+    organization,
     session,
     userWebhookCount,
     zapierWebhookCount,
@@ -38,7 +37,7 @@ const Page = async ({ params }) => {
   ] = await Promise.all([
     getEnvironment(environmentId),
     getIntegrations(environmentId),
-    getTeamByEnvironmentId(params.environmentId),
+    getOrganizationByEnvironmentId(params.environmentId),
     getServerSession(authOptions),
     getWebhookCountBySource(environmentId, "user"),
     getWebhookCountBySource(environmentId, "zapier"),
@@ -52,11 +51,11 @@ const Page = async ({ params }) => {
     throw new Error("Session not found");
   }
 
-  if (!team) {
-    throw new Error("Team not found");
+  if (!organization) {
+    throw new Error("Organization not found");
   }
 
-  const currentUserMembership = await getMembershipByUserIdTeamId(session?.user.id, team.id);
+  const currentUserMembership = await getMembershipByUserIdOrganizationId(session?.user.id, organization.id);
   const { isViewer } = getAccessFlags(currentUserMembership?.role);
 
   const isGoogleSheetsIntegrationConnected = isIntegrationConnected("googleSheets");
@@ -65,19 +64,28 @@ const Page = async ({ params }) => {
   const isN8nIntegrationConnected = isIntegrationConnected("n8n");
   const isSlackIntegrationConnected = isIntegrationConnected("slack");
 
+  const widgetSetupCompleted = environment?.appSetupCompleted || environment?.websiteSetupCompleted;
+  const bothSetupCompleted = environment?.appSetupCompleted && environment?.websiteSetupCompleted;
+
   const integrationCards = [
     {
       docsHref: "https://formbricks.com/docs/getting-started/framework-guides#next-js",
       docsText: "Docs",
       docsNewTab: true,
-      connectHref: `/environments/${environmentId}/product/setup`,
+      connectHref: `/environments/${environmentId}/product/app-connection`,
       connectText: "Connect",
       connectNewTab: false,
       label: "Javascript Widget",
       description: "Integrate Formbricks into your Webapp",
       icon: <Image src={JsLogo} alt="Javascript Logo" />,
-      connected: environment?.widgetSetupCompleted,
-      statusText: environment?.widgetSetupCompleted ? "Connected" : "Not Connected",
+      connected: widgetSetupCompleted,
+      statusText: bothSetupCompleted
+        ? "app & website connected"
+        : environment?.appSetupCompleted
+          ? "app Connected"
+          : environment?.websiteSetupCompleted
+            ? "website connected"
+            : "Not Connected",
     },
     {
       docsHref: "https://formbricks.com/docs/integrations/zapier",

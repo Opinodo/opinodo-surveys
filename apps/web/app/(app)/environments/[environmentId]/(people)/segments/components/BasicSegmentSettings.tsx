@@ -4,18 +4,16 @@ import { FilterIcon, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
-
 import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
 import { isAdvancedSegment } from "@formbricks/lib/segment/utils";
 import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TBaseFilter, TSegment, TSegmentWithSurveyNames, ZSegmentFilters } from "@formbricks/types/segment";
+import { BasicAddFilterModal } from "@formbricks/ui/BasicAddFilterModal";
+import { BasicSegmentEditor } from "@formbricks/ui/BasicSegmentEditor";
 import { Button } from "@formbricks/ui/Button";
+import { ConfirmDeleteSegmentModal } from "@formbricks/ui/ConfirmDeleteSegmentModal";
 import { Input } from "@formbricks/ui/Input";
-import { BasicAddFilterModal } from "@formbricks/ui/Targeting/BasicAddFilterModal";
-import { BasicSegmentEditor } from "@formbricks/ui/Targeting/BasicSegmentEditor";
-import { ConfirmDeleteSegmentModal } from "@formbricks/ui/Targeting/ConfirmDeleteSegmentModal";
 import { UpgradePlanNotice } from "@formbricks/ui/UpgradePlanNotice";
-
 import { deleteBasicSegmentAction, updateBasicSegmentAction } from "../actions";
 
 type TBasicSegmentSettingsTabProps = {
@@ -214,14 +212,14 @@ export const BasicSegmentSettings = ({
             {isFormbricksCloud ? (
               <UpgradePlanNotice
                 message="For advanced targeting, please"
-                textForUrl="upgrade to the User Identification plan."
+                textForUrl="upgrade your plan."
                 url={`/environments/${environmentId}/settings/billing`}
               />
             ) : (
               <UpgradePlanNotice
                 message="For advanced targeting, please"
-                textForUrl="request an Enterprise license."
-                url="https://formbricks.com/docs/self-hosting/enterprise"
+                textForUrl="request an Enterprise License."
+                url={`/environments/${environmentId}/settings/enterprise`}
               />
             )}
 
@@ -245,7 +243,7 @@ export const BasicSegmentSettings = ({
                   handleUpdateSegment();
                 }}
                 disabled={isSaveDisabled}>
-                Save Changes
+                Save changes
               </Button>
             </div>
 

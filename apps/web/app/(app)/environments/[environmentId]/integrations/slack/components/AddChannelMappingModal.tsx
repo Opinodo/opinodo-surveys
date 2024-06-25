@@ -4,9 +4,9 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
-import { checkForRecallInHeadline } from "@formbricks/lib/utils/recall";
+import { replaceHeadlineRecall } from "@formbricks/lib/utils/recall";
+import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TIntegrationItem } from "@formbricks/types/integration";
 import {
   TIntegrationSlack,
@@ -14,6 +14,7 @@ import {
   TIntegrationSlackInput,
 } from "@formbricks/types/integration/slack";
 import { TSurvey } from "@formbricks/types/surveys";
+import { AdditionalIntegrationSettings } from "@formbricks/ui/AdditionalIntegrationSettings";
 import { Button } from "@formbricks/ui/Button";
 import { Checkbox } from "@formbricks/ui/Checkbox";
 import { DropdownSelector } from "@formbricks/ui/DropdownSelector";
@@ -28,6 +29,7 @@ interface AddChannelMappingModalProps {
   slackIntegration: TIntegrationSlack;
   channels: TIntegrationItem[];
   selectedIntegration?: (TIntegrationSlackConfigData & { index: number }) | null;
+  attributeClasses: TAttributeClass[];
 }
 
 export const AddChannelMappingModal = ({
@@ -38,6 +40,7 @@ export const AddChannelMappingModal = ({
   channels,
   slackIntegration,
   selectedIntegration,
+  attributeClasses,
 }: AddChannelMappingModalProps) => {
   const { handleSubmit } = useForm();
 
@@ -46,6 +49,8 @@ export const AddChannelMappingModal = ({
   const [selectedSurvey, setSelectedSurvey] = useState<TSurvey | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<TIntegrationItem | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [includeHiddenFields, setIncludeHiddenFields] = useState(false);
+  const [includeMetadata, setIncludeMetadata] = useState(false);
   const existingIntegrationData = slackIntegration?.config?.data;
   const slackIntegrationData: TIntegrationSlackInput = {
     type: "slack",
@@ -76,6 +81,8 @@ export const AddChannelMappingModal = ({
         })!
       );
       setSelectedQuestions(selectedIntegration.questionIds);
+      setIncludeHiddenFields(!!selectedIntegration.includeHiddenFields);
+      setIncludeMetadata(!!selectedIntegration.includeMetadata);
       return;
     }
     resetForm();
@@ -105,6 +112,8 @@ export const AddChannelMappingModal = ({
             ? "All questions"
             : "Selected questions",
         createdAt: new Date(),
+        includeHiddenFields,
+        includeMetadata,
       };
       if (selectedIntegration) {
         // update action
@@ -168,7 +177,7 @@ export const AddChannelMappingModal = ({
   );
 
   return (
-    <Modal open={open} setOpen={setOpenWithStates} noPadding closeOnOutsideClick={false}>
+    <Modal open={open} setOpen={setOpenWithStates} noPadding closeOnOutsideClick={true}>
       <div className="flex h-full flex-col rounded-lg">
         <div className="rounded-t-lg bg-slate-100">
           <div className="flex w-full items-center justify-between p-6">
@@ -220,28 +229,40 @@ export const AddChannelMappingModal = ({
               </div>
               {selectedSurvey && (
                 <div>
-                  <Label htmlFor="Surveys">Questions</Label>
-                  <div className="mt-1 rounded-lg border border-slate-200">
-                    <div className="grid content-center rounded-lg bg-slate-50 p-3 text-left text-sm text-slate-900">
-                      {checkForRecallInHeadline(selectedSurvey, "default")?.questions?.map((question) => (
-                        <div key={question.id} className="my-1 flex items-center space-x-2">
-                          <label htmlFor={question.id} className="flex cursor-pointer items-center">
-                            <Checkbox
-                              type="button"
-                              id={question.id}
-                              value={question.id}
-                              className="bg-white"
-                              checked={selectedQuestions.includes(question.id)}
-                              onCheckedChange={() => {
-                                handleCheckboxChange(question.id);
-                              }}
-                            />
-                            <span className="ml-2">{getLocalizedValue(question.headline, "default")}</span>
-                          </label>
-                        </div>
-                      ))}
+                  <div>
+                    <Label htmlFor="Surveys">Questions</Label>
+                    <div className="mt-1 rounded-lg border border-slate-200">
+                      <div className="grid content-center rounded-lg bg-slate-50 p-3 text-left text-sm text-slate-900">
+                        {replaceHeadlineRecall(selectedSurvey, "default", attributeClasses)?.questions?.map(
+                          (question) => (
+                            <div key={question.id} className="my-1 flex items-center space-x-2">
+                              <label htmlFor={question.id} className="flex cursor-pointer items-center">
+                                <Checkbox
+                                  type="button"
+                                  id={question.id}
+                                  value={question.id}
+                                  className="bg-white"
+                                  checked={selectedQuestions.includes(question.id)}
+                                  onCheckedChange={() => {
+                                    handleCheckboxChange(question.id);
+                                  }}
+                                />
+                                <span className="ml-2">
+                                  {getLocalizedValue(question.headline, "default")}
+                                </span>
+                              </label>
+                            </div>
+                          )
+                        )}
+                      </div>
                     </div>
                   </div>
+                  <AdditionalIntegrationSettings
+                    includeHiddenFields={includeHiddenFields}
+                    includeMetadata={includeMetadata}
+                    setIncludeHiddenFields={setIncludeHiddenFields}
+                    setIncludeMetadata={setIncludeMetadata}
+                  />
                 </div>
               )}
             </div>

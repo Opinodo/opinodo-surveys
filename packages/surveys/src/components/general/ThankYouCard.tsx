@@ -18,8 +18,8 @@ interface ThankYouCardProps {
   imageUrl?: string;
   videoUrl?: string;
   isResponseSendingFinished: boolean;
+  autoFocusEnabled: boolean;
   failed: boolean;
-  isInIframe: boolean;
 }
 
 export const ThankYouCard = ({
@@ -32,8 +32,8 @@ export const ThankYouCard = ({
   imageUrl,
   videoUrl,
   isResponseSendingFinished,
+  autoFocusEnabled,
   failed,
-  isInIframe,
 }: ThankYouCardProps) => {
   const media = imageUrl || videoUrl ? <QuestionMedia imgUrl={imageUrl} videoUrl={videoUrl} /> : null;
   const checkmark = (
@@ -87,13 +87,13 @@ export const ThankYouCard = ({
                   <SubmitButton
                     buttonLabel={buttonLabel}
                     isLastQuestion={false}
-                    focus={!isInIframe}
+                    focus={autoFocusEnabled}
                     onClick={() => {
                       if (!buttonLink) return;
                       window.location.replace(buttonLink);
                     }}
                   />
-                  <p className="text-subheading hidden text-xs md:flex">Press Enter ↵</p>
+
                 </div>
               )}
             </>

@@ -15,6 +15,7 @@ export const minimalSurvey: TSurvey = {
   redirectUrl: null,
   redirectOnFailUrl: null,
   recontactDays: null,
+  displayLimit: null,
   welcomeCard: {
     enabled: false,
     headline: { default: "Welcome!" },
@@ -46,6 +47,7 @@ export const minimalSurvey: TSurvey = {
   resultShareKey: null,
   segment: null,
   languages: [],
+  showLanguageSwitch: false,
   countries: [],
   limitedCountries: false,
   reward: 0,

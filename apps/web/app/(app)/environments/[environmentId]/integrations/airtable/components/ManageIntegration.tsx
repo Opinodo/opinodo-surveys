@@ -7,8 +7,8 @@ import {
 } from "@/app/(app)/environments/[environmentId]/integrations/airtable/components/AddIntegrationModal";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-
 import { timeSince } from "@formbricks/lib/time";
+import { TAttributeClass } from "@formbricks/types/attributeClasses";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TIntegrationItem } from "@formbricks/types/integration";
 import { TIntegrationAirtable } from "@formbricks/types/integration/airtable";
@@ -24,12 +24,21 @@ interface ManageIntegrationProps {
   setIsConnected: (data: boolean) => void;
   surveys: TSurvey[];
   airtableArray: TIntegrationItem[];
+  attributeClasses: TAttributeClass[];
 }
 
 const tableHeaders = ["Survey", "Table Name", "Questions", "Updated At"];
 
 export const ManageIntegration = (props: ManageIntegrationProps) => {
-  const { airtableIntegration, environment, environmentId, setIsConnected, surveys, airtableArray } = props;
+  const {
+    airtableIntegration,
+    environment,
+    environmentId,
+    setIsConnected,
+    surveys,
+    airtableArray,
+    attributeClasses,
+  } = props;
   const [isDeleting, setisDeleting] = useState(false);
   const [isDeleteIntegrationModalOpen, setIsDeleteIntegrationModalOpen] = useState(false);
   const [defaultValues, setDefaultValues] = useState<(IntegrationModalInputs & { index: number }) | null>(
@@ -103,6 +112,8 @@ export const ManageIntegration = (props: ManageIntegrationProps) => {
                   questions: data.questionIds,
                   survey: data.surveyId,
                   table: data.tableId,
+                  includeHiddenFields: !!data.includeHiddenFields,
+                  includeMetadata: !!data.includeMetadata,
                   index,
                 });
                 setIsModalOpen(true);
@@ -142,6 +153,7 @@ export const ManageIntegration = (props: ManageIntegrationProps) => {
           environmentId={environmentId}
           surveys={surveys}
           airtableIntegration={airtableIntegration}
+          attributeClasses={attributeClasses}
           {...data}
         />
       )}

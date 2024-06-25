@@ -1,7 +1,5 @@
 import "server-only";
-
 import { Prisma } from "@prisma/client";
-
 import { prisma } from "@formbricks/database";
 import { TAttributes } from "@formbricks/types/attributes";
 import { ZOptionalNumber, ZString } from "@formbricks/types/common";
@@ -14,8 +12,6 @@ import {
   TResponseInput,
   TResponseLegacyInput,
   TResponseUpdateInput,
-  TSurveyMetaFieldFilter,
-  TSurveyPersonAttributes,
   ZResponseFilterCriteria,
   ZResponseInput,
   ZResponseLegacyInput,
@@ -23,20 +19,20 @@ import {
 } from "@formbricks/types/responses";
 import { TSurveySummary } from "@formbricks/types/surveys";
 import { TTag } from "@formbricks/types/tags";
-
 import { getAttributes } from "../attribute/service";
 import { cache } from "../cache";
-import { ITEMS_PER_PAGE, WEBAPP_URL } from "../constants";
+import { IS_FORMBRICKS_CLOUD, ITEMS_PER_PAGE, WEBAPP_URL } from "../constants";
 import { displayCache } from "../display/cache";
 import { deleteDisplayByResponseId, getDisplayCountBySurveyId } from "../display/service";
+import { getMonthlyOrganizationResponseCount, getOrganizationByEnvironmentId } from "../organization/service";
 import { createPerson, getPerson, getPersonByUserId } from "../person/service";
+import { sendPlanLimitsReachedEventToPosthogWeekly } from "../posthogServer";
 import { responseNoteCache } from "../responseNote/cache";
 import { getResponseNotes } from "../responseNote/service";
 import { putFile } from "../storage/service";
 import { getSurvey } from "../survey/service";
 import { captureTelemetry } from "../telemetry";
 import { convertToCsv, convertToXlsxBuffer } from "../utils/fileConversion";
-import { checkForRecallInHeadline } from "../utils/recall";
 import { validateInputs } from "../utils/validate";
 import { responseCache } from "./cache";
 import {
@@ -44,6 +40,9 @@ import {
   calculateTtcTotal,
   extractSurveyDetails,
   getQuestionWiseSummary,
+  getResponseHiddenFields,
+  getResponseMeta,
+  getResponsePersonAttributes,
   getResponsesFileName,
   getResponsesJson,
   getSurveySummaryDropOff,
@@ -102,7 +101,7 @@ export const responseSelection = {
   },
 };
 
-export const getResponsesByPersonId = (personId: string, page?: number): Promise<Array<TResponse> | null> =>
+export const getResponsesByPersonId = (personId: string, page?: number): Promise<TResponse[] | null> =>
   cache(
     async () => {
       validateInputs([personId, ZId], [page, ZOptionalNumber]);
@@ -125,7 +124,7 @@ export const getResponsesByPersonId = (personId: string, page?: number): Promise
           throw new ResourceNotFoundError("Response from PersonId", personId);
         }
 
-        let responses: Array<TResponse> = [];
+        let responses: TResponse[] = [];
 
         await Promise.all(
           responsePrisma.map(async (response) => {
@@ -211,6 +210,11 @@ export const createResponse = async (responseInput: TResponseInput): Promise<TRe
     let person: TPerson | null = null;
     let attributes: TAttributes | null = null;
 
+    const organization = await getOrganizationByEnvironmentId(environmentId);
+    if (!organization) {
+      throw new ResourceNotFoundError("Organization", environmentId);
+    }
+
     if (userId) {
       person = await getPersonByUserId(environmentId, userId);
       if (!person) {
@@ -269,6 +273,28 @@ export const createResponse = async (responseInput: TResponseInput): Promise<TRe
     responseNoteCache.revalidate({
       responseId: response.id,
     });
+
+    if (IS_FORMBRICKS_CLOUD) {
+      const responsesCount = await getMonthlyOrganizationResponseCount(organization.id);
+      const responsesLimit = organization.billing.limits.monthly.responses;
+
+      if (responsesLimit && responsesCount >= responsesLimit) {
+        try {
+          await sendPlanLimitsReachedEventToPosthogWeekly(environmentId, {
+            plan: organization.billing.plan,
+            limits: {
+              monthly: {
+                responses: responsesLimit,
+                miu: null,
+              },
+            },
+          });
+        } catch (err) {
+          // Log error but do not throw
+          console.error(`Error sending plan limits reached event to Posthog: ${err}`);
+        }
+      }
+    }
 
     return response;
   } catch (error) {
@@ -346,6 +372,7 @@ export const createResponseLegacy = async (responseInput: TResponseLegacyInput):
     responseNoteCache.revalidate({
       responseId: response.id,
     });
+
     return response;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -393,37 +420,33 @@ export const getResponse = (responseId: string): Promise<TResponse | null> =>
     }
   )();
 
-export const getResponsePersonAttributes = (surveyId: string): Promise<TSurveyPersonAttributes> =>
+export const getResponseFilteringValues = async (surveyId: string) =>
   cache(
     async () => {
       validateInputs([surveyId, ZId]);
 
       try {
-        let attributes: TSurveyPersonAttributes = {};
-        const responseAttributes = await prisma.response.findMany({
+        const survey = await getSurvey(surveyId);
+        if (!survey) {
+          throw new ResourceNotFoundError("Survey", surveyId);
+        }
+
+        const responses = await prisma.response.findMany({
           where: {
-            surveyId: surveyId,
+            surveyId,
           },
           select: {
+            data: true,
+            meta: true,
             personAttributes: true,
           },
         });
 
-        responseAttributes.forEach((response) => {
-          Object.keys(response.personAttributes ?? {}).forEach((key) => {
-            if (response.personAttributes && attributes[key]) {
-              attributes[key].push(response.personAttributes[key].toString());
-            } else if (response.personAttributes) {
-              attributes[key] = [response.personAttributes[key].toString()];
-            }
-          });
-        });
+        const personAttributes = getResponsePersonAttributes(responses);
+        const meta = getResponseMeta(responses);
+        const hiddenFields = getResponseHiddenFields(survey, responses);
 
-        Object.keys(attributes).forEach((key) => {
-          attributes[key] = Array.from(new Set(attributes[key]));
-        });
-
-        return attributes;
+        return { personAttributes, meta, hiddenFields };
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           throw new DatabaseError(error.message);
@@ -432,67 +455,7 @@ export const getResponsePersonAttributes = (surveyId: string): Promise<TSurveyPe
         throw error;
       }
     },
-    [`getResponsePersonAttributes-${surveyId}`],
-    {
-      tags: [responseCache.tag.bySurveyId(surveyId)],
-    }
-  )();
-
-export const getResponseMeta = (surveyId: string): Promise<TSurveyMetaFieldFilter> =>
-  cache(
-    async () => {
-      validateInputs([surveyId, ZId]);
-
-      try {
-        const responseMeta = await prisma.response.findMany({
-          where: {
-            surveyId: surveyId,
-          },
-          select: {
-            meta: true,
-          },
-        });
-
-        const meta: { [key: string]: Set<string> } = {};
-
-        responseMeta.forEach((response) => {
-          Object.entries(response.meta).forEach(([key, value]) => {
-            // skip url
-            if (key === "url") return;
-
-            // Handling nested objects (like userAgent)
-            if (typeof value === "object" && value !== null) {
-              Object.entries(value).forEach(([nestedKey, nestedValue]) => {
-                if (typeof nestedValue === "string" && nestedValue) {
-                  if (!meta[nestedKey]) {
-                    meta[nestedKey] = new Set();
-                  }
-                  meta[nestedKey].add(nestedValue);
-                }
-              });
-            } else if (typeof value === "string" && value) {
-              if (!meta[key]) {
-                meta[key] = new Set();
-              }
-              meta[key].add(value);
-            }
-          });
-        });
-
-        // Convert Set to Array
-        const result = Object.fromEntries(
-          Object.entries(meta).map(([key, valueSet]) => [key, Array.from(valueSet)])
-        );
-
-        return result;
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          throw new DatabaseError(error.message);
-        }
-        throw error;
-      }
-    },
-    [`getResponseMeta-${surveyId}`],
+    [`getResponseFilteringValues-${surveyId}`],
     {
       tags: [responseCache.tag.bySurveyId(surveyId)],
     }
@@ -564,7 +527,6 @@ export const getSurveySummary = (
 
       try {
         const survey = await getSurvey(surveyId);
-
         if (!survey) {
           throw new ResourceNotFoundError("Survey", surveyId);
         }
@@ -586,11 +548,7 @@ export const getSurveySummary = (
 
         const dropOff = getSurveySummaryDropOff(survey, responses, displayCount);
         const meta = getSurveySummaryMeta(responses, displayCount);
-        const questionWiseSummary = getQuestionWiseSummary(
-          checkForRecallInHeadline(survey, "default"),
-          responses,
-          dropOff
-        );
+        const questionWiseSummary = getQuestionWiseSummary(survey, responses, dropOff);
 
         return { meta, dropOff, summary: questionWiseSummary };
       } catch (error) {
