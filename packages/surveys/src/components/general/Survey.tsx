@@ -270,6 +270,7 @@ export const Survey = ({
       if (questionIdx === -1) {
         return (
           <WelcomeCard
+            key="start"
             headline={survey.welcomeCard.headline}
             html={survey.welcomeCard.html}
             fileUrl={survey.welcomeCard.fileUrl}
@@ -280,6 +281,7 @@ export const Survey = ({
             responseCount={responseCount}
             autoFocusEnabled={autoFocusEnabled}
             replaceRecallInfo={replaceRecallInfo}
+            isCurrent={offset === 0}
           />
         );
       } else if (questionIdx === survey.questions.length) {
@@ -307,6 +309,7 @@ export const Survey = ({
         }
         return (
           <ThankYouCard
+            key="end"
             headline={replaceRecallInfo(
               getLocalizedValue(survey.thankYouCard.headline, selectedLanguage),
               responseData
@@ -318,11 +321,13 @@ export const Survey = ({
             isResponseSendingFinished={isResponseSendingFinished}
             buttonLabel={getLocalizedValue(survey.thankYouCard.buttonLabel, selectedLanguage)}
             buttonLink={survey.thankYouCard.buttonLink}
+            survey={survey}
             imageUrl={survey.thankYouCard.imageUrl}
             videoUrl={survey.thankYouCard.videoUrl}
             redirectUrl={appendSurveyAndPanelistQueryParamsToRedirectUrl(survey.redirectUrl)}
             isRedirectDisabled={isRedirectDisabled}
             autoFocusEnabled={autoFocusEnabled}
+            isCurrent={offset === 0}
             failed={false}
           />
         );
@@ -331,6 +336,7 @@ export const Survey = ({
         return (
           question && (
             <QuestionConditional
+              key={question.id}
               surveyId={survey.id}
               question={parseRecallInformation(question, selectedLanguage, responseData)}
               value={responseData[question.id]}
@@ -357,11 +363,11 @@ export const Survey = ({
       <AutoCloseWrapper survey={survey} onClose={onClose} offset={offset}>
         <div
           className={cn(
-            "no-scrollbar md:rounded-custom rounded-t-custom bg-survey-bg flex h-full w-full flex-col justify-between overflow-hidden transition-all duration-1000 ease-in-out",
+            "fb-no-scrollbar md:fb-rounded-custom fb-rounded-t-custom fb-bg-survey-bg fb-flex fb-h-full fb-w-full fb-flex-col fb-justify-between fb-overflow-hidden fb-transition-all fb-duration-1000 fb-ease-in-out",
             cardArrangement === "simple" ? "fb-survey-shadow" : "",
-            offset === 0 || cardArrangement === "simple" ? "opacity-100" : "opacity-0"
+            offset === 0 || cardArrangement === "simple" ? "fb-opacity-100" : "fb-opacity-0"
           )}>
-          <div className="flex h-6 justify-end pr-2 pt-2">
+          <div className="fb-flex fb-h-6 fb-justify-end fb-pr-2 fb-pt-2">
             {getShowLanguageSwitch(offset) && (
               <LanguageSwitch
                 surveyLanguages={survey.languages}
@@ -372,10 +378,13 @@ export const Survey = ({
           </div>
           <div
             ref={contentRef}
-            className={cn(loadingElement ? "animate-pulse opacity-60" : "", fullSizeCards ? "" : "my-auto")}>
+            className={cn(
+              loadingElement ? "fb-animate-pulse fb-opacity-60" : "",
+              fullSizeCards ? "" : "fb-my-auto"
+            )}>
             {content()}
           </div>
-          <div className="mx-6 mb-10 mt-2 space-y-3 md:mb-6 md:mt-6">
+          <div className="fb-mx-6 fb-mb-10 fb-mt-2 fb-space-y-3 md:fb-mb-6 md:fb-mt-6">
             {isBrandingEnabled && <FormbricksBranding />}
             {showProgressBar && <ProgressBar survey={survey} questionId={questionId} />}
             {currentQuestion && currentQuestion.type === "ad" && (

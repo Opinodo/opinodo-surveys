@@ -228,6 +228,7 @@ export const mockCalQuestion: TSurveyCalQuestion = {
     default: "Skip",
   },
   calUserName: "rick/get-rick-rolled",
+  calHost: "cal.com",
   id: "o3bnux6p42u9ew9d02l14r26",
   type: TSurveyQuestionTypeEnum.Cal,
   isDraft: true,
@@ -410,6 +411,7 @@ export const mockTranslatedRatingQuestion = {
   subheader: { default: "Don't worry, be honest.", de: "" },
   lowerLabel: { default: "Not good", de: "" },
   upperLabel: { default: "Very good", de: "" },
+  isColorCodingEnabled: false,
 };
 
 export const mockLegacyRatingQuestion = {
@@ -428,6 +430,7 @@ export const mockTranslatedNpsQuestion = {
   },
   lowerLabel: { default: "Not at all likely", de: "" },
   upperLabel: { default: "Extremely likely", de: "" },
+  isColorCodingEnabled: false,
 };
 
 export const mockLegacyNpsQuestion = {

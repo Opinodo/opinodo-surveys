@@ -31,8 +31,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const goneResponse = (message: string, details?: { [key: string]: string }, cors: boolean = false) =>
-  Response.json(
+const goneResponse = (
+  message: string,
+  details?: { [key: string]: string },
+  cors: boolean = false,
+  cache: string = "private, no-store"
+) => {
+  const headers = {
+    ...(cors && corsHeaders),
+    "Cache-Control": cache,
+  };
+
+  return Response.json(
     {
       code: "gone",
       message,
@@ -40,12 +50,23 @@ const goneResponse = (message: string, details?: { [key: string]: string }, cors
     } as ApiErrorResponse,
     {
       status: 410,
-      ...(cors && { headers: corsHeaders }),
+      headers,
     }
   );
+};
 
-const badRequestResponse = (message: string, details?: { [key: string]: string }, cors: boolean = false) =>
-  Response.json(
+const badRequestResponse = (
+  message: string,
+  details?: { [key: string]: string },
+  cors: boolean = false,
+  cache: string = "private, no-store"
+) => {
+  const headers = {
+    ...(cors && corsHeaders),
+    "Cache-Control": cache,
+  };
+
+  return Response.json(
     {
       code: "bad_request",
       message,
@@ -53,25 +74,23 @@ const badRequestResponse = (message: string, details?: { [key: string]: string }
     } as ApiErrorResponse,
     {
       status: 400,
-      ...(cors && { headers: corsHeaders }),
+      headers,
     }
   );
-
-const missingFieldResponse = (field: string, cors: boolean = false) =>
-  badRequestResponse(
-    `Missing ${field}`,
-    {
-      missing_field: field,
-    },
-    cors
-  );
+};
 
 const methodNotAllowedResponse = (
   res: CustomNextApiResponse,
   allowedMethods: string[],
-  cors: boolean = false
-) =>
-  Response.json(
+  cors: boolean = false,
+  cache: string = "private, no-store"
+) => {
+  const headers = {
+    ...(cors && corsHeaders),
+    "Cache-Control": cache,
+  };
+
+  return Response.json(
     {
       code: "method_not_allowed",
       message: `The HTTP ${res.req?.method} method is not supported by this route.`,
@@ -81,9 +100,10 @@ const methodNotAllowedResponse = (
     } as ApiErrorResponse,
     {
       status: 405,
-      ...(cors && { headers: corsHeaders }),
+      headers,
     }
   );
+};
 
 const notFoundResponse = (
   resourceType: string,
@@ -112,8 +132,13 @@ const notFoundResponse = (
   );
 };
 
-const notAuthenticatedResponse = (cors: boolean = false) =>
-  Response.json(
+const notAuthenticatedResponse = (cors: boolean = false, cache: string = "private, no-store") => {
+  const headers = {
+    ...(cors && corsHeaders),
+    "Cache-Control": cache,
+  };
+
+  return Response.json(
     {
       code: "not_authenticated",
       message: "Not authenticated",
@@ -123,12 +148,18 @@ const notAuthenticatedResponse = (cors: boolean = false) =>
     } as ApiErrorResponse,
     {
       status: 401,
-      ...(cors && { headers: corsHeaders }),
+      headers,
     }
   );
+};
 
-const unauthorizedResponse = (cors: boolean = false) =>
-  Response.json(
+const unauthorizedResponse = (cors: boolean = false, cache: string = "private, no-store") => {
+  const headers = {
+    ...(cors && corsHeaders),
+    "Cache-Control": cache,
+  };
+
+  return Response.json(
     {
       code: "unauthorized",
       message: "You are not authorized to access this resource",
@@ -136,16 +167,23 @@ const unauthorizedResponse = (cors: boolean = false) =>
     } as ApiErrorResponse,
     {
       status: 401,
-      ...(cors && { headers: corsHeaders }),
+      headers,
     }
   );
+};
 
 const forbiddenResponse = (
   message: string,
   cors: boolean = false,
-  details: ApiErrorResponse["details"] = {}
-) =>
-  Response.json(
+  details: ApiErrorResponse["details"] = {},
+  cache: string = "private, no-store"
+) => {
+  const headers = {
+    ...(cors && corsHeaders),
+    "Cache-Control": cache,
+  };
+
+  return Response.json(
     {
       code: "forbidden",
       message,
@@ -153,9 +191,10 @@ const forbiddenResponse = (
     } as ApiErrorResponse,
     {
       status: 403,
-      ...(cors && { headers: corsHeaders }),
+      headers,
     }
   );
+};
 
 const successResponse = (data: Object, cors: boolean = false, cache: string = "private, no-store") => {
   const headers = {
@@ -238,7 +277,6 @@ export const responses = {
   goneResponse,
   badRequestResponse,
   internalServerErrorResponse,
-  missingFieldResponse,
   methodNotAllowedResponse,
   notAuthenticatedResponse,
   unauthorizedResponse,

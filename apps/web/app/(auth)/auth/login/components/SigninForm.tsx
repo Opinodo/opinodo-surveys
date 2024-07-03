@@ -244,7 +244,7 @@ export const SigninForm = ({
         </div>
 
         {publicSignUpEnabled && !totpLogin && isMultiOrgEnabled && (
-          <div className="mt-9 text-center text-xs ">
+          <div className="mt-9 text-center text-xs">
             <Link
               href={inviteToken ? `/auth/signup?inviteToken=${inviteToken}` : "/auth/signup"}
               className="font-semibold text-slate-600 underline hover:text-slate-700">
