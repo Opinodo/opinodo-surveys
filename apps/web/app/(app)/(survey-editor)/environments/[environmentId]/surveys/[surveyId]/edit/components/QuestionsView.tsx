@@ -244,132 +244,121 @@ export const QuestionsView = ({
     const updatedSurvey = { ...localSurvey };
     const questionToTranslate = updatedSurvey.questions[questionIdx];
 
-    const textsToTranslate = { headline: questionToTranslate.headline["default"] };
-    if (questionToTranslate.subheader) {
-      textsToTranslate["subheader"] = questionToTranslate.subheader["default"];
+    const textsToTranslate = extractTextsToTranslate(questionToTranslate);
+
+    for (const language of localSurvey.languages) {
+      const languageCode = language.language.code;
+      if (languageCode !== "en" && languageCode !== "default") {
+        const translatedTexts = await translateText(languageCode, textsToTranslate);
+        updateQuestionWithTranslatedTexts(questionToTranslate, translatedTexts, languageCode);
+      }
     }
-    switch (questionToTranslate.type) {
+
+    updatedSurvey.questions[questionIdx] = questionToTranslate;
+    setLocalSurvey(updatedSurvey);
+    setLoading(false);
+    toast.success("Question translated.");
+  };
+
+  const extractTextsToTranslate = (question) => {
+    const textsToTranslate = { headline: question.headline["default"] };
+    if (question.subheader) {
+      textsToTranslate["subheader"] = question.subheader["default"];
+    }
+    switch (question.type) {
       case "openText":
-        if (questionToTranslate.placeholder) {
-          textsToTranslate["placeholder"] = questionToTranslate.placeholder["default"];
+        if (question.placeholder) {
+          textsToTranslate["placeholder"] = question.placeholder["default"];
         }
         break;
       case "multipleChoiceSingle":
       case "multipleChoiceMulti":
-        questionToTranslate.choices.forEach((choice, index) => {
+        question.choices.forEach((choice, index) => {
           textsToTranslate[`choice_${index}`] = choice.label["default"];
         });
-        if (questionToTranslate.otherOptionPlaceholder) {
-          textsToTranslate["otherOptionPlaceholder"] = questionToTranslate.otherOptionPlaceholder["default"];
+        if (question.otherOptionPlaceholder) {
+          textsToTranslate["otherOptionPlaceholder"] = question.otherOptionPlaceholder["default"];
         }
         break;
       case "cta":
-        if (questionToTranslate.dismissButtonLabel) {
-          textsToTranslate["dismissButtonLabel"] = questionToTranslate.dismissButtonLabel["default"];
+        if (question.dismissButtonLabel) {
+          textsToTranslate["dismissButtonLabel"] = question.dismissButtonLabel["default"];
         }
-        if (questionToTranslate.html) {
-          textsToTranslate["html"] = questionToTranslate.html["default"];
+        if (question.html) {
+          textsToTranslate["html"] = question.html["default"];
         }
-        break;
-      case "ad":
-        // Add any specific fields for 'ad' type if needed
         break;
       case "consent":
-        if (questionToTranslate.html) {
-          textsToTranslate["html"] = questionToTranslate.html["default"];
+        if (question.html) {
+          textsToTranslate["html"] = question.html["default"];
         }
-        if (questionToTranslate.label) {
-          textsToTranslate["label"] = questionToTranslate.label["default"];
+        if (question.label) {
+          textsToTranslate["label"] = question.label["default"];
         }
         break;
       case "nps":
-        if (questionToTranslate.lowerLabel) {
-          textsToTranslate["lowerLabel"] = questionToTranslate.lowerLabel["default"];
-        }
-        if (questionToTranslate.upperLabel) {
-          textsToTranslate["upperLabel"] = questionToTranslate.upperLabel["default"];
-        }
-        break;
       case "rating":
-        if (questionToTranslate.lowerLabel) {
-          textsToTranslate["lowerLabel"] = questionToTranslate.lowerLabel["default"];
+        if (question.lowerLabel) {
+          textsToTranslate["lowerLabel"] = question.lowerLabel["default"];
         }
-        if (questionToTranslate.upperLabel) {
-          textsToTranslate["upperLabel"] = questionToTranslate.upperLabel["default"];
+        if (question.upperLabel) {
+          textsToTranslate["upperLabel"] = question.upperLabel["default"];
         }
         break;
       default:
         break;
     }
+    return textsToTranslate;
+  };
 
-    for (const language of localSurvey.languages) {
-      const languageCode = language.language.code;
-      if (languageCode != "en" && languageCode != "default") {
-        const translatedTexts = await translateText(languageCode, textsToTranslate);
-        questionToTranslate.headline[languageCode] = translatedTexts["headline"];
-        if (questionToTranslate.subheader) {
-          questionToTranslate.subheader[languageCode] = translatedTexts["subheader"];
-        }
-        switch (questionToTranslate.type) {
-          case "openText":
-            if (questionToTranslate.placeholder) {
-              questionToTranslate.placeholder[languageCode] = translatedTexts["placeholder"];
-            }
-            break;
-          case "multipleChoiceSingle":
-          case "multipleChoiceMulti":
-            questionToTranslate.choices.forEach((choice, index) => {
-              choice.label[languageCode] = translatedTexts[`choice_${index}`];
-            });
-            if (questionToTranslate.otherOptionPlaceholder) {
-              questionToTranslate.otherOptionPlaceholder[languageCode] =
-                translatedTexts["otherOptionPlaceholder"];
-            }
-            break;
-          case "cta":
-            if (questionToTranslate.dismissButtonLabel) {
-              questionToTranslate.dismissButtonLabel[languageCode] = translatedTexts["dismissButtonLabel"];
-            }
-            if (questionToTranslate.html) {
-              questionToTranslate.html[languageCode] = translatedTexts["html"];
-            }
-            break;
-          case "ad":
-            // Add any specific fields for 'ad' type if needed
-            break;
-          case "consent":
-            if (questionToTranslate.html) {
-              questionToTranslate.html[languageCode] = translatedTexts["html"];
-            }
-            if (questionToTranslate.label) {
-              questionToTranslate.label[languageCode] = translatedTexts["label"];
-            }
-            break;
-          case "nps":
-            if (questionToTranslate.lowerLabel) {
-              questionToTranslate.lowerLabel[languageCode] = translatedTexts["lowerLabel"];
-            }
-            if (questionToTranslate.upperLabel) {
-              questionToTranslate.upperLabel[languageCode] = translatedTexts["upperLabel"];
-            }
-            break;
-          case "rating":
-            if (questionToTranslate.lowerLabel) {
-              questionToTranslate.lowerLabel[languageCode] = translatedTexts["lowerLabel"];
-            }
-            if (questionToTranslate.upperLabel) {
-              questionToTranslate.upperLabel[languageCode] = translatedTexts["upperLabel"];
-            }
-            break;
-          default:
-            break;
-        }
-      }
+  const updateQuestionWithTranslatedTexts = (question, translatedTexts, languageCode) => {
+    question.headline[languageCode] = translatedTexts["headline"];
+    if (question.subheader) {
+      question.subheader[languageCode] = translatedTexts["subheader"];
     }
-    updatedSurvey.questions[questionIdx] = questionToTranslate;
-    setLocalSurvey(updatedSurvey);
-    setLoading(false);
-    toast.success("Question translated.");
+    switch (question.type) {
+      case "openText":
+        if (question.placeholder) {
+          question.placeholder[languageCode] = translatedTexts["placeholder"];
+        }
+        break;
+      case "multipleChoiceSingle":
+      case "multipleChoiceMulti":
+        question.choices.forEach((choice, index) => {
+          choice.label[languageCode] = translatedTexts[`choice_${index}`];
+        });
+        if (question.otherOptionPlaceholder) {
+          question.otherOptionPlaceholder[languageCode] = translatedTexts["otherOptionPlaceholder"];
+        }
+        break;
+      case "cta":
+        if (question.dismissButtonLabel) {
+          question.dismissButtonLabel[languageCode] = translatedTexts["dismissButtonLabel"];
+        }
+        if (question.html) {
+          question.html[languageCode] = translatedTexts["html"];
+        }
+        break;
+      case "consent":
+        if (question.html) {
+          question.html[languageCode] = translatedTexts["html"];
+        }
+        if (question.label) {
+          question.label[languageCode] = translatedTexts["label"];
+        }
+        break;
+      case "nps":
+      case "rating":
+        if (question.lowerLabel) {
+          question.lowerLabel[languageCode] = translatedTexts["lowerLabel"];
+        }
+        if (question.upperLabel) {
+          question.upperLabel[languageCode] = translatedTexts["upperLabel"];
+        }
+        break;
+      default:
+        break;
+    }
   };
 
   const duplicateQuestion = (questionIdx: number) => {
