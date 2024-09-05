@@ -5,11 +5,7 @@ import { z } from "zod";
 import { createActionClass } from "@formbricks/lib/actionClass/service";
 import { actionClient, authenticatedActionClient } from "@formbricks/lib/actionClient";
 import { checkAuthorization } from "@formbricks/lib/actionClient/utils";
-import {
-  GOOGLE_CLOUD_LOCATION,
-  GOOGLE_CLOUD_PROJECT_ID,
-  UNSPLASH_ACCESS_KEY,
-} from "@formbricks/lib/constants";
+import { UNSPLASH_ACCESS_KEY } from "@formbricks/lib/constants";
 import {
   getOrganizationIdFromEnvironmentId,
   getOrganizationIdFromProductId,
@@ -268,20 +264,31 @@ export const createActionClassAction = authenticatedActionClient
     return await createActionClass(parsedInput.action.environmentId, parsedInput.action);
   });
 
-const translationClient = new TranslationServiceClient();
+const service_key = process.env.GOOGLE_TRANSLATE_SERVICE_KEY;
+
+if (!service_key) {
+  throw new Error("Google Translate service key must be set in environment variables.");
+}
+
+const credential = JSON.parse(Buffer.from(service_key, "base64").toString());
+
+const translationClient = new TranslationServiceClient({
+  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+  credentials: {
+    client_email: credential.client_email,
+    private_key: credential.private_key,
+  },
+});
 
 export async function translateText(
   targetLanguageCode: string,
   texts: { [key: string]: string }
 ): Promise<{ [key: string]: string }> {
-  const projectId = GOOGLE_CLOUD_PROJECT_ID;
-  const location = GOOGLE_CLOUD_LOCATION;
-
   const keys = Object.keys(texts);
   const values = Object.values(texts);
 
   const request = {
-    parent: `projects/${projectId}/locations/${location}`,
+    parent: `projects/${process.env.GOOGLE_CLOUD_PROJECT_ID}/locations/global`,
     contents: values,
     mimeType: "text/plain",
     sourceLanguageCode: "en",
