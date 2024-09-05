@@ -111,6 +111,7 @@ export const SurveyLoadingAnimation = ({
         <Image src={OpinodoLogo} alt="Brand logo" className="mx-auto w-40" />
         <LoadingSpinner />
       </div>
+      {}
     </div>
   );
 };

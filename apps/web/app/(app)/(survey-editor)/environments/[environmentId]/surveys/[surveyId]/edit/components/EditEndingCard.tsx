@@ -92,6 +92,10 @@ export const EditEndingCard = ({
     zIndex: isDragging ? 10 : 1,
   };
 
+  const translateEndingCard = () => {
+    //todo
+  };
+
   const duplicateEndingCard = () => {
     setLocalSurvey((prevSurvey) => {
       const endingToDuplicate = prevSurvey.endings[endingCardIndex];
@@ -189,6 +193,7 @@ export const EditEndingCard = ({
                 lastCard={endingCardIndex === localSurvey.endings.length - 1}
                 duplicateCard={duplicateEndingCard}
                 deleteCard={deleteEndingCard}
+                translateCard={translateEndingCard}
                 moveCard={moveEndingCard}
                 card={endingCard}
                 updateCard={() => {}}

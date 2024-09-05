@@ -1,5 +1,6 @@
 "use server";
 
+import { TranslationServiceClient } from "@google-cloud/translate";
 import { z } from "zod";
 import { createActionClass } from "@formbricks/lib/actionClass/service";
 import { actionClient, authenticatedActionClient } from "@formbricks/lib/actionClient";
@@ -262,3 +263,44 @@ export const createActionClassAction = authenticatedActionClient
 
     return await createActionClass(parsedInput.action.environmentId, parsedInput.action);
   });
+
+const translationClient = new TranslationServiceClient();
+
+export async function translateText(
+  targetLanguageCode: string,
+  texts: { [key: string]: string }
+): Promise<{ [key: string]: string }> {
+  const projectId = "dark-park-434612-g7";
+  const location = "global";
+
+  const keys = Object.keys(texts);
+  const values = Object.values(texts);
+
+  const request = {
+    parent: `projects/${projectId}/locations/${location}`,
+    contents: values,
+    mimeType: "text/plain",
+    sourceLanguageCode: "en",
+    targetLanguageCode: targetLanguageCode,
+  };
+
+  try {
+    const [response] = await translationClient.translateText(request);
+    if (response.translations) {
+      const translatedTexts = response.translations.map(
+        (translation) => translation.translatedText || "!!! TRANSLATION FAILED !!!"
+      );
+      const translatedDict: { [key: string]: string } = {};
+      keys.forEach((key, index) => {
+        translatedDict[key] = translatedTexts[index];
+      });
+      return translatedDict;
+    } else {
+      console.error("No translations found in the response.");
+      return {};
+    }
+  } catch (error) {
+    console.error("Error translating text:", error);
+    throw error;
+  }
+}
