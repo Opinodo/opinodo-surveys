@@ -5,7 +5,11 @@ import { z } from "zod";
 import { createActionClass } from "@formbricks/lib/actionClass/service";
 import { actionClient, authenticatedActionClient } from "@formbricks/lib/actionClient";
 import { checkAuthorization } from "@formbricks/lib/actionClient/utils";
-import { UNSPLASH_ACCESS_KEY } from "@formbricks/lib/constants";
+import {
+  GOOGLE_CLOUD_LOCATION,
+  GOOGLE_CLOUD_PROJECT_ID,
+  UNSPLASH_ACCESS_KEY,
+} from "@formbricks/lib/constants";
 import {
   getOrganizationIdFromEnvironmentId,
   getOrganizationIdFromProductId,
@@ -270,8 +274,8 @@ export async function translateText(
   targetLanguageCode: string,
   texts: { [key: string]: string }
 ): Promise<{ [key: string]: string }> {
-  const projectId = "dark-park-434612-g7";
-  const location = "global";
+  const projectId = GOOGLE_CLOUD_PROJECT_ID;
+  const location = GOOGLE_CLOUD_LOCATION;
 
   const keys = Object.keys(texts);
   const values = Object.values(texts);
