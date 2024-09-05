@@ -362,9 +362,7 @@ export const QuestionFormInput = ({
   // matrixLabel -> updateMatrixLabel
 
   const handleUpdate = (updatedText: string) => {
-    console.log(updatedText);
     const translatedText = createUpdatedText(updatedText);
-    console.log(translatedText);
 
     if (isChoice) {
       updateChoiceDetails(translatedText);
