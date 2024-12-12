@@ -2,35 +2,37 @@
 
 import { FormbricksAICard } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/templates/components/FormbricksAICard";
 import { MenuBar } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/templates/components/MenuBar";
+import { TemplateList } from "@/modules/surveys/components/TemplateList";
+import { PreviewSurvey } from "@/modules/ui/components/preview-survey";
+import { SearchBar } from "@/modules/ui/components/search-bar";
+import { Separator } from "@/modules/ui/components/separator";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { customSurvey } from "@formbricks/lib/templates";
+import { getCustomSurveyTemplate } from "@formbricks/lib/templates";
 import type { TEnvironment } from "@formbricks/types/environment";
-import type { TProduct, TProductConfigChannel, TProductConfigIndustry } from "@formbricks/types/product";
+import type { TProject, TProjectConfigChannel, TProjectConfigIndustry } from "@formbricks/types/project";
 import type { TTemplate, TTemplateRole } from "@formbricks/types/templates";
 import { TUser } from "@formbricks/types/user";
-import { PreviewSurvey } from "@formbricks/ui/components/PreviewSurvey";
-import { SearchBar } from "@formbricks/ui/components/SearchBar";
-import { Separator } from "@formbricks/ui/components/Separator";
-import { TemplateList } from "@formbricks/ui/components/TemplateList";
-import { minimalSurvey } from "../../lib/minimalSurvey";
+import { getMinimalSurvey } from "../../lib/minimalSurvey";
 
 type TemplateContainerWithPreviewProps = {
   environmentId: string;
-  product: TProduct;
+  project: TProject;
   environment: TEnvironment;
   user: TUser;
-  prefilledFilters: (TProductConfigChannel | TProductConfigIndustry | TTemplateRole | null)[];
+  prefilledFilters: (TProjectConfigChannel | TProjectConfigIndustry | TTemplateRole | null)[];
   isAIEnabled: boolean;
 };
 
 export const TemplateContainerWithPreview = ({
-  product,
+  project,
   environment,
   user,
   prefilledFilters,
   isAIEnabled,
 }: TemplateContainerWithPreviewProps) => {
-  const initialTemplate = customSurvey;
+  const t = useTranslations();
+  const initialTemplate = getCustomSurveyTemplate(user.locale);
   const [activeTemplate, setActiveTemplate] = useState<TTemplate>(initialTemplate);
   const [activeQuestionId, setActiveQuestionId] = useState<string>(initialTemplate.preset.questions[0].id);
   const [templateSearch, setTemplateSearch] = useState<string | null>(null);
@@ -41,12 +43,14 @@ export const TemplateContainerWithPreview = ({
       <div className="relative z-0 flex flex-1 overflow-hidden">
         <div className="flex-1 flex-col overflow-auto bg-slate-50">
           <div className="mb-3 ml-6 mt-6 flex flex-col items-center justify-between md:flex-row md:items-end">
-            <h1 className="text-2xl font-bold text-slate-800">Create a new survey</h1>
+            <h1 className="text-2xl font-bold text-slate-800">
+              {t("environments.surveys.templates.create_a_new_survey")}
+            </h1>
             <div className="px-6">
               <SearchBar
                 value={templateSearch ?? ""}
                 onChange={setTemplateSearch}
-                placeholder={"Search..."}
+                placeholder={t("common.search")}
                 className="border-slate-700"
               />
             </div>
@@ -63,7 +67,7 @@ export const TemplateContainerWithPreview = ({
 
           <TemplateList
             environment={environment}
-            product={product}
+            project={project}
             user={user}
             templateSearch={templateSearch ?? ""}
             onTemplateClick={(template) => {
@@ -76,9 +80,9 @@ export const TemplateContainerWithPreview = ({
         <aside className="group hidden flex-1 flex-shrink-0 items-center justify-center overflow-hidden border-l border-slate-100 bg-slate-50 md:flex md:flex-col">
           {activeTemplate && (
             <PreviewSurvey
-              survey={{ ...minimalSurvey, ...activeTemplate.preset }}
+              survey={{ ...getMinimalSurvey(user.locale), ...activeTemplate.preset }}
               questionId={activeQuestionId}
-              product={product}
+              project={project}
               environment={environment}
               languageCode={"default"}
               onFileUpload={async (file) => file.name}

@@ -1,30 +1,32 @@
 "use client";
 
+import { TemplateList } from "@/modules/surveys/components/TemplateList";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/ui/components/card";
+import { useTranslations } from "next-intl";
 import { TEnvironment } from "@formbricks/types/environment";
-import { TProduct } from "@formbricks/types/product";
+import { TProject } from "@formbricks/types/project";
 import { TTemplateFilter } from "@formbricks/types/templates";
 import { TUser } from "@formbricks/types/user";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@formbricks/ui/components/Card";
-import { TemplateList } from "@formbricks/ui/components/TemplateList";
 
 interface TemplatesCardProps {
   environment: TEnvironment;
-  product: TProduct;
+  project: TProject;
   user: TUser;
   prefilledFilters: TTemplateFilter[];
 }
 
-export const TemplatesCard = ({ environment, product, user, prefilledFilters }: TemplatesCardProps) => {
+export const TemplatesCard = ({ environment, project, user, prefilledFilters }: TemplatesCardProps) => {
+  const t = useTranslations();
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Measure your customer experience</CardTitle>
-        <CardDescription>Choose a template or start from scratch</CardDescription>
+        <CardTitle>{t("environments.experience.templates_card_title")}</CardTitle>
+        <CardDescription>{t("environments.experience.templates_card_description")}</CardDescription>
       </CardHeader>
       <CardContent>
         <TemplateList
           environment={environment}
-          product={product}
+          project={project}
           showFilters={false}
           user={user}
           prefilledFilters={prefilledFilters}

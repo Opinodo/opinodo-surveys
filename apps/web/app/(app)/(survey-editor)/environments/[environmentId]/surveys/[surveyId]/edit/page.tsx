@@ -1,35 +1,54 @@
+import { getUserEmail } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/lib/user";
+import { authOptions } from "@/modules/auth/lib/authOptions";
+import { getContactAttributeKeys } from "@/modules/ee/contacts/lib/contacts";
+import { getSegments } from "@/modules/ee/contacts/segments/lib/segments";
+import {
+  getIsContactsEnabled,
+  getMultiLanguagePermission,
+  getSurveyFollowUpsPermission,
+} from "@/modules/ee/license-check/lib/utils";
+import { getProjectPermissionByUserId } from "@/modules/ee/teams/lib/roles";
+import { getTeamPermissionFlags } from "@/modules/ee/teams/utils/teams";
+import { ErrorComponent } from "@/modules/ui/components/error-component";
 import { getServerSession } from "next-auth";
-import { getAdvancedTargetingPermission, getMultiLanguagePermission } from "@formbricks/ee/lib/service";
+import { getTranslations } from "next-intl/server";
 import { getActionClasses } from "@formbricks/lib/actionClass/service";
-import { getAttributeClasses } from "@formbricks/lib/attributeClass/service";
-import { authOptions } from "@formbricks/lib/authOptions";
-import { IS_FORMBRICKS_CLOUD, SURVEY_BG_COLORS, UNSPLASH_ACCESS_KEY } from "@formbricks/lib/constants";
+import {
+  DEFAULT_LOCALE,
+  IS_FORMBRICKS_CLOUD,
+  MAIL_FROM,
+  SURVEY_BG_COLORS,
+  UNSPLASH_ACCESS_KEY,
+} from "@formbricks/lib/constants";
 import { getEnvironment } from "@formbricks/lib/environment/service";
 import { getMembershipByUserIdOrganizationId } from "@formbricks/lib/membership/service";
 import { getAccessFlags } from "@formbricks/lib/membership/utils";
 import { getOrganizationByEnvironmentId } from "@formbricks/lib/organization/service";
-import { getProductByEnvironmentId } from "@formbricks/lib/product/service";
+import { getProjectByEnvironmentId } from "@formbricks/lib/project/service";
 import { getResponseCountBySurveyId } from "@formbricks/lib/response/service";
-import { getSegments } from "@formbricks/lib/segment/service";
 import { getSurvey } from "@formbricks/lib/survey/service";
 import { getTagsByEnvironmentId } from "@formbricks/lib/tag/service";
-import { ErrorComponent } from "@formbricks/ui/components/ErrorComponent";
+import { getUserLocale } from "@formbricks/lib/user/service";
 import { SurveyEditor } from "./components/SurveyEditor";
 
-export const generateMetadata = async ({ params }) => {
+export const generateMetadata = async (props) => {
+  const params = await props.params;
   const survey = await getSurvey(params.surveyId);
   return {
     title: survey?.name ? `${survey?.name} | Editor` : "Editor",
   };
 };
 
-const Page = async ({ params, searchParams }) => {
+const Page = async (props) => {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const t = await getTranslations();
   const [
     survey,
-    product,
+    project,
     environment,
     actionClasses,
-    attributeClasses,
+    contactAttributeKeys,
     responseCount,
     organization,
     session,
@@ -37,37 +56,52 @@ const Page = async ({ params, searchParams }) => {
     environmentTags,
   ] = await Promise.all([
     getSurvey(params.surveyId),
-    getProductByEnvironmentId(params.environmentId),
+    getProjectByEnvironmentId(params.environmentId),
     getEnvironment(params.environmentId),
     getActionClasses(params.environmentId),
-    getAttributeClasses(params.environmentId),
+    getContactAttributeKeys(params.environmentId),
     getResponseCountBySurveyId(params.surveyId),
     getOrganizationByEnvironmentId(params.environmentId),
     getServerSession(authOptions),
     getSegments(params.environmentId),
     getTagsByEnvironmentId(params.environmentId),
   ]);
+
   if (!session) {
-    throw new Error("Session not found");
+    throw new Error(t("common.session_not_found"));
   }
 
   if (!organization) {
-    throw new Error("Organization not found");
+    throw new Error(t("common.organization_not_found"));
+  }
+
+  if (!project) {
+    throw new Error(t("common.project_not_found"));
   }
 
   const currentUserMembership = await getMembershipByUserIdOrganizationId(session?.user.id, organization.id);
-  const { isViewer } = getAccessFlags(currentUserMembership?.role);
-  const isSurveyCreationDeletionDisabled = isViewer;
+  const { isMember } = getAccessFlags(currentUserMembership?.role);
 
-  const isUserTargetingAllowed = await getAdvancedTargetingPermission(organization);
+  const projectPermission = await getProjectPermissionByUserId(session.user.id, project.id);
+
+  const { hasReadAccess } = getTeamPermissionFlags(projectPermission);
+
+  const isSurveyCreationDeletionDisabled = isMember && hasReadAccess;
+  const locale = session.user.id ? await getUserLocale(session.user.id) : undefined;
+
+  const isUserTargetingAllowed = await getIsContactsEnabled();
   const isMultiLanguageAllowed = await getMultiLanguagePermission(organization);
+  const isSurveyFollowUpsAllowed = await getSurveyFollowUpsPermission(organization);
+
+  const userEmail = await getUserEmail(session.user.id);
 
   if (
     !survey ||
     !environment ||
     !actionClasses ||
-    !attributeClasses ||
-    !product ||
+    !contactAttributeKeys ||
+    !project ||
+    !userEmail ||
     isSurveyCreationDeletionDisabled
   ) {
     return <ErrorComponent />;
@@ -78,13 +112,14 @@ const Page = async ({ params, searchParams }) => {
   return (
     <SurveyEditor
       survey={survey}
-      product={product}
+      project={project}
       environment={environment}
       environmentTags={environmentTags}
       actionClasses={actionClasses}
-      attributeClasses={attributeClasses}
+      contactAttributeKeys={contactAttributeKeys}
       responseCount={responseCount}
       membershipRole={currentUserMembership?.role}
+      projectPermission={projectPermission}
       colors={SURVEY_BG_COLORS}
       segments={segments}
       isUserTargetingAllowed={isUserTargetingAllowed}
@@ -93,6 +128,10 @@ const Page = async ({ params, searchParams }) => {
       isFormbricksCloud={IS_FORMBRICKS_CLOUD}
       isUnsplashConfigured={UNSPLASH_ACCESS_KEY ? true : false}
       isCxMode={isCxMode}
+      locale={locale ?? DEFAULT_LOCALE}
+      mailFrom={MAIL_FROM ?? "hola@formbricks.com"}
+      isSurveyFollowUpsAllowed={isSurveyFollowUpsAllowed}
+      userEmail={userEmail}
     />
   );
 };

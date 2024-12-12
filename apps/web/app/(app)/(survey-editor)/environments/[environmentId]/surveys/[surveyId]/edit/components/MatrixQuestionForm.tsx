@@ -1,14 +1,18 @@
 "use client";
 
+import { QuestionFormInput } from "@/modules/surveys/components/QuestionFormInput";
+import { Button } from "@/modules/ui/components/button";
+import { Label } from "@/modules/ui/components/label";
+import { ShuffleOptionSelect } from "@/modules/ui/components/shuffle-option-select";
+import { TooltipRenderer } from "@/modules/ui/components/tooltip";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { PlusIcon, TrashIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
+import type { JSX } from "react";
 import { createI18nString, extractLanguageCodes } from "@formbricks/lib/i18n/utils";
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import { TI18nString, TSurvey, TSurveyMatrixQuestion } from "@formbricks/types/surveys/types";
-import { Button } from "@formbricks/ui/components/Button";
-import { Label } from "@formbricks/ui/components/Label";
-import { QuestionFormInput } from "@formbricks/ui/components/QuestionFormInput";
-import { ShuffleOptionSelect } from "@formbricks/ui/components/ShuffleOptionSelect";
+import { TUserLocale } from "@formbricks/types/user";
 import { isLabelValidForAllLanguages } from "../lib/validation";
 
 interface MatrixQuestionFormProps {
@@ -20,7 +24,8 @@ interface MatrixQuestionFormProps {
   selectedLanguageCode: string;
   setSelectedLanguageCode: (language: string) => void;
   isInvalid: boolean;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
+  locale: TUserLocale;
 }
 
 export const MatrixQuestionForm = ({
@@ -31,9 +36,11 @@ export const MatrixQuestionForm = ({
   localSurvey,
   selectedLanguageCode,
   setSelectedLanguageCode,
-  attributeClasses,
+  contactAttributeKeys,
+  locale,
 }: MatrixQuestionFormProps): JSX.Element => {
   const languageCodes = extractLanguageCodes(localSurvey.languages);
+  const t = useTranslations();
   // Function to add a new Label input field
   const handleAddLabel = (type: "row" | "column") => {
     if (type === "row") {
@@ -83,17 +90,17 @@ export const MatrixQuestionForm = ({
   const shuffleOptionsTypes = {
     none: {
       id: "none",
-      label: "Keep current order",
+      label: t("environments.surveys.edit.keep_current_order"),
       show: true,
     },
     all: {
       id: "all",
-      label: "Randomize all",
+      label: t("environments.surveys.edit.randomize_all"),
       show: true,
     },
     exceptLast: {
       id: "exceptLast",
-      label: "Randomize all except last option",
+      label: t("environments.surveys.edit.randomize_all_except_last"),
       show: true,
     },
   };
@@ -104,14 +111,15 @@ export const MatrixQuestionForm = ({
       <QuestionFormInput
         id="headline"
         value={question.headline}
-        label={"Question*"}
+        label={t("environments.surveys.edit.question") + "*"}
         localSurvey={localSurvey}
         questionIdx={questionIdx}
         isInvalid={isInvalid}
         updateQuestion={updateQuestion}
         selectedLanguageCode={selectedLanguageCode}
         setSelectedLanguageCode={setSelectedLanguageCode}
-        attributeClasses={attributeClasses}
+        contactAttributeKeys={contactAttributeKeys}
+        locale={locale}
       />
       <div ref={parent}>
         {question.subheader !== undefined && (
@@ -120,14 +128,15 @@ export const MatrixQuestionForm = ({
               <QuestionFormInput
                 id="subheader"
                 value={question.subheader}
-                label={"Description"}
+                label={t("common.description")}
                 localSurvey={localSurvey}
                 questionIdx={questionIdx}
                 isInvalid={isInvalid}
                 updateQuestion={updateQuestion}
                 selectedLanguageCode={selectedLanguageCode}
                 setSelectedLanguageCode={setSelectedLanguageCode}
-                attributeClasses={attributeClasses}
+                contactAttributeKeys={contactAttributeKeys}
+                locale={locale}
               />
             </div>
           </div>
@@ -135,7 +144,7 @@ export const MatrixQuestionForm = ({
         {question.subheader === undefined && (
           <Button
             size="sm"
-            variant="minimal"
+            variant="secondary"
             className="mt-3"
             type="button"
             onClick={() => {
@@ -144,19 +153,21 @@ export const MatrixQuestionForm = ({
               });
             }}>
             <PlusIcon className="mr-1 h-4 w-4" />
-            Add Description
+            {t("environments.surveys.edit.add_description")}
           </Button>
         )}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-4">
         <div>
           {/* Rows section */}
-          <Label htmlFor="rows">Rows</Label>
-          <div ref={parent}>
+          <Label htmlFor="rows">{t("environments.surveys.edit.rows")}</Label>
+          <div className="mt-2 flex flex-col gap-2" ref={parent}>
             {question.rows.map((_, index) => (
-              <div className="flex items-center" onKeyDown={(e) => handleKeyDown(e, "row")}>
+              <div
+                className="flex items-center"
+                onKeyDown={(e) => handleKeyDown(e, "row")}
+                key={`row-${index}-${question.rows.length}`}>
                 <QuestionFormInput
-                  key={`row-${index}-${question.rows.length}`}
                   id={`row-${index}`}
                   label={""}
                   localSurvey={localSurvey}
@@ -168,37 +179,48 @@ export const MatrixQuestionForm = ({
                   isInvalid={
                     isInvalid && !isLabelValidForAllLanguages(question.rows[index], localSurvey.languages)
                   }
-                  attributeClasses={attributeClasses}
+                  contactAttributeKeys={contactAttributeKeys}
+                  locale={locale}
                 />
                 {question.rows.length > 2 && (
-                  <TrashIcon
-                    className="ml-2 mt-2 h-4 w-4 cursor-pointer text-slate-400 hover:text-slate-500"
-                    onClick={() => handleDeleteLabel("row", index)}
-                  />
+                  <TooltipRenderer tooltipContent={t("common.delete")}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-2"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDeleteLabel("row", index);
+                      }}>
+                      <TrashIcon />
+                    </Button>
+                  </TooltipRenderer>
                 )}
               </div>
             ))}
             <Button
               variant="secondary"
               size="sm"
-              className="mt-3"
-              StartIcon={PlusIcon}
+              className="w-fit"
               onClick={(e) => {
                 e.preventDefault();
                 handleAddLabel("row");
               }}>
-              <span>Add row</span>
+              <PlusIcon />
+              {t("environments.surveys.edit.add_row")}
             </Button>
           </div>
         </div>
         <div>
           {/* Columns section */}
-          <Label htmlFor="columns">Columns</Label>
-          <div ref={parent}>
+          <Label htmlFor="columns">{t("environments.surveys.edit.columns")}</Label>
+          <div className="mt-2 flex flex-col gap-2" ref={parent}>
             {question.columns.map((_, index) => (
-              <div className="flex items-center" onKeyDown={(e) => handleKeyDown(e, "column")}>
+              <div
+                className="flex items-center"
+                onKeyDown={(e) => handleKeyDown(e, "column")}
+                key={`column-${index}-${question.columns.length}`}>
                 <QuestionFormInput
-                  key={`column-${index}-${question.columns.length}`}
                   id={`column-${index}`}
                   label={""}
                   localSurvey={localSurvey}
@@ -210,26 +232,35 @@ export const MatrixQuestionForm = ({
                   isInvalid={
                     isInvalid && !isLabelValidForAllLanguages(question.columns[index], localSurvey.languages)
                   }
-                  attributeClasses={attributeClasses}
+                  contactAttributeKeys={contactAttributeKeys}
+                  locale={locale}
                 />
                 {question.columns.length > 2 && (
-                  <TrashIcon
-                    className="ml-2 mt-2 h-4 w-4 cursor-pointer text-slate-400 hover:text-slate-500"
-                    onClick={() => handleDeleteLabel("column", index)}
-                  />
+                  <TooltipRenderer tooltipContent={t("common.delete")}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-2"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDeleteLabel("column", index);
+                      }}>
+                      <TrashIcon />
+                    </Button>
+                  </TooltipRenderer>
                 )}
               </div>
             ))}
             <Button
               variant="secondary"
               size="sm"
-              className="mt-3"
-              StartIcon={PlusIcon}
+              className="w-fit"
               onClick={(e) => {
                 e.preventDefault();
                 handleAddLabel("column");
               }}>
-              <span>Add column</span>
+              <PlusIcon />
+              {t("environments.surveys.edit.add_column")}
             </Button>
           </div>
           <div className="mt-3 flex flex-1 items-center justify-end gap-2">

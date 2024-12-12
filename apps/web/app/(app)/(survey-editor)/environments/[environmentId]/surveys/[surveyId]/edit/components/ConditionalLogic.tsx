@@ -3,6 +3,14 @@ import {
   getDefaultOperatorForQuestion,
   replaceEndingCardHeadlineRecall,
 } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/lib/utils";
+import { Button } from "@/modules/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/modules/ui/components/dropdown-menu";
+import { Label } from "@/modules/ui/components/label";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { createId } from "@paralleldrive/cuid2";
 import {
@@ -14,41 +22,35 @@ import {
   SplitIcon,
   TrashIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 import { duplicateLogicItem } from "@formbricks/lib/surveyLogic/utils";
 import { replaceHeadlineRecall } from "@formbricks/lib/utils/recall";
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import { TSurvey, TSurveyLogic, TSurveyQuestion } from "@formbricks/types/surveys/types";
-import { Button } from "@formbricks/ui/components/Button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@formbricks/ui/components/DropdownMenu";
-import { Label } from "@formbricks/ui/components/Label";
 
 interface ConditionalLogicProps {
   localSurvey: TSurvey;
   questionIdx: number;
   question: TSurveyQuestion;
   updateQuestion: (questionIdx: number, updatedAttributes: any) => void;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
 }
 
 export function ConditionalLogic({
-  attributeClasses,
+  contactAttributeKeys,
   localSurvey,
   question,
   questionIdx,
   updateQuestion,
 }: ConditionalLogicProps) {
+  const t = useTranslations();
   const transformedSurvey = useMemo(() => {
-    let modifiedSurvey = replaceHeadlineRecall(localSurvey, "default", attributeClasses);
-    modifiedSurvey = replaceEndingCardHeadlineRecall(modifiedSurvey, "default", attributeClasses);
+    let modifiedSurvey = replaceHeadlineRecall(localSurvey, "default", contactAttributeKeys);
+    modifiedSurvey = replaceEndingCardHeadlineRecall(modifiedSurvey, "default", contactAttributeKeys);
 
     return modifiedSurvey;
-  }, [localSurvey, attributeClasses]);
+  }, [localSurvey, contactAttributeKeys]);
 
   const addLogic = () => {
     const operator = getDefaultOperatorForQuestion(question);
@@ -85,10 +87,12 @@ export function ConditionalLogic({
 
   const handleRemoveLogic = (logicItemIdx: number) => {
     const logicCopy = structuredClone(question.logic ?? []);
+    const isLast = logicCopy.length === 1;
     logicCopy.splice(logicItemIdx, 1);
 
     updateQuestion(questionIdx, {
       logic: logicCopy,
+      logicFallback: isLast ? undefined : question.logicFallback,
     });
   };
 
@@ -117,7 +121,7 @@ export function ConditionalLogic({
   return (
     <div className="mt-4" ref={parent}>
       <Label className="flex gap-2">
-        Conditional Logic
+        {t("environments.surveys.edit.conditional_logic")}
         <SplitIcon className="h-4 w-4 rotate-90" />
       </Label>
 
@@ -147,7 +151,7 @@ export function ConditionalLogic({
                       duplicateLogic(logicItemIdx);
                     }}
                     icon={<CopyIcon className="h-4 w-4" />}>
-                    Duplicate
+                    {t("common.duplicate")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={logicItemIdx === 0}
@@ -155,7 +159,7 @@ export function ConditionalLogic({
                       moveLogic(logicItemIdx, logicItemIdx - 1);
                     }}
                     icon={<ArrowUpIcon className="h-4 w-4" />}>
-                    Move up
+                    {t("common.move_up")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={logicItemIdx === (question.logic ?? []).length - 1}
@@ -163,14 +167,14 @@ export function ConditionalLogic({
                       moveLogic(logicItemIdx, logicItemIdx + 1);
                     }}
                     icon={<ArrowDownIcon className="h-4 w-4" />}>
-                    Move down
+                    {t("common.move_down")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
                       handleRemoveLogic(logicItemIdx);
                     }}
                     icon={<TrashIcon className="h-4 w-4" />}>
-                    Remove
+                    {t("common.remove")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -182,14 +186,13 @@ export function ConditionalLogic({
       <div className="mt-2 flex items-center space-x-2">
         <Button
           id="logicJumps"
-          className="bg-slate-100 hover:bg-slate-50"
           type="button"
           name="logicJumps"
           size="sm"
           variant="secondary"
-          EndIcon={PlusIcon}
           onClick={addLogic}>
-          Add logic
+          {t("environments.surveys.edit.add_logic")}
+          <PlusIcon />
         </Button>
       </div>
     </div>

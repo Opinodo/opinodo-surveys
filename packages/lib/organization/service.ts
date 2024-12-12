@@ -13,9 +13,9 @@ import {
 } from "@formbricks/types/organizations";
 import { TUserNotificationSettings } from "@formbricks/types/user";
 import { cache } from "../cache";
-import { BILLING_LIMITS, ITEMS_PER_PAGE, PRODUCT_FEATURE_KEYS } from "../constants";
+import { BILLING_LIMITS, ITEMS_PER_PAGE, PROJECT_FEATURE_KEYS } from "../constants";
 import { environmentCache } from "../environment/cache";
-import { getProducts } from "../product/service";
+import { getProjects } from "../project/service";
 import { updateUser } from "../user/service";
 import { validateInputs } from "../utils/validate";
 import { organizationCache } from "./cache";
@@ -35,7 +35,7 @@ export const getOrganizationByEnvironmentIdCacheTag = (environmentId: string) =>
   `environments-${environmentId}-organization`;
 
 export const getOrganizationsByUserId = reactCache(
-  (userId: string, page?: number): Promise<TOrganization[]> =>
+  async (userId: string, page?: number): Promise<TOrganization[]> =>
     cache(
       async () => {
         validateInputs([userId, ZString], [page, ZOptionalNumber]);
@@ -73,7 +73,7 @@ export const getOrganizationsByUserId = reactCache(
 );
 
 export const getOrganizationByEnvironmentId = reactCache(
-  (environmentId: string): Promise<TOrganization | null> =>
+  async (environmentId: string): Promise<TOrganization | null> =>
     cache(
       async () => {
         validateInputs([environmentId, ZId]);
@@ -81,7 +81,7 @@ export const getOrganizationByEnvironmentId = reactCache(
         try {
           const organization = await prisma.organization.findFirst({
             where: {
-              products: {
+              projects: {
                 some: {
                   environments: {
                     some: {
@@ -112,7 +112,7 @@ export const getOrganizationByEnvironmentId = reactCache(
 );
 
 export const getOrganization = reactCache(
-  (organizationId: string): Promise<TOrganization | null> =>
+  async (organizationId: string): Promise<TOrganization | null> =>
     cache(
       async () => {
         validateInputs([organizationId, ZString]);
@@ -150,8 +150,9 @@ export const createOrganization = async (
       data: {
         ...organizationInput,
         billing: {
-          plan: PRODUCT_FEATURE_KEYS.FREE,
+          plan: PROJECT_FEATURE_KEYS.FREE,
           limits: {
+            projects: BILLING_LIMITS.FREE.PROJECTS,
             monthly: {
               responses: BILLING_LIMITS.FREE.RESPONSES,
               miu: BILLING_LIMITS.FREE.MIU,
@@ -190,7 +191,7 @@ export const updateOrganization = async (
         id: organizationId,
       },
       data,
-      select: { ...select, memberships: true, products: { select: { environments: true } } }, // include memberships & environments
+      select: { ...select, memberships: true, projects: { select: { environments: true } } }, // include memberships & environments
     });
 
     // revalidate cache for members
@@ -201,8 +202,8 @@ export const updateOrganization = async (
     });
 
     // revalidate cache for environments
-    for (const product of updatedOrganization.products) {
-      for (const environment of product.environments) {
+    for (const project of updatedOrganization.projects) {
+      for (const environment of project.environments) {
         organizationCache.revalidate({
           environmentId: environment.id,
         });
@@ -212,7 +213,7 @@ export const updateOrganization = async (
     const organization = {
       ...updatedOrganization,
       memberships: undefined,
-      products: undefined,
+      projects: undefined,
     };
 
     organizationCache.revalidate({
@@ -228,14 +229,32 @@ export const updateOrganization = async (
   }
 };
 
-export const deleteOrganization = async (organizationId: string): Promise<TOrganization> => {
+export const deleteOrganization = async (organizationId: string) => {
   validateInputs([organizationId, ZId]);
   try {
     const deletedOrganization = await prisma.organization.delete({
       where: {
         id: organizationId,
       },
-      select: { ...select, memberships: true, products: { select: { environments: true } } }, // include memberships & environments
+      select: {
+        id: true,
+        name: true,
+        memberships: {
+          select: {
+            userId: true,
+          },
+        },
+        projects: {
+          select: {
+            id: true,
+            environments: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // revalidate cache for members
@@ -246,8 +265,8 @@ export const deleteOrganization = async (organizationId: string): Promise<TOrgan
     });
 
     // revalidate cache for environments
-    deletedOrganization?.products.forEach((product) => {
-      product.environments.forEach((environment) => {
+    deletedOrganization?.projects.forEach((project) => {
+      project.environments.forEach((environment) => {
         environmentCache.revalidate({
           id: environment.id,
         });
@@ -261,15 +280,13 @@ export const deleteOrganization = async (organizationId: string): Promise<TOrgan
     const organization = {
       ...deletedOrganization,
       memberships: undefined,
-      products: undefined,
+      projects: undefined,
     };
 
     organizationCache.revalidate({
       id: organization.id,
       count: true,
     });
-
-    return organization;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       throw new DatabaseError(error.message);
@@ -280,7 +297,7 @@ export const deleteOrganization = async (organizationId: string): Promise<TOrgan
 };
 
 export const getMonthlyActiveOrganizationPeopleCount = reactCache(
-  (organizationId: string): Promise<number> =>
+  async (organizationId: string): Promise<number> =>
     cache(
       async () => {
         validateInputs([organizationId, ZId]);
@@ -304,7 +321,7 @@ export const getMonthlyActiveOrganizationPeopleCount = reactCache(
 );
 
 export const getMonthlyOrganizationResponseCount = reactCache(
-  (organizationId: string): Promise<number> =>
+  async (organizationId: string): Promise<number> =>
     cache(
       async () => {
         validateInputs([organizationId, ZId]);
@@ -330,8 +347,8 @@ export const getMonthlyOrganizationResponseCount = reactCache(
           }
 
           // Get all environment IDs for the organization
-          const products = await getProducts(organizationId);
-          const environmentIds = products.flatMap((product) => product.environments.map((env) => env.id));
+          const projects = await getProjects(organizationId);
+          const environmentIds = projects.flatMap((project) => project.environments.map((env) => env.id));
 
           // Use Prisma's aggregate to count responses for all environments
           const responseAggregations = await prisma.response.aggregate({

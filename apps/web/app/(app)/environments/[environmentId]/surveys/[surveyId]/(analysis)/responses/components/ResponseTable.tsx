@@ -1,6 +1,15 @@
 import { ResponseCardModal } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/responses/components/ResponseCardModal";
 import { ResponseTableCell } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/responses/components/ResponseTableCell";
 import { generateResponseTableColumns } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/responses/components/ResponseTableColumns";
+import { deleteResponseAction } from "@/modules/analysis/components/SingleResponseCard/actions";
+import { Button } from "@/modules/ui/components/button";
+import {
+  DataTableHeader,
+  DataTableSettingsModal,
+  DataTableToolbar,
+} from "@/modules/ui/components/data-table";
+import { Skeleton } from "@/modules/ui/components/skeleton";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/modules/ui/components/table";
 import {
   DndContext,
   type DragEndEvent,
@@ -15,20 +24,14 @@ import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { VisibilityState, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TResponse, TResponseTableData } from "@formbricks/types/responses";
 import { TSurvey } from "@formbricks/types/surveys/types";
 import { TTag } from "@formbricks/types/tags";
 import { TUser } from "@formbricks/types/user";
-import { Button } from "@formbricks/ui/components/Button";
-import {
-  DataTableHeader,
-  DataTableSettingsModal,
-  DataTableToolbar,
-} from "@formbricks/ui/components/DataTable";
-import { Skeleton } from "@formbricks/ui/components/Skeleton";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@formbricks/ui/components/Table";
+import { TUserLocale } from "@formbricks/types/user";
 
 interface ResponseTableProps {
   data: TResponseTableData[];
@@ -37,12 +40,13 @@ interface ResponseTableProps {
   environment: TEnvironment;
   user?: TUser;
   environmentTags: TTag[];
-  isViewer: boolean;
+  isReadOnly: boolean;
   fetchNextPage: () => void;
   hasMore: boolean;
   deleteResponses: (responseIds: string[]) => void;
   updateResponse: (responseId: string, updatedResponse: TResponse) => void;
   isFetchingFirstPage: boolean;
+  locale: TUserLocale;
 }
 
 export const ResponseTable = ({
@@ -52,13 +56,15 @@ export const ResponseTable = ({
   user,
   environment,
   environmentTags,
-  isViewer,
+  isReadOnly,
   fetchNextPage,
   hasMore,
   deleteResponses,
   updateResponse,
   isFetchingFirstPage,
+  locale,
 }: ResponseTableProps) => {
+  const t = useTranslations();
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
   const [isTableSettingsModalOpen, setIsTableSettingsModalOpen] = useState(false);
@@ -69,27 +75,7 @@ export const ResponseTable = ({
   const [parent] = useAutoAnimate();
 
   // Generate columns
-  const columns = generateResponseTableColumns(survey, isExpanded ?? false, isViewer);
-
-  // Load saved settings from localStorage
-  useEffect(() => {
-    const savedColumnOrder = localStorage.getItem(`${survey.id}-columnOrder`);
-    const savedColumnVisibility = localStorage.getItem(`${survey.id}-columnVisibility`);
-    const savedExpandedSettings = localStorage.getItem(`${survey.id}-rowExpand`);
-
-    if (savedColumnOrder && JSON.parse(savedColumnOrder).length > 0) {
-      setColumnOrder(JSON.parse(savedColumnOrder));
-    } else {
-      setColumnOrder(table.getAllLeafColumns().map((d) => d.id));
-    }
-
-    if (savedColumnVisibility) {
-      setColumnVisibility(JSON.parse(savedColumnVisibility));
-    }
-    if (savedExpandedSettings !== null) {
-      setIsExpanded(JSON.parse(savedExpandedSettings));
-    }
-  }, [survey.id]);
+  const columns = generateResponseTableColumns(survey, isExpanded ?? false, isReadOnly, t);
 
   // Save settings to localStorage when they change
   useEffect(() => {
@@ -114,7 +100,7 @@ export const ResponseTable = ({
   // Memoize table data and columns
   const tableData: TResponseTableData[] = useMemo(
     () => (isFetchingFirstPage ? Array(10).fill({}) : data),
-    [data]
+    [data, isFetchingFirstPage]
   );
   const tableColumns = useMemo(
     () =>
@@ -128,7 +114,7 @@ export const ResponseTable = ({
             ),
           }))
         : columns,
-    [columns, data]
+    [columns, isFetchingFirstPage]
   );
 
   // React Table instance
@@ -154,6 +140,28 @@ export const ResponseTable = ({
     },
   });
 
+  const defaultColumnOrder = useMemo(() => table.getAllLeafColumns().map((d) => d.id), [table]);
+
+  // Modified useEffect
+  useEffect(() => {
+    const savedColumnOrder = localStorage.getItem(`${survey.id}-columnOrder`);
+    const savedColumnVisibility = localStorage.getItem(`${survey.id}-columnVisibility`);
+    const savedExpandedSettings = localStorage.getItem(`${survey.id}-rowExpand`);
+
+    if (savedColumnOrder && JSON.parse(savedColumnOrder).length > 0) {
+      setColumnOrder(JSON.parse(savedColumnOrder));
+    } else {
+      setColumnOrder(defaultColumnOrder);
+    }
+
+    if (savedColumnVisibility) {
+      setColumnVisibility(JSON.parse(savedColumnVisibility));
+    }
+    if (savedExpandedSettings !== null) {
+      setIsExpanded(JSON.parse(savedExpandedSettings));
+    }
+  }, [survey.id, defaultColumnOrder]);
+
   // Handle column drag end
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -164,6 +172,10 @@ export const ResponseTable = ({
         return arrayMove(prevOrder, oldIndex, newIndex);
       });
     }
+  };
+
+  const deleteResponse = async (responseId: string) => {
+    await deleteResponseAction({ responseId });
   };
 
   return (
@@ -181,13 +193,14 @@ export const ResponseTable = ({
           table={table}
           deleteRows={deleteResponses}
           type="response"
+          deleteAction={deleteResponse}
         />
         <div className="w-fit max-w-full overflow-hidden overflow-x-auto rounded-xl border border-slate-200">
           <div className="w-full overflow-x-auto">
             <Table className="w-full" style={{ tableLayout: "fixed" }} id="response-table">
-              <TableHeader>
+              <TableHeader className="pointer-events-auto">
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
+                  <TableRow key={headerGroup.id}>
                     <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
                       {headerGroup.headers.map((header) => (
                         <DataTableHeader
@@ -197,7 +210,7 @@ export const ResponseTable = ({
                         />
                       ))}
                     </SortableContext>
-                  </tr>
+                  </TableRow>
                 ))}
               </TableHeader>
 
@@ -222,7 +235,7 @@ export const ResponseTable = ({
                 {table.getRowModel().rows.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
-                      No results.
+                      {t("common.no_results")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -233,9 +246,7 @@ export const ResponseTable = ({
 
         {data && hasMore && data.length > 0 && (
           <div className="mt-4 flex justify-center">
-            <Button onClick={fetchNextPage} className="bg-blue-500 text-white">
-              Load More
-            </Button>
+            <Button onClick={fetchNextPage}>{t("common.load_more")}</Button>
           </div>
         )}
 
@@ -255,12 +266,13 @@ export const ResponseTable = ({
             user={user}
             environment={environment}
             environmentTags={environmentTags}
-            isViewer={isViewer}
+            isReadOnly={isReadOnly}
             updateResponse={updateResponse}
             deleteResponses={deleteResponses}
             setSelectedResponseId={setSelectedResponseId}
             selectedResponseId={selectedResponseId}
             open={selectedResponse !== null}
+            locale={locale}
             setOpen={(open) => {
               if (!open) {
                 setSelectedResponseId(null);

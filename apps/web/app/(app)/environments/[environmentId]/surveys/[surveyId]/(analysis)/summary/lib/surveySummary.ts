@@ -119,6 +119,11 @@ const evaluateLogicAndGetNextQuestionId = (
     }
   }
 
+  // If no jump target was set, check for a fallback logic
+  if (!firstJumpTarget && currQuesTemp.logicFallback) {
+    firstJumpTarget = currQuesTemp.logicFallback;
+  }
+
   // Return the first jump target if found, otherwise go to the next question
   const nextQuestionId = firstJumpTarget || questions[currentQuestionIndex + 1]?.id || undefined;
 
@@ -303,8 +308,8 @@ export const getQuestionSummary = async (
               id: response.id,
               updatedAt: response.updatedAt,
               value: answer,
-              person: response.person,
-              personAttributes: response.personAttributes,
+              contact: response.contact,
+              contactAttributes: response.contactAttributes,
             });
           }
         });
@@ -361,8 +366,8 @@ export const getQuestionSummary = async (
                 } else if (isOthersEnabled) {
                   otherValues.push({
                     value,
-                    person: response.person,
-                    personAttributes: response.personAttributes,
+                    contact: response.contact,
+                    contactAttributes: response.contactAttributes,
                   });
                 }
                 hasValidAnswer = true;
@@ -376,8 +381,8 @@ export const getQuestionSummary = async (
               } else if (isOthersEnabled) {
                 otherValues.push({
                   value: answer,
-                  person: response.person,
-                  personAttributes: response.personAttributes,
+                  contact: response.contact,
+                  contactAttributes: response.contactAttributes,
                 });
               }
               hasValidAnswer = true;
@@ -645,8 +650,8 @@ export const getQuestionSummary = async (
               id: response.id,
               updatedAt: response.updatedAt,
               value: answer,
-              person: response.person,
-              personAttributes: response.personAttributes,
+              contact: response.contact,
+              contactAttributes: response.contactAttributes,
             });
           }
         });
@@ -670,8 +675,8 @@ export const getQuestionSummary = async (
               id: response.id,
               updatedAt: response.updatedAt,
               value: answer,
-              person: response.person,
-              personAttributes: response.personAttributes,
+              contact: response.contact,
+              contactAttributes: response.contactAttributes,
             });
           }
         });
@@ -786,8 +791,8 @@ export const getQuestionSummary = async (
               id: response.id,
               updatedAt: response.updatedAt,
               value: answer,
-              person: response.person,
-              personAttributes: response.personAttributes,
+              contact: response.contact,
+              contactAttributes: response.contactAttributes,
             });
           }
         });
@@ -863,8 +868,8 @@ export const getQuestionSummary = async (
         values.push({
           updatedAt: response.updatedAt,
           value: answer,
-          person: response.person,
-          personAttributes: response.personAttributes,
+          contact: response.contact,
+          contactAttributes: response.contactAttributes,
         });
       }
     });
@@ -883,7 +888,7 @@ export const getQuestionSummary = async (
 };
 
 export const getSurveySummary = reactCache(
-  (surveyId: string, filterCriteria?: TResponseFilterCriteria): Promise<TSurveySummary> =>
+  async (surveyId: string, filterCriteria?: TResponseFilterCriteria): Promise<TSurveySummary> =>
     cache(
       async () => {
         validateInputs([surveyId, ZId], [filterCriteria, ZResponseFilterCriteria.optional()]);

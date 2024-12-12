@@ -1,4 +1,6 @@
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { TooltipRenderer } from "@/modules/ui/components/tooltip";
+import { useTranslations } from "next-intl";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import {
   TI18nString,
   TSurvey,
@@ -6,13 +8,13 @@ import {
   TSurveyQuestionSummaryMatrix,
   TSurveyQuestionTypeEnum,
 } from "@formbricks/types/surveys/types";
-import { TooltipRenderer } from "@formbricks/ui/components/Tooltip";
+import { TUserLocale } from "@formbricks/types/user";
 import { QuestionSummaryHeader } from "./QuestionSummaryHeader";
 
 interface MatrixQuestionSummaryProps {
   questionSummary: TSurveyQuestionSummaryMatrix;
   survey: TSurvey;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
   setFilter: (
     questionId: TSurveyQuestionId,
     label: TI18nString,
@@ -20,14 +22,17 @@ interface MatrixQuestionSummaryProps {
     filterValue: string,
     filterComboBoxValue?: string | string[]
   ) => void;
+  locale: TUserLocale;
 }
 
 export const MatrixQuestionSummary = ({
   questionSummary,
   survey,
-  attributeClasses,
+  contactAttributeKeys,
   setFilter,
+  locale,
 }: MatrixQuestionSummaryProps) => {
+  const t = useTranslations();
   const getOpacityLevel = (percentage: number): string => {
     const parsedPercentage = percentage;
     const opacity = parsedPercentage * 0.75 + 15;
@@ -38,7 +43,7 @@ export const MatrixQuestionSummary = ({
     if (label) {
       return label;
     } else if (percentage !== undefined && totalResponsesForRow !== undefined) {
-      return `${Math.round((percentage / 100) * totalResponsesForRow)} responses`;
+      return `${Math.round((percentage / 100) * totalResponsesForRow)} ${t("common.responses")}`;
     }
     return "";
   };
@@ -50,7 +55,8 @@ export const MatrixQuestionSummary = ({
       <QuestionSummaryHeader
         questionSummary={questionSummary}
         survey={survey}
-        attributeClasses={attributeClasses}
+        contactAttributeKeys={contactAttributeKeys}
+        locale={locale}
       />
       <div className="overflow-x-auto p-6">
         {/* Summary Table  */}

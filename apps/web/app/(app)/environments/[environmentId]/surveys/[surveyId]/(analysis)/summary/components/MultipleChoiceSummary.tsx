@@ -1,8 +1,12 @@
+import { PersonAvatar } from "@/modules/ui/components/avatars";
+import { Button } from "@/modules/ui/components/button";
+import { ProgressBar } from "@/modules/ui/components/progress-bar";
 import { InboxIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useState } from "react";
-import { getPersonIdentifier } from "@formbricks/lib/person/utils";
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { getContactIdentifier } from "@formbricks/lib/utils/contact";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import {
   TI18nString,
   TSurvey,
@@ -11,9 +15,7 @@ import {
   TSurveyQuestionTypeEnum,
   TSurveyType,
 } from "@formbricks/types/surveys/types";
-import { PersonAvatar } from "@formbricks/ui/components/Avatars";
-import { Button } from "@formbricks/ui/components/Button";
-import { ProgressBar } from "@formbricks/ui/components/ProgressBar";
+import { TUserLocale } from "@formbricks/types/user";
 import { convertFloatToNDecimal } from "../lib/utils";
 import { QuestionSummaryHeader } from "./QuestionSummaryHeader";
 
@@ -22,7 +24,7 @@ interface MultipleChoiceSummaryProps {
   environmentId: string;
   surveyType: TSurveyType;
   survey: TSurvey;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
   setFilter: (
     questionId: TSurveyQuestionId,
     label: TI18nString,
@@ -30,6 +32,7 @@ interface MultipleChoiceSummaryProps {
     filterValue: string,
     filterComboBoxValue?: string | string[]
   ) => void;
+  locale: TUserLocale;
 }
 
 export const MultipleChoiceSummary = ({
@@ -37,9 +40,11 @@ export const MultipleChoiceSummary = ({
   environmentId,
   surveyType,
   survey,
-  attributeClasses,
+  contactAttributeKeys,
   setFilter,
+  locale,
 }: MultipleChoiceSummaryProps) => {
+  const t = useTranslations();
   const [visibleOtherResponses, setVisibleOtherResponses] = useState(10);
   const otherValue = questionSummary.question.choices.find((choice) => choice.id === "other")?.label.default;
   // sort by count and transform to array
@@ -68,12 +73,13 @@ export const MultipleChoiceSummary = ({
       <QuestionSummaryHeader
         questionSummary={questionSummary}
         survey={survey}
-        attributeClasses={attributeClasses}
+        contactAttributeKeys={contactAttributeKeys}
+        locale={locale}
         additionalInfo={
           questionSummary.type === "multipleChoiceMulti" ? (
             <div className="flex items-center rounded-lg bg-slate-100 p-2">
               <InboxIcon className="mr-2 h-4 w-4" />
-              {`${questionSummary.selectionCount} Selections`}
+              {`${questionSummary.selectionCount} ${t("common.selections")}`}
             </div>
           ) : undefined
         }
@@ -89,8 +95,8 @@ export const MultipleChoiceSummary = ({
                 questionSummary.question.headline,
                 questionSummary.question.type,
                 questionSummary.type === "multipleChoiceSingle" || otherValue === result.value
-                  ? "Includes either"
-                  : "Includes all",
+                  ? t("environments.surveys.summary.includes_either")
+                  : t("environments.surveys.summary.includes_all"),
                 [result.value]
               )
             }>
@@ -106,7 +112,7 @@ export const MultipleChoiceSummary = ({
                 </div>
               </div>
               <p className="flex w-full pt-1 text-slate-600 sm:items-end sm:justify-end sm:pt-0">
-                {result.count} {result.count === 1 ? "Selection" : "Selections"}
+                {result.count} {result.count === 1 ? t("common.selection") : t("common.selections")}
               </p>
             </div>
             <div className="group-hover:opacity-80">
@@ -115,8 +121,10 @@ export const MultipleChoiceSummary = ({
             {result.others && result.others.length > 0 && (
               <div className="mt-4 rounded-lg border border-slate-200" onClick={(e) => e.stopPropagation()}>
                 <div className="grid h-12 grid-cols-2 content-center rounded-t-lg bg-slate-100 text-left text-sm font-semibold text-slate-900">
-                  <div className="col-span-1 pl-6">Other values found</div>
-                  <div className="col-span-1 pl-6">{surveyType === "app" && "User"}</div>
+                  <div className="col-span-1 pl-6">
+                    {t("environments.surveys.summary.other_values_found")}
+                  </div>
+                  <div className="col-span-1 pl-6">{surveyType === "app" && t("common.user")}</div>
                 </div>
                 {result.others
                   .filter((otherValue) => otherValue.value !== "")
@@ -130,11 +138,11 @@ export const MultipleChoiceSummary = ({
                           <span>{otherValue.value}</span>
                         </div>
                       )}
-                      {surveyType === "app" && otherValue.person && (
+                      {surveyType === "app" && otherValue.contact && (
                         <Link
                           href={
-                            otherValue.person.id
-                              ? `/environments/${environmentId}/people/${otherValue.person.id}`
+                            otherValue.contact.id
+                              ? `/environments/${environmentId}/contacts/${otherValue.contact.id}`
                               : { pathname: null }
                           }
                           key={idx}
@@ -143,8 +151,10 @@ export const MultipleChoiceSummary = ({
                             <span>{otherValue.value}</span>
                           </div>
                           <div className="ph-no-capture col-span-1 flex items-center space-x-4 pl-6 font-medium text-slate-900">
-                            {otherValue.person.id && <PersonAvatar personId={otherValue.person.id} />}
-                            <span>{getPersonIdentifier(otherValue.person, otherValue.personAttributes)}</span>
+                            {otherValue.contact.id && <PersonAvatar personId={otherValue.contact.id} />}
+                            <span>
+                              {getContactIdentifier(otherValue.contact, otherValue.contactAttributes)}
+                            </span>
                           </div>
                         </Link>
                       )}
@@ -153,7 +163,7 @@ export const MultipleChoiceSummary = ({
                 {visibleOtherResponses < result.others.length && (
                   <div className="flex justify-center py-4">
                     <Button onClick={handleLoadMore} variant="secondary" size="sm">
-                      Load more
+                      {t("common.load_more")}
                     </Button>
                   </div>
                 )}

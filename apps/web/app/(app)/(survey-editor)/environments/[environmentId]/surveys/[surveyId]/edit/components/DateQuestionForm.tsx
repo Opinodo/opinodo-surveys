@@ -1,12 +1,15 @@
+import { QuestionFormInput } from "@/modules/surveys/components/QuestionFormInput";
+import { Button } from "@/modules/ui/components/button";
+import { Label } from "@/modules/ui/components/label";
+import { OptionsSwitch } from "@/modules/ui/components/options-switch";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { PlusIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
+import type { JSX } from "react";
 import { createI18nString, extractLanguageCodes } from "@formbricks/lib/i18n/utils";
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import { TSurvey, TSurveyDateQuestion } from "@formbricks/types/surveys/types";
-import { Button } from "@formbricks/ui/components/Button";
-import { Label } from "@formbricks/ui/components/Label";
-import { OptionsSwitch } from "@formbricks/ui/components/OptionsSwitch";
-import { QuestionFormInput } from "@formbricks/ui/components/QuestionFormInput";
+import { TUserLocale } from "@formbricks/types/user";
 
 interface IDateQuestionFormProps {
   localSurvey: TSurvey;
@@ -17,7 +20,8 @@ interface IDateQuestionFormProps {
   selectedLanguageCode: string;
   setSelectedLanguageCode: (language: string) => void;
   isInvalid: boolean;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
+  locale: TUserLocale;
 }
 
 const dateOptions = [
@@ -43,39 +47,43 @@ export const DateQuestionForm = ({
   localSurvey,
   selectedLanguageCode,
   setSelectedLanguageCode,
-  attributeClasses,
+  contactAttributeKeys,
+  locale,
 }: IDateQuestionFormProps): JSX.Element => {
   const surveyLanguageCodes = extractLanguageCodes(localSurvey.languages);
+  const t = useTranslations();
   const [parent] = useAutoAnimate();
   return (
     <form>
       <QuestionFormInput
         id="headline"
         value={question.headline}
-        label={"Question*"}
+        label={t("environments.surveys.edit.question") + "*"}
         localSurvey={localSurvey}
         questionIdx={questionIdx}
         isInvalid={isInvalid}
         updateQuestion={updateQuestion}
         selectedLanguageCode={selectedLanguageCode}
         setSelectedLanguageCode={setSelectedLanguageCode}
-        attributeClasses={attributeClasses}
+        contactAttributeKeys={contactAttributeKeys}
+        locale={locale}
       />
       <div ref={parent}>
         {question.subheader !== undefined && (
-          <div className="mt-2 inline-flex w-full items-center">
+          <div className="inline-flex w-full items-center">
             <div className="w-full">
               <QuestionFormInput
                 id="subheader"
                 value={question.subheader}
-                label={"Description"}
+                label={t("environments.surveys.edit.description")}
                 localSurvey={localSurvey}
                 questionIdx={questionIdx}
                 isInvalid={isInvalid}
                 updateQuestion={updateQuestion}
                 selectedLanguageCode={selectedLanguageCode}
                 setSelectedLanguageCode={setSelectedLanguageCode}
-                attributeClasses={attributeClasses}
+                contactAttributeKeys={contactAttributeKeys}
+                locale={locale}
               />
             </div>
           </div>
@@ -85,7 +93,7 @@ export const DateQuestionForm = ({
           <Button
             size="sm"
             className="mt-3"
-            variant="minimal"
+            variant="secondary"
             type="button"
             onClick={() => {
               updateQuestion(questionIdx, {
@@ -93,13 +101,13 @@ export const DateQuestionForm = ({
               });
             }}>
             <PlusIcon className="mr-1 h-4 w-4" />
-            Add Description
+            {t("environments.surveys.edit.add_description")}
           </Button>
         )}
       </div>
 
       <div className="mt-3">
-        <Label htmlFor="questionType">Date Format</Label>
+        <Label htmlFor="questionType">{t("environments.surveys.edit.date_format")}</Label>
         <div className="mt-2 flex items-center">
           <OptionsSwitch
             options={dateOptions}

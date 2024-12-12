@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const ZBoolean = z.boolean();
+
 export const ZString = z.string();
 
 export const ZNumber = z.number();
@@ -7,6 +9,8 @@ export const ZNumber = z.number();
 export const ZOptionalNumber = z.number().optional();
 
 export const ZOptionalString = z.string().optional();
+
+export const ZNullableString = z.string().nullable();
 
 export const ZColor = z.string().regex(/^#(?:[A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/);
 
@@ -44,3 +48,11 @@ export type TAllowedFileExtension = z.infer<typeof ZAllowedFileExtension>;
 export const ZId = z.string().cuid2();
 
 export const ZUuid = z.string().uuid();
+
+export const getZSafeUrl = (message: string): z.ZodEffects<z.ZodString, string, string> =>
+  z
+    .string()
+    .url({ message })
+    .refine((url) => url.startsWith("https://"), {
+      message: "URL must start with https://",
+    });

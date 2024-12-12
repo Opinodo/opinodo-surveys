@@ -1,15 +1,5 @@
-import { RotateCcwIcon } from "lucide-react";
-import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
-import { UseFormReturn, useForm, useWatch } from "react-hook-form";
-import toast from "react-hot-toast";
-import { COLOR_DEFAULTS } from "@formbricks/lib/styling/constants";
-import { TEnvironment } from "@formbricks/types/environment";
-import { TProduct, TProductStyling } from "@formbricks/types/product";
-import { TBaseStyling } from "@formbricks/types/styling";
-import { TSurvey, TSurveyStyling } from "@formbricks/types/surveys/types";
-import { AlertDialog } from "@formbricks/ui/components/AlertDialog";
-import { Button } from "@formbricks/ui/components/Button";
+import { AlertDialog } from "@/modules/ui/components/alert-dialog";
+import { Button } from "@/modules/ui/components/button";
 import {
   FormControl,
   FormDescription,
@@ -17,15 +7,25 @@ import {
   FormItem,
   FormLabel,
   FormProvider,
-} from "@formbricks/ui/components/Form";
-import { Switch } from "@formbricks/ui/components/Switch";
+} from "@/modules/ui/components/form";
+import { Switch } from "@/modules/ui/components/switch";
+import { RotateCcwIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+import React, { useEffect, useMemo, useState } from "react";
+import { UseFormReturn, useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { defaultStyling } from "@formbricks/lib/styling/constants";
+import { TEnvironment } from "@formbricks/types/environment";
+import { TProject, TProjectStyling } from "@formbricks/types/project";
+import { TSurvey, TSurveyStyling } from "@formbricks/types/surveys/types";
 import { BackgroundStylingCard } from "./BackgroundStylingCard";
 import { CardStylingSettings } from "./CardStylingSettings";
 import { FormStylingSettings } from "./FormStylingSettings";
 
-type StylingViewProps = {
+interface StylingViewProps {
   environment: TEnvironment;
-  product: TProduct;
+  project: TProject;
   localSurvey: TSurvey;
   setLocalSurvey: React.Dispatch<React.SetStateAction<TSurvey>>;
   colors: string[];
@@ -35,12 +35,12 @@ type StylingViewProps = {
   setLocalStylingChanges: React.Dispatch<React.SetStateAction<TSurveyStyling | null>>;
   isUnsplashConfigured: boolean;
   isCxMode: boolean;
-};
+}
 
 export const StylingView = ({
   colors,
   environment,
-  product,
+  project,
   localSurvey,
   setLocalSurvey,
   setStyling,
@@ -50,50 +50,10 @@ export const StylingView = ({
   isUnsplashConfigured,
   isCxMode,
 }: StylingViewProps) => {
-  const stylingDefaults: TBaseStyling = useMemo(() => {
-    let stylingDefaults: TBaseStyling;
-    const isOverwriteEnabled = localSurvey.styling?.overwriteThemeStyling ?? false;
-
-    if (isOverwriteEnabled) {
-      const { overwriteThemeStyling, ...baseSurveyStyles } = localSurvey.styling ?? {};
-      stylingDefaults = baseSurveyStyles;
-    } else {
-      const { allowStyleOverwrite, ...baseProductStyles } = product.styling ?? {};
-      stylingDefaults = baseProductStyles;
-    }
-
-    return {
-      brandColor: { light: stylingDefaults.brandColor?.light ?? COLOR_DEFAULTS.brandColor },
-      questionColor: { light: stylingDefaults.questionColor?.light ?? COLOR_DEFAULTS.questionColor },
-      inputColor: { light: stylingDefaults.inputColor?.light ?? COLOR_DEFAULTS.inputColor },
-      inputBorderColor: { light: stylingDefaults.inputBorderColor?.light ?? COLOR_DEFAULTS.inputBorderColor },
-      cardBackgroundColor: {
-        light: stylingDefaults.cardBackgroundColor?.light ?? COLOR_DEFAULTS.cardBackgroundColor,
-      },
-      cardBorderColor: { light: stylingDefaults.cardBorderColor?.light ?? COLOR_DEFAULTS.cardBorderColor },
-      cardShadowColor: { light: stylingDefaults.cardShadowColor?.light ?? COLOR_DEFAULTS.cardShadowColor },
-      highlightBorderColor: stylingDefaults.highlightBorderColor?.light
-        ? {
-            light: stylingDefaults.highlightBorderColor.light,
-          }
-        : undefined,
-      isDarkModeEnabled: stylingDefaults.isDarkModeEnabled ?? false,
-      roundness: stylingDefaults.roundness ?? 8,
-      cardArrangement: stylingDefaults.cardArrangement ?? {
-        linkSurveys: "simple",
-        appSurveys: "simple",
-      },
-      background: stylingDefaults.background,
-      hideProgressBar: stylingDefaults.hideProgressBar ?? false,
-      isLogoHidden: stylingDefaults.isLogoHidden ?? false,
-    };
-  }, [localSurvey.styling, product.styling]);
+  const t = useTranslations();
 
   const form = useForm<TSurveyStyling>({
-    defaultValues: {
-      ...localSurvey.styling,
-      ...stylingDefaults,
-    },
+    defaultValues: { ...defaultStyling, ...project.styling, ...localSurvey.styling },
   });
 
   const overwriteThemeStyling = form.watch("overwriteThemeStyling");
@@ -105,8 +65,7 @@ export const StylingView = ({
   const [confirmResetStylingModalOpen, setConfirmResetStylingModalOpen] = useState(false);
 
   const onResetThemeStyling = () => {
-    const { styling: productStyling } = product;
-    const { allowStyleOverwrite, ...baseStyling } = productStyling ?? {};
+    const { allowStyleOverwrite, ...baseStyling } = project.styling ?? {};
 
     setStyling({
       ...baseStyling,
@@ -119,7 +78,7 @@ export const StylingView = ({
     });
 
     setConfirmResetStylingModalOpen(false);
-    toast.success("Styling set to theme styles");
+    toast.success(t("environments.surveys.edit.styling_set_to_theme_styles"));
   };
 
   useEffect(() => {
@@ -130,27 +89,26 @@ export const StylingView = ({
     }
   }, [overwriteThemeStyling]);
 
-  const watchedValues = useWatch({
-    control: form.control,
-  });
-
   useEffect(() => {
-    // @ts-expect-error
-    setLocalSurvey((prev) => ({
-      ...prev,
-      styling: {
-        ...prev.styling,
-        ...watchedValues,
-      },
-    }));
-  }, [watchedValues, setLocalSurvey]);
+    const subscription = form.watch((data: TSurveyStyling) => {
+      setLocalSurvey((prev) => ({
+        ...prev,
+        styling: {
+          ...prev.styling,
+          ...data,
+        },
+      }));
+    });
 
-  const defaultProductStyling = useMemo(() => {
-    const { styling: productStyling } = product;
-    const { allowStyleOverwrite, ...baseStyling } = productStyling ?? {};
+    return () => subscription.unsubscribe();
+  }, [form, setLocalSurvey]);
+
+  const defaultProjectStyling = useMemo(() => {
+    const { styling: projectStyling } = project;
+    const { allowStyleOverwrite, ...baseStyling } = projectStyling ?? {};
 
     return baseStyling;
-  }, [product]);
+  }, [project]);
 
   const handleOverwriteToggle = (value: boolean) => {
     // survey styling from the server is surveyStyling, it could either be set or not
@@ -158,12 +116,12 @@ export const StylingView = ({
 
     setOverwriteThemeStyling(value);
 
-    // if the toggle is turned on, we set the local styling to the product styling
+    // if the toggle is turned on, we set the local styling to the project styling
     if (value) {
       if (!styling) {
-        // copy the product styling to the survey styling
+        // copy the project styling to the survey styling
         setStyling({
-          ...defaultProductStyling,
+          ...defaultProjectStyling,
           overwriteThemeStyling: true,
         });
         return;
@@ -173,23 +131,23 @@ export const StylingView = ({
       if (localStylingChanges) {
         setStyling(localStylingChanges);
       }
-      // if there are no local styling changes, we set the styling to the product styling
+      // if there are no local styling changes, we set the styling to the project styling
       else {
         setStyling({
-          ...defaultProductStyling,
+          ...defaultProjectStyling,
           overwriteThemeStyling: true,
         });
       }
     }
 
-    // if the toggle is turned off, we store the local styling changes and set the styling to the product styling
+    // if the toggle is turned off, we store the local styling changes and set the styling to the project styling
     else {
       // copy the styling to localStylingChanges
       setLocalStylingChanges(styling);
 
-      // copy the product styling to the survey styling
+      // copy the project styling to the survey styling
       setStyling({
-        ...defaultProductStyling,
+        ...defaultProjectStyling,
         overwriteThemeStyling: false,
       });
     }
@@ -212,10 +170,10 @@ export const StylingView = ({
 
                     <div>
                       <FormLabel className="text-base font-semibold text-slate-900">
-                        Add custom styles
+                        {t("environments.surveys.edit.add_custom_styles")}
                       </FormLabel>
                       <FormDescription className="text-sm text-slate-800">
-                        Override the theme with individual styles for this survey.
+                        {t("environments.surveys.edit.override_theme_with_individual_styles_for_this_survey")}
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -228,7 +186,7 @@ export const StylingView = ({
             open={formStylingOpen}
             setOpen={setFormStylingOpen}
             disabled={!overwriteThemeStyling}
-            form={form as UseFormReturn<TProductStyling | TSurveyStyling>}
+            form={form as UseFormReturn<TProjectStyling | TSurveyStyling>}
           />
 
           <CardStylingSettings
@@ -236,8 +194,8 @@ export const StylingView = ({
             setOpen={setCardStylingOpen}
             surveyType={localSurvey.type}
             disabled={!overwriteThemeStyling}
-            product={product}
-            form={form as UseFormReturn<TProductStyling | TSurveyStyling>}
+            project={project}
+            form={form as UseFormReturn<TProjectStyling | TSurveyStyling>}
           />
 
           {localSurvey.type === "link" && (
@@ -248,7 +206,7 @@ export const StylingView = ({
               colors={colors}
               disabled={!overwriteThemeStyling}
               isUnsplashConfigured={isUnsplashConfigured}
-              form={form as UseFormReturn<TProductStyling | TSurveyStyling>}
+              form={form as UseFormReturn<TProjectStyling | TSurveyStyling>}
             />
           )}
 
@@ -258,32 +216,32 @@ export const StylingView = ({
                 {overwriteThemeStyling && (
                   <Button
                     type="button"
-                    variant="minimal"
+                    variant="ghost"
                     className="flex items-center gap-2"
                     onClick={() => setConfirmResetStylingModalOpen(true)}>
-                    Reset to theme styles
+                    {t("environments.surveys.edit.reset_to_theme_styles")}
                     <RotateCcwIcon className="h-4 w-4" />
                   </Button>
                 )}
               </div>
               <p className="text-sm text-slate-500">
-                Adjust the theme in the{" "}
+                {t("environments.surveys.edit.adjust_the_theme_in_the")}{" "}
                 <Link
-                  href={`/environments/${environment.id}/product/look`}
+                  href={`/environments/${environment.id}/project/look`}
                   target="_blank"
                   className="font-semibold underline">
-                  Look & Feel
+                  {t("common.look_and_feel")}
                 </Link>{" "}
-                settings
+                {t("common.settings")}
               </p>
             </div>
           )}
           <AlertDialog
             open={confirmResetStylingModalOpen}
             setOpen={setConfirmResetStylingModalOpen}
-            headerText="Reset to theme styles"
-            mainText="Are you sure you want to reset the styling to the theme styles? This will remove all custom styling."
-            confirmBtnLabel="Confirm"
+            headerText={t("environments.surveys.edit.reset_to_theme_styles")}
+            mainText={t("environments.surveys.edit.reset_to_theme_styles_main_text")}
+            confirmBtnLabel={t("common.confirm")}
             onDecline={() => setConfirmResetStylingModalOpen(false)}
             onConfirm={onResetThemeStyling}
           />

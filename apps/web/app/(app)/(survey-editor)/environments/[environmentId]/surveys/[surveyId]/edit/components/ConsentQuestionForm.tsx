@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { LocalizedEditor } from "@formbricks/ee/multi-language/components/localized-editor";
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { LocalizedEditor } from "@/modules/ee/multi-language-surveys/components/localized-editor";
+import { QuestionFormInput } from "@/modules/surveys/components/QuestionFormInput";
+import { Label } from "@/modules/ui/components/label";
+import { useTranslations } from "next-intl";
+import { type JSX, useState } from "react";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import { TSurvey, TSurveyConsentQuestion } from "@formbricks/types/surveys/types";
-import { Label } from "@formbricks/ui/components/Label";
-import { QuestionFormInput } from "@formbricks/ui/components/QuestionFormInput";
+import { TUserLocale } from "@formbricks/types/user";
 
 interface ConsentQuestionFormProps {
   localSurvey: TSurvey;
@@ -15,7 +17,8 @@ interface ConsentQuestionFormProps {
   selectedLanguageCode: string;
   setSelectedLanguageCode: (languageCode: string) => void;
   isInvalid: boolean;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
+  locale: TUserLocale;
 }
 
 export const ConsentQuestionForm = ({
@@ -26,15 +29,16 @@ export const ConsentQuestionForm = ({
   localSurvey,
   selectedLanguageCode,
   setSelectedLanguageCode,
-  attributeClasses,
+  contactAttributeKeys,
+  locale,
 }: ConsentQuestionFormProps): JSX.Element => {
   const [firstRender, setFirstRender] = useState(true);
-
+  const t = useTranslations();
   return (
     <form>
       <QuestionFormInput
         id="headline"
-        label="Question*"
+        label={t("environments.surveys.edit.question") + "*"}
         value={question.headline}
         localSurvey={localSurvey}
         questionIdx={questionIdx}
@@ -42,11 +46,12 @@ export const ConsentQuestionForm = ({
         updateQuestion={updateQuestion}
         selectedLanguageCode={selectedLanguageCode}
         setSelectedLanguageCode={setSelectedLanguageCode}
-        attributeClasses={attributeClasses}
+        contactAttributeKeys={contactAttributeKeys}
+        locale={locale}
       />
 
       <div className="mt-3">
-        <Label htmlFor="subheader">Description</Label>
+        <Label htmlFor="subheader">{t("common.description")}</Label>
         <div className="mt-2">
           <LocalizedEditor
             id="subheader"
@@ -59,13 +64,14 @@ export const ConsentQuestionForm = ({
             firstRender={firstRender}
             setFirstRender={setFirstRender}
             questionIdx={questionIdx}
+            locale={locale}
           />
         </div>
       </div>
 
       <QuestionFormInput
         id="label"
-        label="Checkbox Label*"
+        label={t("environments.surveys.edit.checkbox_label") + "*"}
         placeholder="I agree to the terms and conditions"
         value={question.label}
         localSurvey={localSurvey}
@@ -74,7 +80,8 @@ export const ConsentQuestionForm = ({
         updateQuestion={updateQuestion}
         selectedLanguageCode={selectedLanguageCode}
         setSelectedLanguageCode={setSelectedLanguageCode}
-        attributeClasses={attributeClasses}
+        contactAttributeKeys={contactAttributeKeys}
+        locale={locale}
       />
     </form>
   );

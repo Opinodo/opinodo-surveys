@@ -1,7 +1,10 @@
 import { createDocumentAndAssignInsight } from "@/app/api/(internal)/pipeline/lib/documents";
+import { sendSurveyFollowUps } from "@/app/api/(internal)/pipeline/lib/survey-follow-up";
 import { responses } from "@/app/lib/api/response";
 import { transformErrorToDetails } from "@/app/lib/api/validator";
-import { getIsAIEnabled } from "@/app/lib/utils";
+import { getIsAIEnabled } from "@/modules/ee/license-check/lib/utils";
+import { getSurveyFollowUpsPermission } from "@/modules/ee/license-check/lib/utils";
+import { sendResponseFinishedEmail } from "@/modules/email";
 import { createHmac } from "crypto";
 import { headers } from "next/headers";
 import { prisma } from "@formbricks/database";
@@ -12,14 +15,17 @@ import { getOrganizationByEnvironmentId } from "@formbricks/lib/organization/ser
 import { getSurvey } from "@formbricks/lib/survey/service";
 import { convertDatesInObject } from "@formbricks/lib/time";
 import { getPromptText } from "@formbricks/lib/utils/ai";
+import { parseRecallInfo } from "@formbricks/lib/utils/recall";
 import { webhookCache } from "@formbricks/lib/webhook/cache";
 import { TPipelineTrigger, ZPipelineInput } from "@formbricks/types/pipelines";
 import { TWebhook } from "@formbricks/types/webhooks";
+import { getContactAttributes } from "./lib/contact-attribute";
 import { handleIntegrations } from "./lib/handleIntegrations";
 
 export const POST = async (request: Request) => {
+  const requestHeaders = await headers();
   // Check authentication
-  if (headers().get("x-api-key") !== CRON_SECRET) {
+  if (requestHeaders.get("x-api-key") !== CRON_SECRET) {
     return responses.notAuthenticatedResponse();
   }
 
@@ -38,6 +44,12 @@ export const POST = async (request: Request) => {
   }
 
   const { environmentId, surveyId, event, response } = inputValidation.data;
+  const contactAttributes = response.contact?.id ? await getContactAttributes(response.contact?.id) : {};
+
+  const organization = await getOrganizationByEnvironmentId(environmentId);
+  if (!organization) {
+    throw new Error("Organization not found");
+  }
 
   // Fetch webhooks
   const getWebhooksForPipeline = cache(
@@ -95,7 +107,7 @@ export const POST = async (request: Request) => {
     }
 
     if (integrations.length > 0) {
-      await handleIntegrations(integrations, inputValidation.data, survey);
+      await handleIntegrations(integrations, inputValidation.data, survey, contactAttributes);
     }
 
     // Await webhook and email promises with allSettled to prevent early rejection
@@ -111,11 +123,6 @@ export const POST = async (request: Request) => {
     if (hasSurveyOpenTextQuestions) {
       const isAICofigured = IS_AI_CONFIGURED;
       if (hasSurveyOpenTextQuestions && isAICofigured) {
-        const organization = await getOrganizationByEnvironmentId(environmentId);
-        if (!organization) {
-          throw new Error("Organization not found");
-        }
-
         const isAIEnabled = await getIsAIEnabled(organization);
 
         if (isAIEnabled) {
@@ -126,15 +133,27 @@ export const POST = async (request: Request) => {
               if (!isQuestionAnswered) {
                 continue;
               }
-              const text = getPromptText(question.headline.default, response.data[question.id] as string);
+
+              const headline = parseRecallInfo(
+                question.headline[response.language ?? "default"],
+                contactAttributes,
+                response.data,
+                response.variables
+              );
+
+              const text = getPromptText(headline, response.data[question.id] as string);
               // TODO: check if subheadline gives more context and better embeddings
-              await createDocumentAndAssignInsight(survey.name, {
-                environmentId,
-                surveyId,
-                responseId: response.id,
-                questionId: question.id,
-                text,
-              });
+              try {
+                await createDocumentAndAssignInsight(survey.name, {
+                  environmentId,
+                  surveyId,
+                  responseId: response.id,
+                  questionId: question.id,
+                  text,
+                });
+              } catch (e) {
+                console.error(e);
+              }
             }
           }
         }

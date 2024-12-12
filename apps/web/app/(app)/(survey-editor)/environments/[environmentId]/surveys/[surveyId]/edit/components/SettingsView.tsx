@@ -1,9 +1,11 @@
 import { SurveyGeneralSettings } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/components/SurveyGeneralSettings";
-import { AdvancedTargetingCard } from "@formbricks/ee/advanced-targeting/components/advanced-targeting-card";
+import { TargetingLockedCard } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/components/TargetingLockedCard";
+import { TargetingCard } from "@/modules/ee/contacts/segments/components/targeting-card";
+import { TTeamPermission } from "@/modules/ee/teams/project-teams/types/teams";
 import { TActionClass } from "@formbricks/types/action-classes";
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import { TEnvironment } from "@formbricks/types/environment";
-import { TMembershipRole } from "@formbricks/types/memberships";
+import { TOrganizationRole } from "@formbricks/types/memberships";
 import { TProduct } from "@formbricks/types/product";
 import { TSegment } from "@formbricks/types/segment";
 import { TSurvey } from "@formbricks/types/surveys/types";
@@ -11,7 +13,6 @@ import { TTag } from "@formbricks/types/tags";
 import { RecontactOptionsCard } from "./RecontactOptionsCard";
 import { ResponseOptionsCard } from "./ResponseOptionsCard";
 import { SurveyPlacementCard } from "./SurveyPlacementCard";
-import { TargetingCard } from "./TargetingCard";
 import { WhenToSendCard } from "./WhenToSendCard";
 
 interface SettingsViewProps {
@@ -19,12 +20,12 @@ interface SettingsViewProps {
   localSurvey: TSurvey;
   setLocalSurvey: (survey: TSurvey) => void;
   actionClasses: TActionClass[];
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
   segments: TSegment[];
   responseCount: number;
-  membershipRole?: TMembershipRole;
+  membershipRole?: TOrganizationRole;
   isUserTargetingAllowed?: boolean;
-  isFormbricksCloud: boolean;
+  projectPermission: TTeamPermission | null;
   product: TProduct;
   environmentTags: TTag[];
 }
@@ -34,12 +35,12 @@ export const SettingsView = ({
   localSurvey,
   setLocalSurvey,
   actionClasses,
-  attributeClasses,
+  contactAttributeKeys,
   segments,
   responseCount,
   membershipRole,
   isUserTargetingAllowed = false,
-  isFormbricksCloud,
+  projectPermission,
   product,
   environmentTags,
 }: SettingsViewProps) => {
@@ -57,27 +58,22 @@ export const SettingsView = ({
 
       {localSurvey.type === "app" ? (
         <div>
-          {!isUserTargetingAllowed ? (
-            <TargetingCard
-              key={localSurvey.segment?.id}
-              localSurvey={localSurvey}
-              setLocalSurvey={setLocalSurvey}
-              environmentId={environment.id}
-              attributeClasses={attributeClasses}
-              segments={segments}
-              initialSegment={segments.find((segment) => segment.id === localSurvey.segment?.id)}
-              isFormbricksCloud={isFormbricksCloud}
-            />
+          {isUserTargetingAllowed ? (
+            <div className="relative">
+              <div className="blur-none">
+                <TargetingCard
+                  key={localSurvey.segment?.id}
+                  localSurvey={localSurvey}
+                  setLocalSurvey={setLocalSurvey}
+                  environmentId={environment.id}
+                  contactAttributeKeys={contactAttributeKeys}
+                  segments={segments}
+                  initialSegment={segments.find((segment) => segment.id === localSurvey.segment?.id)}
+                />
+              </div>
+            </div>
           ) : (
-            <AdvancedTargetingCard
-              key={localSurvey.segment?.id}
-              localSurvey={localSurvey}
-              setLocalSurvey={setLocalSurvey}
-              environmentId={environment.id}
-              attributeClasses={attributeClasses}
-              segments={segments}
-              initialSegment={segments.find((segment) => segment.id === localSurvey.segment?.id)}
-            />
+            <TargetingLockedCard />
           )}
         </div>
       ) : null}
@@ -88,6 +84,7 @@ export const SettingsView = ({
         environmentId={environment.id}
         propActionClasses={actionClasses}
         membershipRole={membershipRole}
+        projectPermission={projectPermission}
       />
 
       <ResponseOptionsCard

@@ -1,24 +1,7 @@
 "use client";
 
-import { createId } from "@paralleldrive/cuid2";
-import { ArrowDownIcon, ArrowUpIcon, CopyIcon, EllipsisIcon, LanguagesIcon, TrashIcon } from "lucide-react";
-import { useState } from "react";
-import { cn } from "@formbricks/lib/cn";
-import {
-  CX_QUESTIONS_NAME_MAP,
-  QUESTIONS_ICON_MAP,
-  QUESTIONS_NAME_MAP,
-  getQuestionDefaults,
-} from "@formbricks/lib/utils/questions";
-import { TProduct } from "@formbricks/types/product";
-import {
-  TSurvey,
-  TSurveyEndScreenCard,
-  TSurveyQuestion,
-  TSurveyQuestionTypeEnum,
-  TSurveyRedirectUrlCard,
-} from "@formbricks/types/surveys/types";
-import { ConfirmationModal } from "@formbricks/ui/components/ConfirmationModal";
+import { Button } from "@/modules/ui/components/button";
+import { ConfirmationModal } from "@/modules/ui/components/confirmation-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +10,26 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@formbricks/ui/components/DropdownMenu";
+} from "@/modules/ui/components/dropdown-menu";
+import { TooltipRenderer } from "@/modules/ui/components/tooltip";
+import { createId } from "@paralleldrive/cuid2";
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, EllipsisIcon, LanguagesIcon, TrashIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+import {
+  QUESTIONS_ICON_MAP,
+  getCXQuestionNameMap,
+  getQuestionDefaults,
+  getQuestionNameMap,
+} from "@formbricks/lib/utils/questions";
+import { TProject } from "@formbricks/types/project";
+import {
+  TSurvey,
+  TSurveyEndScreenCard,
+  TSurveyQuestion,
+  TSurveyQuestionTypeEnum,
+  TSurveyRedirectUrlCard,
+} from "@formbricks/types/surveys/types";
 
 interface EditorCardMenuProps {
   survey: TSurvey;
@@ -41,8 +43,9 @@ interface EditorCardMenuProps {
   updateCard: (cardIdx: number, updatedAttributes: any) => void;
   addCard: (question: any, index?: number) => void;
   cardType: "question" | "ending";
-  product?: TProduct;
+  project?: TProject;
   isCxMode?: boolean;
+  locale: string;
 }
 
 export const EditorCardMenu = ({
@@ -53,13 +56,15 @@ export const EditorCardMenu = ({
   deleteCard,
   translateCard,
   moveCard,
-  product,
+  project,
   card,
   updateCard,
   addCard,
   cardType,
   isCxMode = false,
+  locale,
 }: EditorCardMenuProps) => {
+  const t = useTranslations();
   const [logicWarningModal, setLogicWarningModal] = useState(false);
   const [changeToType, setChangeToType] = useState(() => {
     if (card.type !== "endScreen" && card.type !== "redirectToUrl") {
@@ -75,7 +80,7 @@ export const EditorCardMenu = ({
 
   const isTranslateDisabled = survey.languages.length <= 1;
 
-  const availableQuestionTypes = isCxMode ? CX_QUESTIONS_NAME_MAP : QUESTIONS_NAME_MAP;
+  const availableQuestionTypes = isCxMode ? getCXQuestionNameMap(locale) : getQuestionNameMap(locale);
 
   const changeQuestionType = (type?: TSurveyQuestionTypeEnum) => {
     if (!type) return;
@@ -83,7 +88,7 @@ export const EditorCardMenu = ({
     const { headline, required, subheader, imageUrl, videoUrl, buttonLabel, backButtonLabel } =
       card as TSurveyQuestion;
 
-    const questionDefaults = getQuestionDefaults(type, product);
+    const questionDefaults = getQuestionDefaults(type, project, locale);
 
     if (
       (type === TSurveyQuestionTypeEnum.MultipleChoiceSingle &&
@@ -115,7 +120,7 @@ export const EditorCardMenu = ({
   };
 
   const addQuestionCardBelow = (type: TSurveyQuestionTypeEnum) => {
-    const questionDefaults = getQuestionDefaults(type, product);
+    const questionDefaults = getQuestionDefaults(type, project, locale);
 
     addCard(
       {
@@ -141,40 +146,80 @@ export const EditorCardMenu = ({
   };
 
   return (
-    <div className="flex space-x-2">
-      <LanguagesIcon
-        className={cn(
-          "h-4 cursor-pointer text-slate-500",
-          isTranslateDisabled ? "cursor-not-allowed opacity-50" : "hover:text-slate-600"
-        )}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (isTranslateDisabled) return;
-          translateCard(cardIdx);
-        }}
-      />
-      <CopyIcon
-        className="h-4 cursor-pointer text-slate-500 hover:text-slate-600"
-        onClick={(e) => {
-          e.stopPropagation();
-          duplicateCard(cardIdx);
-        }}
-      />
-      <TrashIcon
-        className={cn(
-          "h-4 cursor-pointer text-slate-500",
-          isDeleteDisabled ? "cursor-not-allowed opacity-50" : "hover:text-slate-600"
-        )}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (isDeleteDisabled) return;
-          deleteCard(cardIdx);
-        }}
-      />
-
+    <div className="flex">
+      <TooltipRenderer tooltipContent={t("common.translate")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={isTranslateDisabled}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isTranslateDisabled) return;
+            translateCard(cardIdx);
+          }}
+          className="disabled:border-none">
+          <LanguagesIcon />
+        </Button>
+      </TooltipRenderer>
+      <TooltipRenderer tooltipContent={t("common.move_up")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={cardIdx === 0}
+          onClick={(e) => {
+            if (cardIdx !== 0) {
+              e.stopPropagation();
+              moveCard(cardIdx, true);
+            }
+          }}
+          className="disabled:border-none">
+          <ArrowUpIcon />
+        </Button>
+      </TooltipRenderer>
+      <TooltipRenderer tooltipContent={t("common.move_down")} triggerClass="disabled:border-none">
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={lastCard}
+          onClick={(e) => {
+            if (!lastCard) {
+              e.stopPropagation();
+              moveCard(cardIdx, false);
+            }
+          }}
+          className="disabled:border-none">
+          <ArrowDownIcon />
+        </Button>
+      </TooltipRenderer>
+      <TooltipRenderer tooltipContent={t("common.duplicate")} triggerClass="disabled:border-none">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            duplicateCard(cardIdx);
+          }}
+          className="disabled:border-none">
+          <CopyIcon />
+        </Button>
+      </TooltipRenderer>
+      <TooltipRenderer tooltipContent={t("common.delete")} triggerClass="disabled:border-none">
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={isDeleteDisabled}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isDeleteDisabled) return;
+            deleteCard(cardIdx);
+          }}
+          className="disabled:border-none">
+          <TrashIcon />
+        </Button>
+      </TooltipRenderer>
       <DropdownMenu>
-        <DropdownMenuTrigger>
-          <EllipsisIcon className="h-4 w-4 text-slate-500 hover:text-slate-600" />
+        <DropdownMenuTrigger className="h-10 w-10 rounded-lg border border-transparent p-2 hover:border-slate-200">
+          <EllipsisIcon className="mx-auto h-4 w-4 text-slate-700 hover:text-slate-600" />
         </DropdownMenuTrigger>
 
         <DropdownMenuContent>
@@ -184,7 +229,7 @@ export const EditorCardMenu = ({
                 <DropdownMenuSubTrigger
                   className="cursor-pointer text-sm text-slate-600 hover:text-slate-700"
                   onClick={(e) => e.preventDefault()}>
-                  Change question type
+                  {t("environments.surveys.edit.change_question_type")}
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="ml-2">
@@ -217,14 +262,14 @@ export const EditorCardMenu = ({
                   e.preventDefault();
                   addEndingCardBelow();
                 }}>
-                <span className="text-sm">Add ending below</span>
+                <span className="text-sm">{t("environments.surveys.edit.add_ending_below")}</span>
               </DropdownMenuItem>
             )}
 
             {cardType === "question" && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer" onClick={(e) => e.preventDefault()}>
-                  Add question below
+                  {t("environments.surveys.edit.add_question_below")}
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="ml-2">
@@ -256,7 +301,7 @@ export const EditorCardMenu = ({
               }}
               icon={<ArrowUpIcon className="h-4 w-4" />}
               disabled={cardIdx === 0}>
-              <span>Move up</span>
+              <span>{t("common.move_up")}</span>
             </DropdownMenuItem>
 
             <DropdownMenuItem
@@ -268,18 +313,17 @@ export const EditorCardMenu = ({
               }}
               icon={<ArrowDownIcon className="h-4 w-4" />}
               disabled={lastCard}>
-              <span>Move down</span>
+              <span>{t("common.move_down")}</span>
             </DropdownMenuItem>
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
-
       <ConfirmationModal
         open={logicWarningModal}
         setOpen={setLogicWarningModal}
-        title="Changing will cause logic errors"
-        text="Changing the question type will remove the logic conditions from this question"
-        buttonText="Change anyway"
+        title={t("environments.surveys.edit.logic_error_warning")}
+        text={t("environments.surveys.edit.logic_error_warning_text")}
+        buttonText={t("environments.surveys.edit.change_anyway")}
         onConfirm={onConfirm}
       />
     </div>

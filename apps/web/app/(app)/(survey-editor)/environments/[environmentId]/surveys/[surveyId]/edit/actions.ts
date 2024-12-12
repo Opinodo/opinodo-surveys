@@ -1,5 +1,7 @@
 "use server";
 
+import { actionClient, authenticatedActionClient } from "@/lib/utils/action-client";
+import { checkAuthorizationUpdated } from "@/lib/utils/action-client-middleware";
 import { TranslationServiceClient } from "@google-cloud/translate";
 import { z } from "zod";
 import { createActionClass } from "@formbricks/lib/actionClass/service";
@@ -8,178 +10,99 @@ import { checkAuthorization } from "@formbricks/lib/actionClient/utils";
 import { UNSPLASH_ACCESS_KEY, UNSPLASH_ALLOWED_DOMAINS } from "@formbricks/lib/constants";
 import {
   getOrganizationIdFromEnvironmentId,
-  getOrganizationIdFromProductId,
-  getOrganizationIdFromSegmentId,
+  getOrganizationIdFromProjectId,
   getOrganizationIdFromSurveyId,
-} from "@formbricks/lib/organization/utils";
-import { getProduct } from "@formbricks/lib/product/service";
-import {
-  cloneSegment,
-  createSegment,
-  resetSegmentInSurvey,
-  updateSegment,
-} from "@formbricks/lib/segment/service";
-import { surveyCache } from "@formbricks/lib/survey/cache";
-import { loadNewSegmentInSurvey, updateSurvey } from "@formbricks/lib/survey/service";
+  getProjectIdFromEnvironmentId,
+  getProjectIdFromSurveyId,
+} from "@/lib/utils/helper";
+import { getSurveyFollowUpsPermission } from "@/modules/ee/license-check/lib/utils";
+import { checkMultiLanguagePermission } from "@/modules/ee/multi-language-surveys/lib/actions";
+import { z } from "zod";
+import { createActionClass } from "@formbricks/lib/actionClass/service";
+import { UNSPLASH_ACCESS_KEY, UNSPLASH_ALLOWED_DOMAINS } from "@formbricks/lib/constants";
+import { getOrganization } from "@formbricks/lib/organization/service";
+import { getProject } from "@formbricks/lib/project/service";
+import { updateSurvey } from "@formbricks/lib/survey/service";
 import { ZActionClassInput } from "@formbricks/types/action-classes";
 import { ZId } from "@formbricks/types/common";
-import { ZBaseFilters, ZSegmentFilters, ZSegmentUpdateInput } from "@formbricks/types/segment";
+import { OperationNotAllowedError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { ZSurvey } from "@formbricks/types/surveys/types";
+
+/**
+ * Checks if survey follow-ups are enabled for the given organization.
+ *
+ * @param { string } organizationId  The ID of the organization to check.
+ * @returns { Promise<void> }  A promise that resolves if the permission is granted.
+ * @throws { ResourceNotFoundError }  If the organization is not found.
+ * @throws { OperationNotAllowedError }  If survey follow-ups are not enabled for the organization.
+ */
+const checkSurveyFollowUpsPermission = async (organizationId: string): Promise<void> => {
+  const organization = await getOrganization(organizationId);
+  if (!organization) {
+    throw new ResourceNotFoundError("Organization", organizationId);
+  }
+
+  const isSurveyFollowUpsEnabled = await getSurveyFollowUpsPermission(organization);
+  if (!isSurveyFollowUpsEnabled) {
+    throw new OperationNotAllowedError("Survey follow ups are not enabled for this organization");
+  }
+};
 
 export const updateSurveyAction = authenticatedActionClient
   .schema(ZSurvey)
   .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
+    const organizationId = await getOrganizationIdFromSurveyId(parsedInput.id);
+    await checkAuthorizationUpdated({
       userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromSurveyId(parsedInput.id),
-      rules: ["survey", "update"],
+      organizationId,
+      access: [
+        {
+          type: "organization",
+          roles: ["owner", "manager"],
+        },
+        {
+          type: "projectTeam",
+          projectId: await getProjectIdFromSurveyId(parsedInput.id),
+          minPermission: "readWrite",
+        },
+      ],
     });
+
+    if (parsedInput.followUps?.length) {
+      await checkSurveyFollowUpsPermission(organizationId);
+    }
+
+    if (parsedInput.languages?.length) {
+      await checkMultiLanguagePermission(organizationId);
+    }
+
     return await updateSurvey(parsedInput);
   });
 
-const ZRefetchProductAction = z.object({
-  productId: ZId,
+const ZRefetchProjectAction = z.object({
+  projectId: ZId,
 });
 
-export const refetchProductAction = authenticatedActionClient
-  .schema(ZRefetchProductAction)
+export const refetchProjectAction = authenticatedActionClient
+  .schema(ZRefetchProjectAction)
   .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
+    await checkAuthorizationUpdated({
       userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromProductId(parsedInput.productId),
-      rules: ["product", "read"],
+      organizationId: await getOrganizationIdFromProjectId(parsedInput.projectId),
+      access: [
+        {
+          type: "organization",
+          roles: ["owner", "manager"],
+        },
+        {
+          type: "projectTeam",
+          minPermission: "readWrite",
+          projectId: parsedInput.projectId,
+        },
+      ],
     });
 
-    return await getProduct(parsedInput.productId);
-  });
-
-const ZCreateBasicSegmentAction = z.object({
-  description: z.string().optional(),
-  environmentId: ZId,
-  filters: ZBaseFilters,
-  isPrivate: z.boolean(),
-  surveyId: ZId,
-  title: z.string(),
-});
-
-export const createBasicSegmentAction = authenticatedActionClient
-  .schema(ZCreateBasicSegmentAction)
-  .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
-      userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromEnvironmentId(parsedInput.environmentId),
-      rules: ["segment", "create"],
-    });
-
-    const parsedFilters = ZSegmentFilters.safeParse(parsedInput.filters);
-
-    if (!parsedFilters.success) {
-      const errMsg =
-        parsedFilters.error.issues.find((issue) => issue.code === "custom")?.message || "Invalid filters";
-      throw new Error(errMsg);
-    }
-
-    const segment = await createSegment({
-      environmentId: parsedInput.environmentId,
-      surveyId: parsedInput.surveyId,
-      title: parsedInput.title,
-      description: parsedInput.description || "",
-      isPrivate: parsedInput.isPrivate,
-      filters: parsedInput.filters,
-    });
-    surveyCache.revalidate({ id: parsedInput.surveyId });
-
-    return segment;
-  });
-
-const ZUpdateBasicSegmentAction = z.object({
-  segmentId: ZId,
-  data: ZSegmentUpdateInput,
-});
-
-export const updateBasicSegmentAction = authenticatedActionClient
-  .schema(ZUpdateBasicSegmentAction)
-  .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
-      userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromSegmentId(parsedInput.segmentId),
-      rules: ["segment", "update"],
-    });
-
-    const { filters } = parsedInput.data;
-    if (filters) {
-      const parsedFilters = ZSegmentFilters.safeParse(filters);
-
-      if (!parsedFilters.success) {
-        const errMsg =
-          parsedFilters.error.issues.find((issue) => issue.code === "custom")?.message || "Invalid filters";
-        throw new Error(errMsg);
-      }
-    }
-
-    return await updateSegment(parsedInput.segmentId, parsedInput.data);
-  });
-
-const ZLoadNewBasicSegmentAction = z.object({
-  surveyId: ZId,
-  segmentId: ZId,
-});
-
-export const loadNewBasicSegmentAction = authenticatedActionClient
-  .schema(ZLoadNewBasicSegmentAction)
-  .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
-      userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromSegmentId(parsedInput.surveyId),
-      rules: ["segment", "read"],
-    });
-
-    await checkAuthorization({
-      userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromSurveyId(parsedInput.surveyId),
-      rules: ["survey", "update"],
-    });
-
-    return await loadNewSegmentInSurvey(parsedInput.surveyId, parsedInput.segmentId);
-  });
-
-const ZCloneBasicSegmentAction = z.object({
-  segmentId: ZId,
-  surveyId: ZId,
-});
-
-export const cloneBasicSegmentAction = authenticatedActionClient
-  .schema(ZCloneBasicSegmentAction)
-  .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
-      userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromSegmentId(parsedInput.segmentId),
-      rules: ["segment", "create"],
-    });
-
-    await checkAuthorization({
-      userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromSurveyId(parsedInput.surveyId),
-      rules: ["survey", "read"],
-    });
-
-    return await cloneSegment(parsedInput.segmentId, parsedInput.surveyId);
-  });
-
-const ZResetBasicSegmentFiltersAction = z.object({
-  surveyId: ZId,
-});
-
-export const resetBasicSegmentFiltersAction = authenticatedActionClient
-  .schema(ZResetBasicSegmentFiltersAction)
-  .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
-      userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromSurveyId(parsedInput.surveyId),
-      rules: ["segment", "update"],
-    });
-
-    return await resetSegmentInSurvey(parsedInput.surveyId);
+    return await getProject(parsedInput.projectId);
   });
 
 const ZGetImagesFromUnsplashAction = z.object({
@@ -268,10 +191,20 @@ const ZCreateActionClassAction = z.object({
 export const createActionClassAction = authenticatedActionClient
   .schema(ZCreateActionClassAction)
   .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
+    await checkAuthorizationUpdated({
       userId: ctx.user.id,
       organizationId: await getOrganizationIdFromEnvironmentId(parsedInput.action.environmentId),
-      rules: ["actionClass", "create"],
+      access: [
+        {
+          type: "organization",
+          roles: ["owner", "manager"],
+        },
+        {
+          type: "projectTeam",
+          minPermission: "readWrite",
+          projectId: await getProjectIdFromEnvironmentId(parsedInput.action.environmentId),
+        },
+      ],
     });
 
     return await createActionClass(parsedInput.action.environmentId, parsedInput.action);

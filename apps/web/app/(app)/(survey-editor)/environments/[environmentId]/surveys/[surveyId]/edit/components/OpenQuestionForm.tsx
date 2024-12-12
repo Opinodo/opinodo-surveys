@@ -1,25 +1,30 @@
 "use client";
 
+import { QuestionFormInput } from "@/modules/surveys/components/QuestionFormInput";
+import { AdvancedOptionToggle } from "@/modules/ui/components/advanced-option-toggle";
+import { Button } from "@/modules/ui/components/button";
+import { Input } from "@/modules/ui/components/input";
+import { Label } from "@/modules/ui/components/label";
+import { OptionsSwitch } from "@/modules/ui/components/options-switch";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { HashIcon, LinkIcon, MailIcon, MessageSquareTextIcon, PhoneIcon, PlusIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { JSX, useEffect, useState } from "react";
 import { createI18nString, extractLanguageCodes } from "@formbricks/lib/i18n/utils";
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import {
   TSurvey,
   TSurveyOpenTextQuestion,
   TSurveyOpenTextQuestionInputType,
 } from "@formbricks/types/surveys/types";
-import { Button } from "@formbricks/ui/components/Button";
-import { Label } from "@formbricks/ui/components/Label";
-import { OptionsSwitch } from "@formbricks/ui/components/OptionsSwitch";
-import { QuestionFormInput } from "@formbricks/ui/components/QuestionFormInput";
+import { TUserLocale } from "@formbricks/types/user";
 
 const questionTypes = [
-  { value: "text", label: "Text", icon: <MessageSquareTextIcon className="h-4 w-4" /> },
-  { value: "email", label: "Email", icon: <MailIcon className="h-4 w-4" /> },
-  { value: "url", label: "URL", icon: <LinkIcon className="h-4 w-4" /> },
-  { value: "number", label: "Number", icon: <HashIcon className="h-4 w-4" /> },
-  { value: "phone", label: "Phone", icon: <PhoneIcon className="h-4 w-4" /> },
+  { value: "text", label: "common.text", icon: <MessageSquareTextIcon className="h-4 w-4" /> },
+  { value: "email", label: "common.email", icon: <MailIcon className="h-4 w-4" /> },
+  { value: "url", label: "common.url", icon: <LinkIcon className="h-4 w-4" /> },
+  { value: "number", label: "common.number", icon: <HashIcon className="h-4 w-4" /> },
+  { value: "phone", label: "common.phone", icon: <PhoneIcon className="h-4 w-4" /> },
 ];
 
 interface OpenQuestionFormProps {
@@ -31,7 +36,8 @@ interface OpenQuestionFormProps {
   selectedLanguageCode: string;
   setSelectedLanguageCode: (language: string) => void;
   isInvalid: boolean;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
+  locale: TUserLocale;
 }
 
 export const OpenQuestionForm = ({
@@ -42,20 +48,40 @@ export const OpenQuestionForm = ({
   localSurvey,
   selectedLanguageCode,
   setSelectedLanguageCode,
-  attributeClasses,
+  contactAttributeKeys,
+  locale,
 }: OpenQuestionFormProps): JSX.Element => {
+  const t = useTranslations();
   const defaultPlaceholder = getPlaceholderByInputType(question.inputType ?? "text");
   const surveyLanguageCodes = extractLanguageCodes(localSurvey.languages ?? []);
+
+  const [showCharLimits, setShowCharLimits] = useState(question.inputType === "text");
+
   const handleInputChange = (inputType: TSurveyOpenTextQuestionInputType) => {
     const updatedAttributes = {
       inputType: inputType,
       placeholder: createI18nString(getPlaceholderByInputType(inputType), surveyLanguageCodes),
       longAnswer: inputType === "text" ? question.longAnswer : false,
+      charLimit: {
+        min: undefined,
+        max: undefined,
+      },
     };
+    setIsCharLimitEnabled(false);
+    setShowCharLimits(inputType === "text");
     updateQuestion(questionIdx, updatedAttributes);
   };
 
   const [parent] = useAutoAnimate();
+  const [isCharLimitEnabled, setIsCharLimitEnabled] = useState(false);
+
+  useEffect(() => {
+    if (question?.charLimit?.min !== undefined || question?.charLimit?.max !== undefined) {
+      setIsCharLimitEnabled(true);
+    } else {
+      setIsCharLimitEnabled(false);
+    }
+  }, []);
 
   return (
     <form>
@@ -68,8 +94,9 @@ export const OpenQuestionForm = ({
         updateQuestion={updateQuestion}
         selectedLanguageCode={selectedLanguageCode}
         setSelectedLanguageCode={setSelectedLanguageCode}
-        attributeClasses={attributeClasses}
-        label={"Question*"}
+        contactAttributeKeys={contactAttributeKeys}
+        label={t("environments.surveys.edit.question") + "*"}
+        locale={locale}
       />
 
       <div ref={parent}>
@@ -85,8 +112,9 @@ export const OpenQuestionForm = ({
                 updateQuestion={updateQuestion}
                 selectedLanguageCode={selectedLanguageCode}
                 setSelectedLanguageCode={setSelectedLanguageCode}
-                attributeClasses={attributeClasses}
-                label={"Description"}
+                contactAttributeKeys={contactAttributeKeys}
+                label={t("common.description")}
+                locale={locale}
               />
             </div>
           </div>
@@ -94,7 +122,7 @@ export const OpenQuestionForm = ({
         {question.subheader === undefined && (
           <Button
             size="sm"
-            variant="minimal"
+            variant="secondary"
             className="mt-3"
             type="button"
             onClick={() => {
@@ -103,7 +131,7 @@ export const OpenQuestionForm = ({
               });
             }}>
             <PlusIcon className="mr-1 h-4 w-4" />
-            Add Description
+            {t("environments.surveys.edit.add_description")}
           </Button>
         )}
       </div>
@@ -121,14 +149,15 @@ export const OpenQuestionForm = ({
           updateQuestion={updateQuestion}
           selectedLanguageCode={selectedLanguageCode}
           setSelectedLanguageCode={setSelectedLanguageCode}
-          attributeClasses={attributeClasses}
-          label={"Placeholder"}
+          contactAttributeKeys={contactAttributeKeys}
+          label={t("common.placeholder")}
+          locale={locale}
         />
       </div>
 
       {/* Add a dropdown to select the question type */}
       <div className="mt-3">
-        <Label htmlFor="questionType">Input Type</Label>
+        <Label htmlFor="questionType">{t("common.input_type")}</Label>
         <div className="mt-2 flex items-center">
           <OptionsSwitch
             options={questionTypes}
@@ -136,6 +165,70 @@ export const OpenQuestionForm = ({
             handleOptionChange={handleInputChange} // Use the merged function
           />
         </div>
+      </div>
+      <div className="mt-3">
+        {showCharLimits && (
+          <AdvancedOptionToggle
+            isChecked={isCharLimitEnabled}
+            onToggle={(checked: boolean) => {
+              setIsCharLimitEnabled(checked);
+              updateQuestion(questionIdx, {
+                charLimit: {
+                  enabled: checked,
+                  min: undefined,
+                  max: undefined,
+                },
+              });
+            }}
+            htmlId="charLimit"
+            description={t("environments.surveys.edit.character_limit_toggle_description")}
+            childBorder
+            title={t("environments.surveys.edit.character_limit_toggle_title")}
+            customContainerClass="p-0">
+            <div className="flex gap-4 p-4">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="minLength">{t("common.minimum")}</Label>
+                <Input
+                  id="minLength"
+                  name="minLength"
+                  type="number"
+                  min={0}
+                  value={question?.charLimit?.min || ""}
+                  aria-label={t("common.minimum")}
+                  className="bg-white"
+                  onChange={(e) =>
+                    updateQuestion(questionIdx, {
+                      charLimit: {
+                        ...question?.charLimit,
+                        min: e.target.value ? parseInt(e.target.value) : undefined,
+                      },
+                    })
+                  }
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="maxLength">{t("common.maximum")}</Label>
+                <Input
+                  id="maxLength"
+                  name="maxLength"
+                  type="number"
+                  min={0}
+                  aria-label={t("common.maximum")}
+                  value={question?.charLimit?.max || ""}
+                  className="bg-white"
+                  onChange={(e) =>
+                    updateQuestion(questionIdx, {
+                      charLimit: {
+                        ...question?.charLimit,
+                        max: e.target.value ? parseInt(e.target.value) : undefined,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </AdvancedOptionToggle>
+        )}
       </div>
     </form>
   );

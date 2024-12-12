@@ -6,47 +6,49 @@ import {
   TSurveyCopyFormData,
   ZSurveyCopyFormValidation,
 } from "@/app/(app)/environments/[environmentId]/surveys/types/surveys";
+import { Button } from "@/modules/ui/components/button";
+import { Checkbox } from "@/modules/ui/components/checkbox";
+import { FormControl, FormField, FormItem, FormProvider } from "@/modules/ui/components/form";
+import { Label } from "@/modules/ui/components/label";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { useFieldArray, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { TProduct } from "@formbricks/types/product";
-import { Button } from "@formbricks/ui/components/Button";
-import { Checkbox } from "@formbricks/ui/components/Checkbox";
-import { FormControl, FormField, FormItem, FormProvider } from "@formbricks/ui/components/Form";
-import { Label } from "@formbricks/ui/components/Label";
+import { TProject } from "@formbricks/types/project";
 
 export const CopySurveyForm = ({
-  defaultProducts,
+  defaultProjects,
   survey,
   onCancel,
   setOpen,
 }: {
-  defaultProducts: TProduct[];
+  defaultProjects: TProject[];
   survey: TSurvey;
   onCancel: () => void;
   setOpen: (value: boolean) => void;
 }) => {
+  const t = useTranslations();
   const form = useForm<TSurveyCopyFormData>({
     resolver: zodResolver(ZSurveyCopyFormValidation),
     defaultValues: {
-      products: defaultProducts.map((product) => ({
-        product: product.id,
+      projects: defaultProjects.map((project) => ({
+        project: project.id,
         environments: [],
       })),
     },
   });
 
   const formFields = useFieldArray({
-    name: "products",
+    name: "projects",
     control: form.control,
   });
 
   const onSubmit = async (data: TSurveyCopyFormData) => {
-    const filteredData = data.products.filter((product) => product.environments.length > 0);
+    const filteredData = data.projects.filter((project) => project.environments.length > 0);
 
     try {
-      filteredData.map(async (product) => {
-        product.environments.map(async (environment) => {
+      filteredData.map(async (project) => {
+        project.environments.map(async (environment) => {
           await copySurveyToOtherEnvironmentAction({
             environmentId: survey.environmentId,
             surveyId: survey.id,
@@ -54,10 +56,9 @@ export const CopySurveyForm = ({
           });
         });
       });
-
-      toast.success("Survey copied successfully!");
+      toast.success(t("environments.surveys.copy_survey_success"));
     } catch (error) {
-      toast.error("Failed to copy survey");
+      toast.error(t("environments.surveys.copy_survey_error"));
     } finally {
       setOpen(false);
     }
@@ -69,23 +70,23 @@ export const CopySurveyForm = ({
         onSubmit={form.handleSubmit(onSubmit)}
         className="relative flex h-full w-full flex-col gap-8 overflow-y-auto bg-white p-4">
         <div className="space-y-8 pb-12">
-          {formFields.fields.map((field, productIndex) => {
-            const product = defaultProducts.find((product) => product.id === field.product);
+          {formFields.fields.map((field, projectIndex) => {
+            const project = defaultProjects.find((project) => project.id === field.project);
 
             return (
-              <div key={product?.id}>
+              <div key={project?.id}>
                 <div className="flex flex-col gap-4">
                   <div className="w-fit">
-                    <p className="text-base font-semibold text-slate-900">{product?.name}</p>
+                    <p className="text-base font-semibold text-slate-900">{project?.name}</p>
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    {product?.environments.map((environment) => {
+                    {project?.environments.map((environment) => {
                       return (
                         <FormField
                           key={environment.id}
                           control={form.control}
-                          name={`products.${productIndex}.environments`}
+                          name={`projects.${projectIndex}.environments`}
                           render={({ field }) => {
                             return (
                               <FormItem>
@@ -104,7 +105,7 @@ export const CopySurveyForm = ({
                                             field.onChange([...field.value, environment.id]);
                                           }
                                         }}
-                                        className="mr-2 h-4 w-4 appearance-none border-gray-300 checked:border-transparent checked:bg-slate-500 checked:after:bg-slate-500 checked:hover:bg-slate-500 focus:ring-2 focus:ring-slate-500 focus:ring-opacity-50"
+                                        className="mr-2 h-4 w-4 appearance-none border-slate-300 checked:border-transparent checked:bg-slate-500 checked:after:bg-slate-500 checked:hover:bg-slate-500 focus:ring-2 focus:ring-slate-500 focus:ring-opacity-50"
                                         id={environment.id}
                                       />
                                       <Label htmlFor={environment.id}>
@@ -129,13 +130,11 @@ export const CopySurveyForm = ({
         </div>
         <div className="fixed bottom-0 left-0 right-0 z-10 flex w-full justify-end space-x-2 bg-white">
           <div className="flex w-full justify-end pb-4 pr-4">
-            <Button type="button" onClick={onCancel} variant="minimal">
-              Cancel
+            <Button type="button" onClick={onCancel} variant="ghost">
+              {t("common.cancel")}
             </Button>
 
-            <Button variant="primary" type="submit">
-              Copy survey
-            </Button>
+            <Button type="submit">{t("environments.surveys.copy_survey")}</Button>
           </div>
         </div>
       </form>

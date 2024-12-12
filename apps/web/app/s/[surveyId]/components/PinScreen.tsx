@@ -3,19 +3,19 @@
 import { validateSurveyPinAction } from "@/app/s/[surveyId]/actions";
 import { LinkSurvey } from "@/app/s/[surveyId]/components/LinkSurvey";
 import { TSurveyPinValidationResponseError } from "@/app/s/[surveyId]/types";
+import { getFormattedErrorMessage } from "@/lib/utils/helper";
+import { OTPInput } from "@/modules/ui/components/otp-input";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-import { getFormattedErrorMessage } from "@formbricks/lib/actionClient/helper";
 import { cn } from "@formbricks/lib/cn";
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
-import { TProduct } from "@formbricks/types/product";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
+import { TProject } from "@formbricks/types/project";
 import { TResponse } from "@formbricks/types/responses";
 import { TSurvey } from "@formbricks/types/surveys/types";
-import { OTPInput } from "@formbricks/ui/components/OTPInput";
 
 interface PinScreenProps {
   surveyId: string;
-  product: TProduct;
-  userId?: string;
+  project: TProject;
   emailVerificationStatus?: string;
   singleUseId?: string;
   singleUseResponse?: TResponse;
@@ -25,17 +25,18 @@ interface PinScreenProps {
   IS_FORMBRICKS_CLOUD: boolean;
   verifiedEmail?: string;
   languageCode: string;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
   isEmbed: boolean;
+  locale: string;
+  isPreview: boolean;
 }
 
 export const PinScreen = (props: PinScreenProps) => {
   const {
     surveyId,
-    product,
+    project,
     webAppUrl,
     emailVerificationStatus,
-    userId,
     singleUseId,
     singleUseResponse,
     IMPRINT_URL,
@@ -43,13 +44,15 @@ export const PinScreen = (props: PinScreenProps) => {
     IS_FORMBRICKS_CLOUD,
     verifiedEmail,
     languageCode,
-    attributeClasses,
+    contactAttributeKeys,
     isEmbed,
+    locale,
+    isPreview,
   } = props;
 
   const [localPinEntry, setLocalPinEntry] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-
+  const t = useTranslations();
   const [error, setError] = useState<TSurveyPinValidationResponseError>();
   const [survey, setSurvey] = useState<TSurvey>();
 
@@ -101,7 +104,7 @@ export const PinScreen = (props: PinScreenProps) => {
       <div className="flex h-full w-full items-center justify-center">
         <div className="flex flex-col items-center justify-center">
           <div className="my-4 font-semibold">
-            <h4>This survey is protected. Enter the PIN below</h4>
+            <h4>{t("s.enter_pin")}</h4>
           </div>
           <OTPInput
             disabled={Boolean(error) || loading}
@@ -118,19 +121,20 @@ export const PinScreen = (props: PinScreenProps) => {
   return (
     <LinkSurvey
       survey={survey}
-      product={product}
-      userId={userId}
+      project={project}
       emailVerificationStatus={emailVerificationStatus}
       singleUseId={singleUseId}
       singleUseResponse={singleUseResponse}
       webAppUrl={webAppUrl}
       verifiedEmail={verifiedEmail}
       languageCode={languageCode}
-      attributeClasses={attributeClasses}
+      contactAttributeKeys={contactAttributeKeys}
       isEmbed={isEmbed}
       IMPRINT_URL={IMPRINT_URL}
       PRIVACY_URL={PRIVACY_URL}
       IS_FORMBRICKS_CLOUD={IS_FORMBRICKS_CLOUD}
+      locale={locale}
+      isPreview={isPreview}
     />
   );
 };

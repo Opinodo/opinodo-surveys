@@ -1,18 +1,20 @@
 "use client";
 
+import { QuestionFormInput } from "@/modules/surveys/components/QuestionFormInput";
+import { Button } from "@/modules/ui/components/button";
+import { Label } from "@/modules/ui/components/label";
+import { ShuffleOptionSelect } from "@/modules/ui/components/shuffle-option-select";
 import { DndContext } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { createId } from "@paralleldrive/cuid2";
 import { PlusIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { type JSX, useEffect, useRef, useState } from "react";
 import { createI18nString, extractLanguageCodes } from "@formbricks/lib/i18n/utils";
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import { TI18nString, TSurvey, TSurveyRankingQuestion } from "@formbricks/types/surveys/types";
-import { Button } from "@formbricks/ui/components/Button";
-import { Label } from "@formbricks/ui/components/Label";
-import { QuestionFormInput } from "@formbricks/ui/components/QuestionFormInput";
-import { ShuffleOptionSelect } from "@formbricks/ui/components/ShuffleOptionSelect";
+import { TUserLocale } from "@formbricks/types/user";
 import { QuestionOptionChoice } from "./QuestionOptionChoice";
 
 interface RankingQuestionFormProps {
@@ -24,7 +26,8 @@ interface RankingQuestionFormProps {
   selectedLanguageCode: string;
   setSelectedLanguageCode: (language: string) => void;
   isInvalid: boolean;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
+  locale: TUserLocale;
 }
 
 export const RankingQuestionForm = ({
@@ -35,8 +38,10 @@ export const RankingQuestionForm = ({
   localSurvey,
   selectedLanguageCode,
   setSelectedLanguageCode,
-  attributeClasses,
+  contactAttributeKeys,
+  locale,
 }: RankingQuestionFormProps): JSX.Element => {
+  const t = useTranslations();
   const lastChoiceRef = useRef<HTMLInputElement>(null);
   const [isInvalidValue, setIsInvalidValue] = useState<string | null>(null);
 
@@ -70,6 +75,10 @@ export const RankingQuestionForm = ({
   const addOption = () => {
     const choices = !question.choices ? [] : question.choices;
 
+    if (choices.length >= 25) {
+      return;
+    }
+
     const newChoice = {
       id: createId(),
       label: createI18nString("", surveyLanguageCodes),
@@ -92,12 +101,12 @@ export const RankingQuestionForm = ({
   const shuffleOptionsTypes = {
     none: {
       id: "none",
-      label: "Keep current order",
+      label: t("environments.surveys.edit.keep_current_order"),
       show: true,
     },
     all: {
       id: "all",
-      label: "Randomize all",
+      label: t("environments.surveys.edit.randomize_all"),
       show: question.choices.length > 0,
     },
   };
@@ -115,14 +124,15 @@ export const RankingQuestionForm = ({
       <QuestionFormInput
         id="headline"
         value={question.headline}
-        label={"Question*"}
+        label={t("environments.surveys.edit.question") + "*"}
         localSurvey={localSurvey}
         questionIdx={questionIdx}
         isInvalid={isInvalid}
         updateQuestion={updateQuestion}
         selectedLanguageCode={selectedLanguageCode}
         setSelectedLanguageCode={setSelectedLanguageCode}
-        attributeClasses={attributeClasses}
+        contactAttributeKeys={contactAttributeKeys}
+        locale={locale}
       />
 
       <div ref={parent}>
@@ -132,14 +142,15 @@ export const RankingQuestionForm = ({
               <QuestionFormInput
                 id="subheader"
                 value={question.subheader}
-                label={"Description"}
+                label={t("common.description")}
                 localSurvey={localSurvey}
                 questionIdx={questionIdx}
                 isInvalid={isInvalid}
                 updateQuestion={updateQuestion}
                 selectedLanguageCode={selectedLanguageCode}
                 setSelectedLanguageCode={setSelectedLanguageCode}
-                attributeClasses={attributeClasses}
+                contactAttributeKeys={contactAttributeKeys}
+                locale={locale}
               />
             </div>
           </div>
@@ -147,7 +158,7 @@ export const RankingQuestionForm = ({
         {question.subheader === undefined && (
           <Button
             size="sm"
-            variant="minimal"
+            variant="secondary"
             className="mt-3"
             type="button"
             onClick={() => {
@@ -156,13 +167,13 @@ export const RankingQuestionForm = ({
               });
             }}>
             <PlusIcon className="mr-1 h-4 w-4" />
-            Add Description
+            {t("environments.surveys.edit.add_description")}
           </Button>
         )}
       </div>
 
       <div className="mt-3">
-        <Label htmlFor="choices">Options*</Label>
+        <Label htmlFor="choices">{t("environments.surveys.edit.options")}*</Label>
         <div className="mt-2" id="choices">
           <DndContext
             id="ranking-choices"
@@ -184,7 +195,7 @@ export const RankingQuestionForm = ({
               updateQuestion(questionIdx, { choices: newChoices });
             }}>
             <SortableContext items={question.choices} strategy={verticalListSortingStrategy}>
-              <div className="flex flex-col" ref={parent}>
+              <div className="flex flex-col gap-2" ref={parent}>
                 {question.choices &&
                   question.choices.map((choice, choiceIdx) => (
                     <QuestionOptionChoice
@@ -203,7 +214,8 @@ export const RankingQuestionForm = ({
                       question={question}
                       updateQuestion={updateQuestion}
                       surveyLanguageCodes={surveyLanguageCodes}
-                      attributeClasses={attributeClasses}
+                      contactAttributeKeys={contactAttributeKeys}
+                      locale={locale}
                     />
                   ))}
               </div>
@@ -214,10 +226,11 @@ export const RankingQuestionForm = ({
             <Button
               size="sm"
               variant="secondary"
-              EndIcon={PlusIcon}
               type="button"
+              disabled={question.choices?.length >= 25}
               onClick={() => addOption()}>
-              Add option
+              {t("environments.surveys.edit.add_option")}
+              <PlusIcon />
             </Button>
             <ShuffleOptionSelect
               shuffleOptionsTypes={shuffleOptionsTypes}

@@ -1,4 +1,6 @@
-import { TAttributeClass } from "@formbricks/types/attribute-classes";
+import { ProgressBar } from "@/modules/ui/components/progress-bar";
+import { useTranslations } from "next-intl";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import {
   TI18nString,
   TSurvey,
@@ -6,14 +8,14 @@ import {
   TSurveyQuestionSummaryConsent,
   TSurveyQuestionTypeEnum,
 } from "@formbricks/types/surveys/types";
-import { ProgressBar } from "@formbricks/ui/components/ProgressBar";
+import { TUserLocale } from "@formbricks/types/user";
 import { convertFloatToNDecimal } from "../lib/utils";
 import { QuestionSummaryHeader } from "./QuestionSummaryHeader";
 
 interface ConsentSummaryProps {
   questionSummary: TSurveyQuestionSummaryConsent;
   survey: TSurvey;
-  attributeClasses: TAttributeClass[];
+  contactAttributeKeys: TContactAttributeKey[];
   setFilter: (
     questionId: TSurveyQuestionId,
     label: TI18nString,
@@ -21,22 +23,25 @@ interface ConsentSummaryProps {
     filterValue: string,
     filterComboBoxValue?: string | string[]
   ) => void;
+  locale: TUserLocale;
 }
 
 export const ConsentSummary = ({
   questionSummary,
   survey,
-  attributeClasses,
+  contactAttributeKeys,
   setFilter,
+  locale,
 }: ConsentSummaryProps) => {
+  const t = useTranslations();
   const summaryItems = [
     {
-      title: "Accepted",
+      title: t("common.accepted"),
       percentage: questionSummary.accepted.percentage,
       count: questionSummary.accepted.count,
     },
     {
-      title: "Dismissed",
+      title: t("common.dismissed"),
       percentage: questionSummary.dismissed.percentage,
       count: questionSummary.dismissed.count,
     },
@@ -46,7 +51,8 @@ export const ConsentSummary = ({
       <QuestionSummaryHeader
         questionSummary={questionSummary}
         survey={survey}
-        attributeClasses={attributeClasses}
+        contactAttributeKeys={contactAttributeKeys}
+        locale={locale}
       />
       <div className="space-y-5 px-4 pb-6 pt-4 text-sm md:px-6 md:text-base">
         {summaryItems.map((summaryItem) => {
@@ -75,7 +81,7 @@ export const ConsentSummary = ({
                   </div>
                 </div>
                 <p className="flex w-32 items-end justify-end text-slate-600">
-                  {summaryItem.count} {summaryItem.count === 1 ? "response" : "responses"}
+                  {summaryItem.count} {summaryItem.count === 1 ? t("common.response") : t("common.responses")}
                 </p>
               </div>
               <div className="group-hover:opacity-80">

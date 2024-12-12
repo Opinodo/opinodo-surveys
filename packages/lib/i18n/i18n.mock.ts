@@ -1,4 +1,3 @@
-import { mockSegment } from "segment/tests/__mocks__/segment.mock";
 import { mockSurveyLanguages } from "survey/tests/__mock__/survey.mock";
 import {
   TSurvey,
@@ -307,7 +306,7 @@ export const mockSurvey: TSurvey = {
   displayPercentage: null,
   autoComplete: null,
   isVerifyEmailEnabled: false,
-  productOverwrites: null,
+  projectOverwrites: null,
   styling: null,
   surveyClosedMessage: null,
   singleUse: {
@@ -318,7 +317,7 @@ export const mockSurvey: TSurvey = {
   resultShareKey: null,
   triggers: [],
   languages: mockSurveyLanguages,
-  segment: mockSegment,
+  segment: null,
   showLanguageSwitch: null,
   timerDuration: null,
 } as unknown as TSurvey;
