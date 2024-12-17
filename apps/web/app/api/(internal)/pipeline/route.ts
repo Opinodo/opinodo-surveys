@@ -1,10 +1,7 @@
 import { createDocumentAndAssignInsight } from "@/app/api/(internal)/pipeline/lib/documents";
-import { sendSurveyFollowUps } from "@/app/api/(internal)/pipeline/lib/survey-follow-up";
 import { responses } from "@/app/lib/api/response";
 import { transformErrorToDetails } from "@/app/lib/api/validator";
 import { getIsAIEnabled } from "@/modules/ee/license-check/lib/utils";
-import { getSurveyFollowUpsPermission } from "@/modules/ee/license-check/lib/utils";
-import { sendResponseFinishedEmail } from "@/modules/email";
 import { createHmac } from "crypto";
 import { headers } from "next/headers";
 import { prisma } from "@formbricks/database";

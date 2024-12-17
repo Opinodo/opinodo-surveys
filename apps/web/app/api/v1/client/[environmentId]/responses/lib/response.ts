@@ -23,6 +23,7 @@ export const responseSelection = {
   createdAt: true,
   updatedAt: true,
   surveyId: true,
+  panelistId: true,
   finished: true,
   data: true,
   meta: true,

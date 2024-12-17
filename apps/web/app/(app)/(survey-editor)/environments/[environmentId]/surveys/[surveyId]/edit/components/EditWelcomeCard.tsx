@@ -1,28 +1,21 @@
 "use client";
 
+import { translateText } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/actions";
 import { LocalizedEditor } from "@/modules/ee/multi-language-surveys/components/localized-editor";
 import { QuestionFormInput } from "@/modules/surveys/components/QuestionFormInput";
 import { FileInput } from "@/modules/ui/components/file-input";
 import { Label } from "@/modules/ui/components/label";
+import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import { Switch } from "@/modules/ui/components/switch";
-import { translateText } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/actions";
 import * as Collapsible from "@radix-ui/react-collapsible";
-import { LanguagesIcon } from "lucide-react";
-import { Hand } from "lucide-react";
+import { Hand, LanguagesIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { LocalizedEditor } from "@formbricks/ee/multi-language/components/localized-editor";
-import { useState } from "react";
 import { cn } from "@formbricks/lib/cn";
 import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import { TSurvey, TSurveyQuestionId, TSurveyWelcomeCard } from "@formbricks/types/surveys/types";
-import { FileInput } from "@formbricks/ui/components/FileInput";
-import { Label } from "@formbricks/ui/components/Label";
-import { LoadingSpinner } from "@formbricks/ui/components/LoadingSpinner";
-import { QuestionFormInput } from "@formbricks/ui/components/QuestionFormInput";
-import { Switch } from "@formbricks/ui/components/Switch";
 import { TUserLocale } from "@formbricks/types/user";
 
 interface EditWelcomeCardProps {

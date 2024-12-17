@@ -82,3 +82,22 @@ export const createTag = async (environmentId: string, name: string): Promise<TT
     throw error;
   }
 };
+
+export const getTagsBySurveyId = async (surveyId: string): Promise<TTag[]> => {
+  validateInputs([surveyId, ZId]);
+
+  try {
+    const survey = await prisma.survey.findUnique({
+      where: { id: surveyId },
+      include: { tags: true },
+    });
+
+    if (!survey) {
+      throw new Error("Survey not found");
+    }
+
+    return survey.tags;
+  } catch (error) {
+    throw error;
+  }
+};

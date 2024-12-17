@@ -31,6 +31,7 @@ let setResponseData = (_: TResponseData) => {};
 interface LinkSurveyProps {
   survey: TSurvey;
   project: TProject;
+  userId?: string;
   emailVerificationStatus?: string;
   singleUseId?: string;
   singleUseResponse?: TResponse;
@@ -50,6 +51,7 @@ interface LinkSurveyProps {
 export const LinkSurvey = ({
   survey,
   project,
+  userId,
   emailVerificationStatus,
   singleUseId,
   singleUseResponse,

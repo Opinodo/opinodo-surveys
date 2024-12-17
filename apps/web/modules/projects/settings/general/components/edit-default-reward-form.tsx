@@ -1,29 +1,36 @@
 "use client";
 
+import { getFormattedErrorMessage } from "@/lib/utils/helper";
+import { updateProjectAction } from "@/modules/projects/settings/actions";
+import { Button } from "@/modules/ui/components/button";
+import {
+  FormControl,
+  FormError,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormProvider,
+} from "@/modules/ui/components/form";
+import { Input } from "@/modules/ui/components/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
-import { getFormattedErrorMessage } from "@formbricks/lib/actionClient/helper";
-import { TProduct, ZProduct } from "@formbricks/types/product";
-import { Button } from "@formbricks/ui/components/Button";
-import { FormControl, FormError, FormField, FormItem, FormLabel, FormProvider } from "@formbricks/ui/components/Form";
-import { Input } from "@formbricks/ui/components/Input";
-import { updateProductAction } from "../../actions";
+import { TProject, ZProject } from "@formbricks/types/project";
 
 type EditDefaultRewardProps = {
   environmentId: string;
-  product: TProduct;
+  project: TProject;
 };
 
-const ZDefaultRewardInput = ZProduct.pick({ defaultRewardInUSD: true });
+const ZDefaultRewardInput = ZProject.pick({ defaultRewardInUSD: true });
 
 type TEditDefaultReward = z.infer<typeof ZDefaultRewardInput>;
 
-export const EditDefaultReward: React.FC<EditDefaultRewardProps> = ({ product }) => {
+export const EditDefaultRewardForm: React.FC<EditDefaultRewardProps> = ({ project }) => {
   const form = useForm<TEditDefaultReward>({
     defaultValues: {
-      defaultRewardInUSD: product.defaultRewardInUSD,
+      defaultRewardInUSD: project.defaultRewardInUSD,
     },
     resolver: zodResolver(ZDefaultRewardInput),
     mode: "onChange",
@@ -41,8 +48,8 @@ export const EditDefaultReward: React.FC<EditDefaultRewardProps> = ({ product })
         return;
       }
 
-      const updatedProductResponse = await updateProductAction({
-        productId: product.id,
+      const updatedProductResponse = await updateProjectAction({
+        projectId: project.id,
         data: {
           defaultRewardInUSD: data.defaultRewardInUSD,
         },

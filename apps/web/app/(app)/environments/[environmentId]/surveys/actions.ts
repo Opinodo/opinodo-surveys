@@ -4,13 +4,13 @@ import { getSurvey, getSurveys } from "@/app/(app)/environments/[environmentId]/
 import { authenticatedActionClient } from "@/lib/utils/action-client";
 import { checkAuthorizationUpdated } from "@/lib/utils/action-client-middleware";
 import {
+  getEnvironmentIdFromSurveyId,
   getOrganizationIdFromEnvironmentId,
   getOrganizationIdFromSurveyId,
   getProjectIdFromEnvironmentId,
   getProjectIdFromSurveyId,
-  getOrganizationIdFromTagId,
 } from "@/lib/utils/helper";
-import { getEnvironment } from "@/lib/utils/services";
+import { getEnvironment, getTag } from "@/lib/utils/services";
 import { z } from "zod";
 import { getUserProjects } from "@formbricks/lib/project/service";
 import { copySurveyToOtherEnvironment, deleteSurvey } from "@formbricks/lib/survey/service";
@@ -230,10 +230,20 @@ const ZCreateTagAction = z.object({
 export const createTagAction = authenticatedActionClient
   .schema(ZCreateTagAction)
   .action(async ({ parsedInput, ctx }) => {
-    await checkAuthorization({
+    await checkAuthorizationUpdated({
       userId: ctx.user.id,
       organizationId: await getOrganizationIdFromEnvironmentId(parsedInput.environmentId),
-      rules: ["tag", "create"],
+      access: [
+        {
+          type: "organization",
+          roles: ["owner", "manager"],
+        },
+        {
+          type: "projectTeam",
+          projectId: await getProjectIdFromEnvironmentId(parsedInput.environmentId),
+          minPermission: "readWrite",
+        },
+      ],
     });
 
     return await createTag(parsedInput.environmentId, parsedInput.tagName);
@@ -247,21 +257,34 @@ const ZCreateTagToSurveyAction = z.object({
 export const createTagToSurveyAction = authenticatedActionClient
   .schema(ZCreateTagToSurveyAction)
   .action(async ({ parsedInput, ctx }) => {
-    await checkAuthorization({
+    const surveyEnvironmentId = await getEnvironmentIdFromSurveyId(parsedInput.surveyId);
+    const tagEnvironment = await getTag(parsedInput.tagId);
+
+    if (!surveyEnvironmentId || !tagEnvironment) {
+      throw new Error("Environment not found");
+    }
+
+    if (surveyEnvironmentId !== tagEnvironment.environmentId) {
+      throw new Error("Response and tag are not in the same environment");
+    }
+
+    await checkAuthorizationUpdated({
       userId: ctx.user.id,
       organizationId: await getOrganizationIdFromSurveyId(parsedInput.surveyId),
-      rules: ["survey", "update"],
+      access: [
+        {
+          type: "organization",
+          roles: ["owner", "manager"],
+        },
+        {
+          type: "projectTeam",
+          projectId: await getProjectIdFromEnvironmentId(surveyEnvironmentId),
+          minPermission: "readWrite",
+        },
+      ],
     });
 
-    await checkAuthorization({
-      userId: ctx.user.id,
-      organizationId: await getOrganizationIdFromTagId(parsedInput.tagId),
-      rules: ["tag", "read"],
-    });
-
-    const result = await addTagToSurvey(parsedInput.surveyId, parsedInput.tagId);
-
-    return result;
+    return await addTagToSurvey(parsedInput.surveyId, parsedInput.tagId);
   });
 
 const ZGetTagsForSurveyAction = z.object({
@@ -276,10 +299,31 @@ const ZDeleteTagOnSurveyAction = z.object({
 export const deleteTagOnSurveyAction = authenticatedActionClient
   .schema(ZDeleteTagOnSurveyAction)
   .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
+    const surveyEnvironmentId = await getEnvironmentIdFromSurveyId(parsedInput.surveyId);
+    const tagEnvironment = await getTag(parsedInput.tagId);
+
+    if (!surveyEnvironmentId || !tagEnvironment) {
+      throw new Error("Environment not found");
+    }
+
+    if (surveyEnvironmentId !== tagEnvironment.environmentId) {
+      throw new Error("Response and tag are not in the same environment");
+    }
+
+    await checkAuthorizationUpdated({
       userId: ctx.user.id,
       organizationId: await getOrganizationIdFromSurveyId(parsedInput.surveyId),
-      rules: ["survey", "update"],
+      access: [
+        {
+          type: "organization",
+          roles: ["owner", "manager"],
+        },
+        {
+          type: "projectTeam",
+          projectId: await getProjectIdFromEnvironmentId(surveyEnvironmentId),
+          minPermission: "readWrite",
+        },
+      ],
     });
 
     return await deleteTagOnSurvey(parsedInput.surveyId, parsedInput.tagId);
@@ -288,10 +332,20 @@ export const deleteTagOnSurveyAction = authenticatedActionClient
 export const getTagsForSurveyAction = authenticatedActionClient
   .schema(ZGetTagsForSurveyAction)
   .action(async ({ ctx, parsedInput }) => {
-    await checkAuthorization({
+    await checkAuthorizationUpdated({
       userId: ctx.user.id,
       organizationId: await getOrganizationIdFromSurveyId(parsedInput.surveyId),
-      rules: ["survey", "read"],
+      access: [
+        {
+          type: "organization",
+          roles: ["owner", "manager"],
+        },
+        {
+          type: "projectTeam",
+          minPermission: "read",
+          projectId: await getProjectIdFromSurveyId(parsedInput.surveyId),
+        },
+      ],
     });
 
     return await getTagsBySurveyId(parsedInput.surveyId);

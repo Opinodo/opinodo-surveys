@@ -6,9 +6,6 @@ import { getMetadataForLinkSurvey } from "@/app/s/[surveyId]/metadata";
 import { getMultiLanguagePermission } from "@/modules/ee/license-check/lib/utils";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getMultiLanguagePermission } from "@formbricks/ee/lib/service";
-import { updateAttributes } from "@formbricks/lib/attribute/service";
-import { getAttributeClasses } from "@formbricks/lib/attributeClass/service";
 import { IMPRINT_URL, IS_FORMBRICKS_CLOUD, PRIVACY_URL, WEBAPP_URL } from "@formbricks/lib/constants";
 import { getOrganizationByEnvironmentId } from "@formbricks/lib/organization/service";
 import { getProjectByEnvironmentId } from "@formbricks/lib/project/service";
@@ -20,12 +17,15 @@ import { TResponse } from "@formbricks/types/responses";
 import { getContactAttributeKeys } from "./lib/contact-attribute-key";
 import { getEmailVerificationDetails } from "./lib/helpers";
 
+// import { getContactByUserId } from "@/app/api/v1/client/[environmentId]/app/sync/lib/contact";
+
 interface LinkSurveyPageProps {
   params: Promise<{
     surveyId: string;
   }>;
   searchParams: Promise<{
     suId?: string;
+    userId?: string;
     verify?: string;
     lang?: string;
     embed?: string;
@@ -154,22 +154,22 @@ const Page = async (props: LinkSurveyPageProps) => {
   const languageCode = getLanguageCode();
 
   const userId = searchParams.userId;
-  if (userId) {
-    // make sure the person exists or get's created
-    let person = await getPersonByUserId(survey.environmentId, userId);
-    if (!person) {
-      person = await createPerson(survey.environmentId, userId);
-    }
-
-    // update attributes for the person
-    const updatedAttributes = {
-      ...(searchParams.email && { email: searchParams.email }),
-      ...(searchParams.country && { country: searchParams.country }),
-      ...(searchParams.language && { language: searchParams.language }),
-    };
-
-    await updateAttributes(person.id, updatedAttributes);
-  }
+  // if (userId) {
+  //   let contact = await getContactByUserId(survey.environmentId, userId);
+  //   if (!contact) {
+  //     contact = await createPerson(survey.environmentId, userId);
+  //   }
+  //
+  //   // update attributes for the person
+  //   const updatedAttributes = {
+  //     ...(searchParams.email && { email: searchParams.email }),
+  //     ...(searchParams.country && { country: searchParams.country }),
+  //     ...(searchParams.language && { language: searchParams.language }),
+  //   };
+  //
+  //   await updateAttributes(contact.id, updatedAttributes);
+  // }
+  //todo
 
   const isSurveyPinProtected = Boolean(!!survey && survey.pin);
   const responseCount = await getResponseCountBySurveyId(survey.id);
@@ -179,6 +179,7 @@ const Page = async (props: LinkSurveyPageProps) => {
       <PinScreen
         surveyId={survey.id}
         project={project}
+        userId={userId}
         emailVerificationStatus={emailVerificationStatus}
         singleUseId={isSingleUseSurvey ? singleUseId : undefined}
         singleUseResponse={singleUseResponse ? singleUseResponse : undefined}
@@ -200,6 +201,7 @@ const Page = async (props: LinkSurveyPageProps) => {
     <LinkSurvey
       survey={survey}
       project={project}
+      userId={userId}
       emailVerificationStatus={emailVerificationStatus}
       singleUseId={isSingleUseSurvey ? singleUseId : undefined}
       singleUseResponse={singleUseResponse ? singleUseResponse : undefined}

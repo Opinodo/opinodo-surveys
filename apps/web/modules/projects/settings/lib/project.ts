@@ -32,6 +32,9 @@ const selectProject = {
   environments: true,
   styling: true,
   logo: true,
+  defaultRewardInUSD: true,
+  defaultRedirectOnCompleteUrl: true,
+  defaultRedirectOnFailUrl: true,
 };
 
 export const updateProject = async (

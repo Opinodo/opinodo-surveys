@@ -1,10 +1,8 @@
 import { Button } from "@/modules/ui/components/button";
 import { CheckCircle2Icon, HelpCircleIcon, PauseCircleIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import Image from "next/image";
 import Link from "next/link";
 import { TSurveyClosedMessage } from "@formbricks/types/surveys/types";
-import { Button } from "@formbricks/ui/components/Button";
 
 export const SurveyInactive = async ({
   status,

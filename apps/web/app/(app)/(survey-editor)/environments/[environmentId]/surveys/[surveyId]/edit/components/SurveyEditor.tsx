@@ -222,7 +222,7 @@ export const SurveyEditor = ({
               responseCount={responseCount}
               membershipRole={membershipRole}
               isUserTargetingAllowed={isUserTargetingAllowed}
-              locale={locale}
+              project={localProject}
               projectPermission={projectPermission}
             />
           )}
@@ -236,7 +236,6 @@ export const SurveyEditor = ({
               isSurveyFollowUpsAllowed={isSurveyFollowUpsAllowed}
               userEmail={userEmail}
               locale={locale}
-              product={localProduct}
             />
           )}
         </main>

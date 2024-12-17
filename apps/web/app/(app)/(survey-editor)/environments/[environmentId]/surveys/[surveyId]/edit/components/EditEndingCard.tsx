@@ -9,6 +9,7 @@ import {
   formatTextWithSlashes,
 } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/lib/utils";
 import { ConfirmationModal } from "@/modules/ui/components/confirmation-modal";
+import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import { OptionsSwitch } from "@/modules/ui/components/options-switch";
 import { TooltipRenderer } from "@/modules/ui/components/tooltip";
 import { useSortable } from "@dnd-kit/sortable";
@@ -17,8 +18,6 @@ import { createId } from "@paralleldrive/cuid2";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { GripIcon, Handshake, Undo2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
-import toast from "react-hot-toast";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { cn } from "@formbricks/lib/cn";
@@ -31,7 +30,6 @@ import {
   TSurveyQuestionId,
   TSurveyRedirectUrlCard,
 } from "@formbricks/types/surveys/types";
-import { LoadingSpinner } from "@formbricks/ui/components/LoadingSpinner";
 import { TUserLocale } from "@formbricks/types/user";
 
 interface EditEndingCardProps {

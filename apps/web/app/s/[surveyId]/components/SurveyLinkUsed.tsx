@@ -1,6 +1,6 @@
-import OpinodoLogo from "@/images/opinodo-logo.png";
 "use client";
 
+import OpinodoLogo from "@/images/opinodo-logo.png";
 import { CheckCircle2Icon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";

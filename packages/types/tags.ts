@@ -22,3 +22,9 @@ export const ZTagsOnResponses = z.object({
   tagId: z.string(),
 });
 export type TTagsOnResponses = z.infer<typeof ZTagsOnResponses>;
+
+export const ZTagsOnSurveys = z.object({
+  surveyId: z.string(),
+  tagId: z.string(),
+});
+export type TTagsOnSurveys = z.infer<typeof ZTagsOnSurveys>;

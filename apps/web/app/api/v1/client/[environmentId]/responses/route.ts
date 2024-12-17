@@ -100,7 +100,10 @@ export const POST = async (request: Request, context: Context): Promise<Response
     response = await createResponse({
       ...responseInputData,
       meta,
-      panelistId: inputValidation.data.userId || "",
+      panelistId:
+        typeof responseInputData.data.userId === "string"
+          ? responseInputData.data.userId
+          : String(responseInputData.data.userId || ""),
     });
   } catch (error) {
     if (error instanceof InvalidInputError) {

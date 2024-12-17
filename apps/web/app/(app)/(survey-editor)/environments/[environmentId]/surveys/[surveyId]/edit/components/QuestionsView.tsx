@@ -5,6 +5,7 @@ import { AddEndingCardButton } from "@/app/(app)/(survey-editor)/environments/[e
 import { SurveyVariablesCard } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/components/SurveyVariablesCard";
 import { findQuestionUsedInLogic } from "@/app/(app)/(survey-editor)/environments/[environmentId]/surveys/[surveyId]/edit/lib/utils";
 import { MultiLanguageCard } from "@/modules/ee/multi-language-surveys/components/multi-language-card";
+import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import {
   DndContext,
   DragEndEvent,
@@ -17,7 +18,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { createId } from "@paralleldrive/cuid2";
 import { useTranslations } from "next-intl";
-import React, {SetStateAction, useEffect, useMemo, useState} from "react";
+import React, { SetStateAction, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { addMultiLanguageLabels, extractLanguageCodes } from "@formbricks/lib/i18n/utils";
 import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
@@ -42,7 +43,6 @@ import {
 } from "@formbricks/types/surveys/types";
 import { findQuestionsWithCyclicLogic } from "@formbricks/types/surveys/validation";
 import { TUserLocale } from "@formbricks/types/user";
-import { LoadingSpinner } from "@formbricks/ui/components/LoadingSpinner";
 import {
   isEndingCardValid,
   isWelcomeCardValid,
@@ -674,7 +674,7 @@ export const QuestionsView = ({
                   isFormbricksCloud={isFormbricksCloud}
                   locale={locale}
                   defaultRedirect={
-                    product.defaultRedirectOnCompleteUrl ?? "https://member.digiopinion.com/overview"
+                    project.defaultRedirectOnCompleteUrl ?? "https://member.digiopinion.com/overview"
                   }
                 />
               );

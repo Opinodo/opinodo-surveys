@@ -1,10 +1,13 @@
 "use client";
 
+import { getFormattedErrorMessage } from "@/lib/utils/helper";
+import { Button } from "@/modules/ui/components/button";
+import { Tag } from "@/modules/ui/components/tag";
+import { TagsCombobox } from "@/modules/ui/components/tags-combobox";
 import { AlertCircleIcon, SettingsIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { getFormattedErrorMessage } from "@formbricks/lib/actionClient/helper";
 import { TTag } from "@formbricks/types/tags";
 import {
   createTagAction,
@@ -12,9 +15,6 @@ import {
   deleteTagOnSurveyAction,
   getTagsForSurveyAction,
 } from "../actions";
-import {TagsCombobox} from "@formbricks/ui/components/TagsCombobox";
-import { Button } from "@formbricks/ui/components/Button";
-import { Tag } from "@formbricks/ui/components/Tag";
 
 interface SurveyTagsWrapperProps {
   tags: {
@@ -80,7 +80,7 @@ export const SurveyTagsWrapper: React.FC<SurveyTagsWrapperProps> = ({
     <div className="flex items-center gap-3 border-t border-slate-200 px-6 py-4">
       {!isViewer && (
         <Button
-          variant="minimal"
+          variant="default"
           size="sm"
           className="cursor-pointer p-0"
           onClick={() => {

@@ -2,7 +2,6 @@
 
 import { SecondaryNavigation } from "@/modules/ui/components/secondary-navigation";
 import { useTranslations } from "next-intl";
-import { UserCircleIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 interface AccountSettingsNavbarProps {

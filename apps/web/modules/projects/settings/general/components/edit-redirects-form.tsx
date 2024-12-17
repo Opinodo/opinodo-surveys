@@ -1,32 +1,39 @@
 "use client";
 
+import { getFormattedErrorMessage } from "@/lib/utils/helper";
+import { updateProjectAction } from "@/modules/projects/settings/actions";
+import { Button } from "@/modules/ui/components/button";
+import {
+  FormControl,
+  FormError,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormProvider,
+} from "@/modules/ui/components/form";
+import { Input } from "@/modules/ui/components/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
-import { getFormattedErrorMessage } from "@formbricks/lib/actionClient/helper";
-import { TProduct, ZProduct } from "@formbricks/types/product";
-import { Button } from "@formbricks/ui/components/Button";
-import { FormControl, FormError, FormField, FormItem, FormLabel, FormProvider } from "@formbricks/ui/components/Form";
-import { Input } from "@formbricks/ui/components/Input";
-import { updateProductAction } from "../../actions";
+import { TProject, ZProject } from "@formbricks/types/project";
 
 type EditRedirectsProps = {
-  product: TProduct;
+  project: TProject;
 };
 
-const ZRedirectsInput = ZProduct.pick({
+const ZRedirectsInput = ZProject.pick({
   defaultRedirectOnCompleteUrl: true,
   defaultRedirectOnFailUrl: true,
 });
 
 type TEditRedirects = z.infer<typeof ZRedirectsInput>;
 
-export const EditRedirects: React.FC<EditRedirectsProps> = ({ product }) => {
+export const EditRedirectsForm: React.FC<EditRedirectsProps> = ({ project }) => {
   const form = useForm<TEditRedirects>({
     defaultValues: {
-      defaultRedirectOnCompleteUrl: product.defaultRedirectOnCompleteUrl,
-      defaultRedirectOnFailUrl: product.defaultRedirectOnFailUrl,
+      defaultRedirectOnCompleteUrl: project.defaultRedirectOnCompleteUrl,
+      defaultRedirectOnFailUrl: project.defaultRedirectOnFailUrl,
     },
     resolver: zodResolver(ZRedirectsInput),
     mode: "onChange",
@@ -44,29 +51,29 @@ export const EditRedirects: React.FC<EditRedirectsProps> = ({ product }) => {
         return;
       }
 
-      const updatedProductResponse = await updateProductAction({
-        productId: product.id,
+      const updatedProjectResponse = await updateProjectAction({
+        projectId: project.id,
         data: {
           defaultRedirectOnCompleteUrl: data.defaultRedirectOnCompleteUrl,
           defaultRedirectOnFailUrl: data.defaultRedirectOnFailUrl,
         },
       });
 
-      if (updatedProductResponse?.data) {
+      if (updatedProjectResponse?.data) {
         toast.success("Default redirects updated successfully.");
         form.resetField("defaultRedirectOnCompleteUrl", {
-          defaultValue: updatedProductResponse.data.defaultRedirectOnCompleteUrl,
+          defaultValue: updatedProjectResponse.data.defaultRedirectOnCompleteUrl,
         });
         form.resetField("defaultRedirectOnFailUrl", {
-          defaultValue: updatedProductResponse.data.defaultRedirectOnFailUrl,
+          defaultValue: updatedProjectResponse.data.defaultRedirectOnFailUrl,
         });
       } else {
-        const errorMessage = getFormattedErrorMessage(updatedProductResponse);
+        const errorMessage = getFormattedErrorMessage(updatedProjectResponse);
         toast.error(errorMessage);
       }
     } catch (err) {
       console.error(err);
-      toast.error(`Error: Unable to save product information`);
+      toast.error(`Error: Unable to save project information`);
     }
   };
 

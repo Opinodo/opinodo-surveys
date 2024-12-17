@@ -314,7 +314,9 @@ export const getActiveLinkSurveys = reactCache(
             select: selectSurvey,
           });
 
-          const transformedSurveys = surveysPrisma.map(transformPrismaSurvey);
+          const transformedSurveys = surveysPrisma.map((surveyPrisma) =>
+            transformPrismaSurvey<TSurvey>(surveyPrisma)
+          );
           return transformedSurveys;
         } catch (error) {
           if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -445,8 +447,18 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       throw new ResourceNotFoundError("Survey", surveyId);
     }
 
-    const { tags, countries, triggers, environmentId, segment, questions, languages, type, followUps, ...surveyData } =
-      updatedSurvey;
+    const {
+      tags,
+      countries,
+      triggers,
+      environmentId,
+      segment,
+      questions,
+      languages,
+      type,
+      followUps,
+      ...surveyData
+    } = updatedSurvey;
 
     if (tags) {
       data.tags = {

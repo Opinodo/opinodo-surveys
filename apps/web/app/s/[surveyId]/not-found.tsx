@@ -3,7 +3,6 @@ import { Button } from "@/modules/ui/components/button";
 import { HelpCircleIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@formbricks/ui/components/Button";
 
 const NotFound = () => {
   return (

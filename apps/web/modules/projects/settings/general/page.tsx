@@ -19,7 +19,9 @@ import { getAccessFlags } from "@formbricks/lib/membership/utils";
 import { getOrganizationByEnvironmentId } from "@formbricks/lib/organization/service";
 import { getProjectByEnvironmentId } from "@formbricks/lib/project/service";
 import { DeleteProject } from "./components/delete-project";
+import { EditDefaultRewardForm } from "./components/edit-default-reward-form";
 import { EditProjectNameForm } from "./components/edit-project-name-form";
+import { EditRedirectsForm } from "./components/edit-redirects-form";
 import { EditWaitingTimeForm } from "./components/edit-waiting-time-form";
 
 export const GeneralSettingsPage = async (props: { params: Promise<{ environmentId: string }> }) => {
@@ -73,6 +75,16 @@ export const GeneralSettingsPage = async (props: { params: Promise<{ environment
         title={t("environments.project.general.recontact_waiting_time")}
         description={t("environments.project.general.recontact_waiting_time_settings_description")}>
         <EditWaitingTimeForm project={project} isReadOnly={isReadOnly} />
+      </SettingsCard>
+      <SettingsCard
+        title="Edit Default Reward"
+        description="Define the default reward for a survey in dollars.">
+        <EditDefaultRewardForm environmentId={params.environmentId} project={project} />
+      </SettingsCard>
+      <SettingsCard
+        title="Callback and Redirect URLs"
+        description="Define the default redirect and callback url">
+        <EditRedirectsForm project={project} />
       </SettingsCard>
       <SettingsCard
         title={t("environments.project.general.delete_project")}

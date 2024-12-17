@@ -2,12 +2,6 @@
 
 import { actionClient, authenticatedActionClient } from "@/lib/utils/action-client";
 import { checkAuthorizationUpdated } from "@/lib/utils/action-client-middleware";
-import { TranslationServiceClient } from "@google-cloud/translate";
-import { z } from "zod";
-import { createActionClass } from "@formbricks/lib/actionClass/service";
-import { actionClient, authenticatedActionClient } from "@formbricks/lib/actionClient";
-import { checkAuthorization } from "@formbricks/lib/actionClient/utils";
-import { UNSPLASH_ACCESS_KEY, UNSPLASH_ALLOWED_DOMAINS } from "@formbricks/lib/constants";
 import {
   getOrganizationIdFromEnvironmentId,
   getOrganizationIdFromProjectId,
@@ -17,6 +11,7 @@ import {
 } from "@/lib/utils/helper";
 import { getSurveyFollowUpsPermission } from "@/modules/ee/license-check/lib/utils";
 import { checkMultiLanguagePermission } from "@/modules/ee/multi-language-surveys/lib/actions";
+import { TranslationServiceClient } from "@google-cloud/translate";
 import { z } from "zod";
 import { createActionClass } from "@formbricks/lib/actionClass/service";
 import { UNSPLASH_ACCESS_KEY, UNSPLASH_ALLOWED_DOMAINS } from "@formbricks/lib/constants";
