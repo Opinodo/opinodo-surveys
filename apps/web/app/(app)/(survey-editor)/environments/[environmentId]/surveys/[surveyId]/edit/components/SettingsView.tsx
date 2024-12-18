@@ -26,6 +26,7 @@ interface SettingsViewProps {
   membershipRole?: TOrganizationRole;
   isUserTargetingAllowed?: boolean;
   projectPermission: TTeamPermission | null;
+  isFormbricksCloud: boolean;
   project: TProject;
   environmentTags: TTag[];
 }
@@ -41,6 +42,7 @@ export const SettingsView = ({
   membershipRole,
   isUserTargetingAllowed = false,
   projectPermission,
+  isFormbricksCloud,
   project,
   environmentTags,
 }: SettingsViewProps) => {
@@ -73,7 +75,7 @@ export const SettingsView = ({
               </div>
             </div>
           ) : (
-            <TargetingLockedCard />
+            <TargetingLockedCard isFormbricksCloud={isFormbricksCloud} environmentId={environment.id} />
           )}
         </div>
       ) : null}

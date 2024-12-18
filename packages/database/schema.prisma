@@ -137,7 +137,7 @@ model Response {
   singleUseId       String?
   language          String?
   documents         Document[]
-  panelistId       String?
+  panelistId        String?
   displayId         String?           @unique
   display           Display?          @relation(fields: [displayId], references: [id])
 
@@ -421,6 +421,20 @@ model Integration {
   @@index([environmentId])
 }
 
+enum DataMigrationStatus {
+  pending
+  applied
+  failed
+}
+
+model DataMigration {
+  id         String              @id @default(cuid())
+  startedAt  DateTime            @default(now()) @map(name: "started_at")
+  finishedAt DateTime?           @map(name: "finished_at")
+  name       String              @unique
+  status     DataMigrationStatus
+}
+
 model Environment {
   id                   String                @id @default(cuid())
   createdAt            DateTime              @default(now()) @map(name: "created_at")
@@ -482,7 +496,7 @@ model Project {
   /// @zod.custom(imports.ZLogo)
   /// [Logo]
   logo                         Json?
-  projectTeams         ProjectTeam[]
+  projectTeams                 ProjectTeam[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
