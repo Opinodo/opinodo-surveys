@@ -1,0 +1,53 @@
+import { authenticateRequest } from "@/app/api/v1/auth";
+import { responses } from "@/app/lib/api/response";
+import { generateSurveySingleUseId } from "@/app/lib/singleUseSurveys";
+import { WEBAPP_URL } from "@formbricks/lib/constants";
+import { getSurvey } from "@formbricks/lib/survey/service";
+import { DatabaseError } from "@formbricks/types/errors";
+
+export async function GET(request: Request) {
+  try {
+    const authentication = await authenticateRequest(request);
+    if (!authentication) return responses.notAuthenticatedResponse();
+    const { searchParams } = new URL(request.url);
+
+    const surveyId = searchParams.get("survey_id");
+    const panelistId = searchParams.get("panelist_id");
+    const country = searchParams.get("country");
+    const language = searchParams.get("language");
+    const email = searchParams.get("email");
+
+    if (!surveyId || !panelistId || !country || !language || !email) {
+      return responses.validationResponse({
+        survey_id: "required",
+        panelist_id: "required",
+        country: "required",
+        language: "required",
+        email: "required",
+      });
+    }
+
+    const survey = await getSurvey(surveyId);
+    if (!survey) {
+      return responses.notFoundResponse("Survey", surveyId);
+    }
+
+    let url = `${WEBAPP_URL}/s/${survey.id}`;
+    if (survey.singleUse?.enabled) {
+      const singleUseId = generateSurveySingleUseId(survey.singleUse.isEncrypted);
+      url += `?suId=${singleUseId}`;
+      url += `&email=${encodeURIComponent(email)}`;
+      url += `&userId=${panelistId}`;
+      url += `&country=${country}`;
+      url += `&lang=${language}`;
+      url += `&source=[SOURCE]`;
+    }
+
+    return responses.successResponse({ survey_url: url });
+  } catch (error) {
+    if (error instanceof DatabaseError) {
+      return responses.badRequestResponse(error.message);
+    }
+    throw error;
+  }
+}
