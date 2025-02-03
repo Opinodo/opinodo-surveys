@@ -18,6 +18,8 @@ FROM node:22-alpine3.20 AS base
 FROM base AS installer
 
 # Enable corepack and prepare pnpm
+RUN export COREPACK_INTEGRITY_KEYS="$(curl https://registry.npmjs.org/-/npm/v1/keys | jq -c '{npm: .keys}')" && corepack enable
+# Enable corepack and prepare pnpm
 RUN corepack enable
 
 # Install necessary build tools and compilers
@@ -103,5 +105,5 @@ RUN mkdir -p /home/nextjs/apps/web/uploads/
 VOLUME /home/nextjs/apps/web/uploads/
 
 CMD supercronic -quiet /app/docker/cronjobs & \
-    (cd packages/database) && \
+    (cd packages/database && npm run db:migrate:deploy) && \
     exec node apps/web/server.js
