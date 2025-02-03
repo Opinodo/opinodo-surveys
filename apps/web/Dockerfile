@@ -19,7 +19,6 @@ FROM base AS installer
 
 # Enable corepack and prepare pnpm
 RUN corepack enable
-RUN corepack prepare pnpm@10.0.0 --activate
 
 # Install necessary build tools and compilers
 RUN apk update && apk add --no-cache g++ cmake make gcc python3 openssl-dev jq
@@ -104,5 +103,5 @@ RUN mkdir -p /home/nextjs/apps/web/uploads/
 VOLUME /home/nextjs/apps/web/uploads/
 
 CMD supercronic -quiet /app/docker/cronjobs & \
-    (cd packages/database && npm run db:migrate:deploy) && \
+    (cd packages/database) && \
     exec node apps/web/server.js
