@@ -18,6 +18,7 @@ FROM node:22-alpine3.20 AS base
 FROM base AS installer
 
 # Enable corepack and prepare pnpm
+RUN npm i -g corepack@latest
 RUN corepack enable
 RUN corepack prepare pnpm@10.0.0 --activate
 
