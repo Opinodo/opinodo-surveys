@@ -18,9 +18,7 @@ FROM node:22-alpine3.20 AS base
 FROM base AS installer
 
 # Enable corepack and prepare pnpm
-RUN corepack disable pnpm
-RUN corepack enable pnpm
-RUN corepack prepare pnpm@10.0.0 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.2 --activate
 
 # Install necessary build tools and compilers
 RUN apk update && apk add --no-cache g++ cmake make gcc python3 openssl-dev jq
