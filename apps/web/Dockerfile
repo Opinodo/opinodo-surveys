@@ -62,6 +62,7 @@ RUN jq -r '.devDependencies.prisma' packages/database/package.json > /prisma_ver
 #
 ## step 3: setup production runner
 #
+#
 FROM base AS runner
 RUN npm i -g corepack@latest
 RUN corepack enable
