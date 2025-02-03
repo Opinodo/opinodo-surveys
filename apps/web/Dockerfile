@@ -18,10 +18,9 @@ FROM node:22-alpine3.20 AS base
 FROM base AS installer
 
 # Enable corepack and prepare pnpm
-RUN export COREPACK_INTEGRITY_KEYS="$(curl https://registry.npmjs.org/-/npm/v1/keys | jq -c '{npm: .keys}')" && corepack enable
-# Enable corepack and prepare pnpm
-RUN corepack enable
-RUN corepack prepare pnpm@10.0.0 --activate
+RUN corepack disable pnpm
+RUN corepack enable pnpm
+RUN corepack prepare pnpm@latest --activate
 
 # Install necessary build tools and compilers
 RUN apk update && apk add --no-cache g++ cmake make gcc python3 openssl-dev jq
