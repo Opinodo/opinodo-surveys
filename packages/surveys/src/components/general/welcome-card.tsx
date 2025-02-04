@@ -10,6 +10,14 @@ import { type TI18nString } from "@formbricks/types/surveys/types";
 import { Headline } from "./headline";
 import { HtmlBody } from "./html-body";
 
+declare global {
+  interface Window {
+    Adnuntius?: {
+      refresh: () => void;
+    };
+  }
+}
+
 interface WelcomeCardProps {
   headline?: TI18nString;
   html?: TI18nString;
@@ -108,6 +116,31 @@ export function WelcomeCard({
   const timeToFinish = survey.welcomeCard.timeToFinish;
   const showResponseCount = survey.welcomeCard.showResponseCount;
 
+  useEffect(() => {
+    // Inject the Adnuntius script dynamically if not already added
+    if (!document.getElementById("adnuntius-script")) {
+      const script = document.createElement("script");
+      script.src = "https://tags.adnuntius.com/concept_cph/53o7zCYf1.prod.js";
+      script.async = true;
+      script.id = "adnuntius-script";
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      // Cleanup: Remove script if needed
+      const existingScript = document.getElementById("adnuntius-script");
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (window.Adnuntius && typeof window.Adnuntius.refresh === "function") {
+      window.Adnuntius.refresh();
+    }
+  }, []);
+
   const handleSubmit = () => {
     onSubmit({ welcomeCard: "clicked" }, {});
   };
@@ -173,6 +206,7 @@ export function WelcomeCard({
           }}
         />
       </div>
+      <div id="bm-int" className="fb-mt-4 fb-text-center"></div>
       {timeToFinish && !showResponseCount ? (
         <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
           <TimerIcon />
