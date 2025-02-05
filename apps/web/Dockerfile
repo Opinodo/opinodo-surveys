@@ -1,4 +1,4 @@
-FROM node:22-alpine3.20 AS base
+FROM node:22-alpine AS base
 
 #
 ## step 1: Prune monorepo
@@ -18,9 +18,7 @@ FROM node:22-alpine3.20 AS base
 FROM base AS installer
 
 # Enable corepack and prepare pnpm
-RUN npm i -g corepack@latest
-RUN corepack enable
-RUN corepack prepare pnpm@10.0.0 --activate
+RUN npm install -g pnpm@9.15.0
 
 # Install necessary build tools and compilers
 RUN apk update && apk add --no-cache g++ cmake make gcc python3 openssl-dev jq
@@ -62,9 +60,7 @@ RUN jq -r '.devDependencies.prisma' packages/database/package.json > /prisma_ver
 #
 ## step 3: setup production runner
 #
-#
 FROM base AS runner
-RUN npm i -g corepack@latest
 RUN corepack enable
 
 RUN apk add --no-cache curl \
@@ -107,5 +103,5 @@ RUN mkdir -p /home/nextjs/apps/web/uploads/
 VOLUME /home/nextjs/apps/web/uploads/
 
 CMD supercronic -quiet /app/docker/cronjobs & \
-    (cd packages/database) && \
+    (cd packages/database && npm run db:migrate:deploy) && \
     exec node apps/web/server.js
