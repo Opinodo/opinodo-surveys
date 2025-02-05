@@ -1,5 +1,4 @@
-FROM node:22-alpine AS base
-
+FROM node:22-alpine3.20 AS base
 #
 ## step 1: Prune monorepo
 #
@@ -18,7 +17,9 @@ FROM node:22-alpine AS base
 FROM base AS installer
 
 # Enable corepack and prepare pnpm
-RUN npm install -g pnpm@9.15.0
+RUN npm i -g corepack@latest
+RUN corepack enable
+RUN corepack prepare pnpm@10.0.0 --activate
 
 # Install necessary build tools and compilers
 RUN apk update && apk add --no-cache g++ cmake make gcc python3 openssl-dev jq
@@ -103,5 +104,5 @@ RUN mkdir -p /home/nextjs/apps/web/uploads/
 VOLUME /home/nextjs/apps/web/uploads/
 
 CMD supercronic -quiet /app/docker/cronjobs & \
-    (cd packages/database && npm run db:migrate:deploy) && \
+    (cd packages/database) && \
     exec node apps/web/server.js
