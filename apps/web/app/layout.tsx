@@ -1,9 +1,11 @@
 import { GoogleTagManager } from "@next/third-parties/google";
 import { PHProvider } from "@/modules/ui/components/post-hog-client";
+import { TolgeeNextProvider } from "@/tolgee/client";
+import { getLocale } from "@/tolgee/language";
+import { getTolgee } from "@/tolgee/server";
+import { TolgeeStaticData } from "@tolgee/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Metadata } from "next";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
 import "../modules/ui/globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +18,9 @@ export const metadata: Metadata = {
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const locale = await getLocale();
-  const messages = await getMessages();
+  const tolgee = await getTolgee();
+  // serializable data that are passed to client components
+  const staticData = await tolgee.loadRequired();
 
   return (
     <html lang={locale} translate="no">
@@ -30,7 +34,9 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
       <GoogleTagManager gtmId={"GTM-PJ6M9K9P"} />
       <body className="flex h-dvh flex-col transition-all ease-in-out">
         <PHProvider>
-          <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+          <TolgeeNextProvider language={locale} staticData={staticData as unknown as TolgeeStaticData}>
+            {children}
+          </TolgeeNextProvider>
         </PHProvider>
       </body>
     </html>

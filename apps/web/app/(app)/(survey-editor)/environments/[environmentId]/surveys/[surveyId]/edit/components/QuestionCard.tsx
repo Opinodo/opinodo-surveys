@@ -10,11 +10,11 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import * as Collapsible from "@radix-ui/react-collapsible";
+import { useTranslate } from "@tolgee/react";
 import { ChevronDownIcon, ChevronRightIcon, GripIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { cn } from "@formbricks/lib/cn";
-import { QUESTIONS_ICON_MAP, getTSurveyQuestionTypeEnumName } from "@formbricks/lib/utils/questions";
+import { getQuestionIconMap, getTSurveyQuestionTypeEnumName } from "@formbricks/lib/utils/questions";
 import { recallToHeadline } from "@formbricks/lib/utils/recall";
 import { TProject } from "@formbricks/types/project";
 import {
@@ -87,7 +87,8 @@ export const QuestionCard = ({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: question.id,
   });
-  const t = useTranslations();
+  const { t } = useTranslate();
+  const QUESTIONS_ICON_MAP = getQuestionIconMap(t);
   const open = activeQuestionId === question.id;
   const [openAdvanced, setOpenAdvanced] = useState(question.logic && question.logic.length > 0);
   const [parent] = useAutoAnimate();
@@ -228,7 +229,7 @@ export const QuestionCard = ({
                           selectedLanguageCode
                         ] ?? ""
                       )
-                    : getTSurveyQuestionTypeEnumName(question.type, locale)}
+                    : getTSurveyQuestionTypeEnumName(question.type, t)}
                 </p>
                 {!open && (
                   <p className="mt-1 truncate text-xs text-slate-500">
@@ -255,7 +256,6 @@ export const QuestionCard = ({
                 addCard={addQuestion}
                 cardType="question"
                 isCxMode={isCxMode}
-                locale={locale}
               />
             </div>
           </div>

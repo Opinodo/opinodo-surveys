@@ -1,8 +1,8 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
 import OpinodoLogo from "@/images/opinodo-logo.png";
 import { CheckCircle2Icon } from "lucide-react";
-import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { TSurveySingleUse } from "@formbricks/types/surveys/types";
@@ -12,7 +12,7 @@ interface SurveyLinkUsedProps {
 }
 
 export const SurveyLinkUsed = ({ singleUseMessage }: SurveyLinkUsedProps) => {
-  const t = useTranslations();
+  const { t } = useTranslate();
   const defaultHeading = t("s.survey_already_answered_heading");
   const defaultSubheading = t("s.survey_already_answered_subheading");
   return (
