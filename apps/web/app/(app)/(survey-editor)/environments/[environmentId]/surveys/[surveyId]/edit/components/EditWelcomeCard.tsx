@@ -8,8 +8,8 @@ import { Label } from "@/modules/ui/components/label";
 import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import { Switch } from "@/modules/ui/components/switch";
 import * as Collapsible from "@radix-ui/react-collapsible";
+import { useTranslate } from "@tolgee/react";
 import { Hand, LanguagesIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
@@ -38,7 +38,7 @@ export const EditWelcomeCard = ({
   setSelectedLanguageCode,
   locale,
 }: EditWelcomeCardProps) => {
-  const t = useTranslations();
+  const { t } = useTranslate();
   const [firstRender, setFirstRender] = useState(true);
   const path = usePathname();
   const environmentId = path?.split("/environments/")[1]?.split("/")[0];

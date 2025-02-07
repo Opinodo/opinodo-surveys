@@ -9,6 +9,7 @@ import {
   CommandList,
 } from "@/modules/ui/components/command";
 import { NetPromoterScoreIcon } from "@/modules/ui/components/icons";
+import { useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import {
   AirplayIcon,
@@ -31,10 +32,9 @@ import {
   StarIcon,
   User,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
 import * as React from "react";
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
-// import { useClickOutside } from "@formbricks/lib/utils/hooks/useClickOutside";
+import { useClickOutside } from "@formbricks/lib/utils/hooks/useClickOutside";
 import { TSurveyQuestionTypeEnum } from "@formbricks/types/surveys/types";
 
 export enum OptionsType {
@@ -142,10 +142,10 @@ const SelectedCommandItem = ({ label, questionType, type }: Partial<QuestionOpti
 
 export const QuestionsComboBox = ({ options, selected, onChangeValue }: QuestionComboBoxProps) => {
   const [open, setOpen] = React.useState(false);
-  const t = useTranslations();
+  const { t } = useTranslate();
   const commandRef = React.useRef(null);
   const [inputValue, setInputValue] = React.useState("");
-  // useClickOutside(commandRef, () => setOpen(false));
+  useClickOutside(commandRef, () => setOpen(false));
 
   return (
     <Command ref={commandRef} className="h-10 overflow-visible bg-transparent hover:bg-slate-50">

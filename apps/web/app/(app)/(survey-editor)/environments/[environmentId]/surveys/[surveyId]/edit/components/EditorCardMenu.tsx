@@ -13,13 +13,13 @@ import {
 } from "@/modules/ui/components/dropdown-menu";
 import { TooltipRenderer } from "@/modules/ui/components/tooltip";
 import { createId } from "@paralleldrive/cuid2";
+import { useTranslate } from "@tolgee/react";
 import { ArrowDownIcon, ArrowUpIcon, CopyIcon, EllipsisIcon, LanguagesIcon, TrashIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
-  QUESTIONS_ICON_MAP,
   getCXQuestionNameMap,
   getQuestionDefaults,
+  getQuestionIconMap,
   getQuestionNameMap,
 } from "@formbricks/lib/utils/questions";
 import { TProject } from "@formbricks/types/project";
@@ -45,7 +45,6 @@ interface EditorCardMenuProps {
   cardType: "question" | "ending";
   project?: TProject;
   isCxMode?: boolean;
-  locale: string;
 }
 
 export const EditorCardMenu = ({
@@ -62,9 +61,9 @@ export const EditorCardMenu = ({
   addCard,
   cardType,
   isCxMode = false,
-  locale,
 }: EditorCardMenuProps) => {
-  const t = useTranslations();
+  const { t } = useTranslate();
+  const QUESTIONS_ICON_MAP = getQuestionIconMap(t);
   const [logicWarningModal, setLogicWarningModal] = useState(false);
   const [changeToType, setChangeToType] = useState(() => {
     if (card.type !== "endScreen" && card.type !== "redirectToUrl") {
@@ -80,7 +79,7 @@ export const EditorCardMenu = ({
 
   const isTranslateDisabled = survey.languages.length <= 1;
 
-  const availableQuestionTypes = isCxMode ? getCXQuestionNameMap(locale) : getQuestionNameMap(locale);
+  const availableQuestionTypes = isCxMode ? getCXQuestionNameMap(t) : getQuestionNameMap(t);
 
   const changeQuestionType = (type?: TSurveyQuestionTypeEnum) => {
     if (!type) return;
@@ -88,7 +87,7 @@ export const EditorCardMenu = ({
     const { headline, required, subheader, imageUrl, videoUrl, buttonLabel, backButtonLabel } =
       card as TSurveyQuestion;
 
-    const questionDefaults = getQuestionDefaults(type, project, locale);
+    const questionDefaults = getQuestionDefaults(type, project, t);
 
     if (
       (type === TSurveyQuestionTypeEnum.MultipleChoiceSingle &&
@@ -127,7 +126,7 @@ export const EditorCardMenu = ({
   };
 
   const addQuestionCardBelow = (type: TSurveyQuestionTypeEnum) => {
-    const questionDefaults = getQuestionDefaults(type, project, locale);
+    const questionDefaults = getQuestionDefaults(type, project, t);
 
     addCard(
       {
