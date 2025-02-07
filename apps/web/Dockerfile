@@ -18,7 +18,7 @@ FROM node:22-alpine3.20 AS base
 FROM base AS installer
 
 # Enable corepack and prepare pnpm
-RUN npm i -g corepack@latest
+RUN npm install -g corepack@latest
 RUN corepack enable
 RUN corepack prepare pnpm@10.0.0 --activate
 
@@ -62,9 +62,9 @@ RUN jq -r '.devDependencies.prisma' packages/database/package.json > /prisma_ver
 #
 ## step 3: setup production runner
 #
-#
 FROM base AS runner
-RUN npm i -g corepack@latest
+
+RUN npm install -g corepack@latest
 RUN corepack enable
 
 RUN apk add --no-cache curl \
