@@ -1,4 +1,6 @@
 // Utility function to render hyperlinked content
+import { JSX } from "react";
+
 export const renderHyperlinkedContent = (data: string): JSX.Element[] => {
   // More specific URL pattern
   const urlPattern =
