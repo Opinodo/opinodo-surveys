@@ -3,7 +3,6 @@ import { ScrollableContainer } from "@/components/wrappers/scrollable-container"
 import { replaceRecallInfo } from "@/lib/recall";
 import { calculateElementIdx } from "@/lib/utils";
 import { useEffect } from "preact/hooks";
-import { useState } from "react";
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
 import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
 import { type TResponseData, type TResponseTtc, type TResponseVariables } from "@formbricks/types/responses";
@@ -15,9 +14,6 @@ declare global {
   interface Window {
     Adnuntius?: {
       refresh: () => void;
-      events?: {
-        on: (event: string, callback: (data: any) => void) => void;
-      };
     };
   }
 }
@@ -88,8 +84,6 @@ export function WelcomeCard({
   responseData,
   variablesData,
 }: WelcomeCardProps) {
-  const [adCompleted, setAdCompleted] = useState(false);
-
   const calculateTimeToComplete = () => {
     let totalCards = survey.questions.length;
     if (survey.endings.length > 0) totalCards += 1;
@@ -142,37 +136,13 @@ export function WelcomeCard({
   }, []);
 
   useEffect(() => {
-    if (window.Adnuntius && window.Adnuntius.events) {
-      window.Adnuntius.events.on("adImpression", (event) => {
-        console.log("Ad impression event:", event);
-      });
-
-      window.Adnuntius.events.on("adClick", (event) => {
-        console.log("Ad clicked:", event);
-      });
-
-      window.Adnuntius.events.on("adSkipped", (event) => {
-        console.log("Video ad skipped:", event);
-        setAdCompleted(true);
-      });
-
-      window.Adnuntius.events.on("adCompleted", (event) => {
-        console.log("Video ad completed:", event);
-        setAdCompleted(true);
-      });
-    }
-  }, []);
-
-  useEffect(() => {
     if (window.Adnuntius && typeof window.Adnuntius.refresh === "function") {
       window.Adnuntius.refresh();
     }
   }, []);
 
   const handleSubmit = () => {
-    if (adCompleted) {
-      onSubmit({ welcomeCard: "clicked" }, {});
-    }
+    onSubmit({ welcomeCard: "clicked" }, {});
   };
 
   useEffect(() => {
@@ -228,7 +198,6 @@ export function WelcomeCard({
           focus={isCurrent ? autoFocusEnabled : false}
           tabIndex={isCurrent ? 0 : -1}
           onClick={handleSubmit}
-          disabled={!adCompleted}
           type="button"
           onKeyDown={(e) => {
             if (e.key === "Enter") {
