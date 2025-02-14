@@ -3,7 +3,6 @@ import { ScrollableContainer } from "@/components/wrappers/scrollable-container"
 import { replaceRecallInfo } from "@/lib/recall";
 import { calculateElementIdx } from "@/lib/utils";
 import { useEffect } from "preact/hooks";
-import { useState } from "react";
 import { getLocalizedValue } from "@formbricks/lib/i18n/utils";
 import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
 import { type TResponseData, type TResponseTtc, type TResponseVariables } from "@formbricks/types/responses";
@@ -142,12 +141,6 @@ export function WelcomeCard({
     }
   }, []);
 
-  const [adFinished, setAdFinished] = useState(false);
-
-  const handleAdClose = () => {
-    setAdFinished(true);
-  };
-
   const handleSubmit = () => {
     onSubmit({ welcomeCard: "clicked" }, {});
   };
@@ -174,101 +167,73 @@ export function WelcomeCard({
 
   return (
     <div>
-      {/* Video Ad Overlay */}
-      {!adFinished && (
-        <div className="fixed left-0 top-0 z-50 flex h-full w-full items-center justify-center bg-black bg-opacity-75">
-          <div className="relative overflow-hidden rounded-lg bg-white">
-            {/* Adnuntius Video Ad */}
-            <iframe
-              src="https://delivery.adnuntius.com/i?tag=53o7zCYf1"
-              className="h-[350px] w-[600px]"
-              allow="autoplay"
-              onLoad={() => console.log("Ad Loaded")}></iframe>
-
-            {/* Close Button */}
-            <button
-              onClick={handleAdClose}
-              className="absolute right-2 top-2 rounded-full bg-red-500 px-3 py-1 text-white">
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
-      <div>
-        <div className={adFinished ? "opacity-100" : "pointer-events-none opacity-0"}>
-          <ScrollableContainer>
-            <div>
-              {fileUrl ? (
-                <img
-                  src={fileUrl}
-                  className="fb-mb-8 fb-max-h-96 fb-w-1/3 fb-rounded-lg fb-object-contain"
-                  alt="Company Logo"
-                />
-              ) : null}
-
-              <Headline
-                headline={replaceRecallInfo(
-                  getLocalizedValue(headline, languageCode),
-                  responseData,
-                  variablesData
-                )}
-                questionId="welcomeCard"
-              />
-              <HtmlBody
-                htmlString={replaceRecallInfo(
-                  getLocalizedValue(html, languageCode),
-                  responseData,
-                  variablesData
-                )}
-                questionId="welcomeCard"
-              />
-            </div>
-          </ScrollableContainer>
-          <div className="fb-mx-6 fb-mt-4 fb-flex fb-gap-4 fb-py-4">
-            <SubmitButton
-              buttonLabel={getLocalizedValue(buttonLabel, languageCode)}
-              isLastQuestion={false}
-              focus={isCurrent ? autoFocusEnabled : false}
-              tabIndex={isCurrent ? 0 : -1}
-              onClick={handleSubmit}
-              type="button"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                }
-              }}
+      <ScrollableContainer>
+        <div>
+          {fileUrl ? (
+            <img
+              src={fileUrl}
+              className="fb-mb-8 fb-max-h-96 fb-w-1/3 fb-rounded-lg fb-object-contain"
+              alt="Company Logo"
             />
-          </div>
-          {/*<div id="bm-int" className="fb-mt-4 fb-text-center"></div>*/}
-          {timeToFinish && !showResponseCount ? (
-            <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
-              <TimerIcon />
-              <p className="fb-pt-1 fb-text-xs">
-                <span> Takes {calculateTimeToComplete()} </span>
-              </p>
-            </div>
           ) : null}
-          {showResponseCount && !timeToFinish && responseCount && responseCount > 3 ? (
-            <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
-              <UsersIcon />
-              <p className="fb-pt-1 fb-text-xs">
-                <span>{`${responseCount.toString()} people responded`}</span>
-              </p>
-            </div>
-          ) : null}
-          {timeToFinish && showResponseCount ? (
-            <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
-              <TimerIcon />
-              <p className="fb-pt-1 fb-text-xs">
-                <span> Takes {calculateTimeToComplete()} </span>
-                <span>
-                  {responseCount && responseCount > 3 ? `⋅ ${responseCount.toString()} people responded` : ""}
-                </span>
-              </p>
-            </div>
-          ) : null}
+
+          <Headline
+            headline={replaceRecallInfo(
+              getLocalizedValue(headline, languageCode),
+              responseData,
+              variablesData
+            )}
+            questionId="welcomeCard"
+          />
+          <HtmlBody
+            htmlString={replaceRecallInfo(getLocalizedValue(html, languageCode), responseData, variablesData)}
+            questionId="welcomeCard"
+          />
         </div>
+      </ScrollableContainer>
+      <div className="fb-mx-6 fb-mt-4 fb-flex fb-gap-4 fb-py-4">
+        <SubmitButton
+          buttonLabel={getLocalizedValue(buttonLabel, languageCode)}
+          isLastQuestion={false}
+          focus={isCurrent ? autoFocusEnabled : false}
+          tabIndex={isCurrent ? 0 : -1}
+          onClick={handleSubmit}
+          type="button"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+            }
+          }}
+        />
       </div>
+      <div id="bm-int" className="fb-mt-4 fb-text-center"></div>
+      {timeToFinish && !showResponseCount ? (
+        <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
+          <TimerIcon />
+          <p className="fb-pt-1 fb-text-xs">
+            <span> Takes {calculateTimeToComplete()} </span>
+          </p>
+        </div>
+      ) : null}
+      {showResponseCount && !timeToFinish && responseCount && responseCount > 3 ? (
+        <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
+          <UsersIcon />
+          <p className="fb-pt-1 fb-text-xs">
+            <span>{`${responseCount.toString()} people responded`}</span>
+          </p>
+        </div>
+      ) : null}
+      {timeToFinish && showResponseCount ? (
+        <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
+          <TimerIcon />
+          <p className="fb-pt-1 fb-text-xs">
+            <span> Takes {calculateTimeToComplete()} </span>
+            <span>
+              {responseCount && responseCount > 3 ? `⋅ ${responseCount.toString()} people responded` : ""}
+            </span>
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }
