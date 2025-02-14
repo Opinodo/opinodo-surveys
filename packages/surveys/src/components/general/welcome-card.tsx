@@ -10,14 +10,6 @@ import { type TI18nString } from "@formbricks/types/surveys/types";
 import { Headline } from "./headline";
 import { HtmlBody } from "./html-body";
 
-declare global {
-  interface Window {
-    Adnuntius?: {
-      refresh: () => void;
-    };
-  }
-}
-
 interface WelcomeCardProps {
   headline?: TI18nString;
   html?: TI18nString;
@@ -133,12 +125,6 @@ export function WelcomeCard({
         existingScript.remove();
       }
     };
-  }, []);
-
-  useEffect(() => {
-    if (window.Adnuntius && typeof window.Adnuntius.refresh === "function") {
-      window.Adnuntius.refresh();
-    }
   }, []);
 
   const handleSubmit = () => {
