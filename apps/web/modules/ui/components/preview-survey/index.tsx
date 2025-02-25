@@ -8,7 +8,7 @@ import { Environment, Project } from "@prisma/client";
 import { useTranslate } from "@tolgee/react";
 import { Variants, motion } from "framer-motion";
 import { ExpandIcon, MonitorIcon, ShrinkIcon, SmartphoneIcon } from "lucide-react";
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TJsFileUploadParams } from "@formbricks/types/js";
 import { TProjectStyling } from "@formbricks/types/project";
 import { TUploadFileConfig } from "@formbricks/types/storage";
@@ -253,7 +253,7 @@ export const PreviewSurvey = ({
             <MediaBackground
               surveyType={survey.type}
               styling={styling}
-              ContentRef={ContentRef as RefObject<HTMLDivElement>}
+              ContentRef={ContentRef as React.RefObject<HTMLDivElement>}
               isMobilePreview>
               {previewType === "modal" ? (
                 <Modal
@@ -385,7 +385,7 @@ export const PreviewSurvey = ({
               <MediaBackground
                 surveyType={survey.type}
                 styling={styling}
-                ContentRef={ContentRef as RefObject<HTMLDivElement>}
+                ContentRef={ContentRef as React.RefObject<HTMLDivElement>}
                 isEditorView>
                 <div className="absolute left-5 top-5">
                   {!styling.isLogoHidden && (
