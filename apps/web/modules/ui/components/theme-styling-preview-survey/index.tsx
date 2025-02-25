@@ -8,7 +8,7 @@ import { SurveyInline } from "@/modules/ui/components/survey";
 import { Project } from "@prisma/client";
 import { useTranslate } from "@tolgee/react";
 import { Variants, motion } from "framer-motion";
-import { Fragment, RefObject, useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { TSurvey, TSurveyType } from "@formbricks/types/surveys/types";
 
 interface ThemeStylingPreviewSurveyProps {
@@ -176,7 +176,7 @@ export const ThemeStylingPreviewSurvey = ({
             <MediaBackground
               surveyType={survey.type}
               styling={project.styling}
-              ContentRef={ContentRef as RefObject<HTMLDivElement>}
+              ContentRef={ContentRef as React.MutableRefObject<HTMLDivElement> | null}
               isEditorView>
               {!project.styling?.isLogoHidden && (
                 <div className="absolute left-5 top-5" onClick={scrollToEditLogoSection}>
