@@ -34,6 +34,7 @@ export const selectSurvey = {
   isVerifyEmailEnabled: true,
   isSingleResponsePerEmailEnabled: true,
   redirectUrl: true,
+  redirectOnFailUrl: true,
   projectOverwrites: true,
   styling: true,
   surveyClosedMessage: true,
@@ -41,6 +42,11 @@ export const selectSurvey = {
   pin: true,
   resultShareKey: true,
   showLanguageSwitch: true,
+  reward: true,
+  countries: true,
+  tags: true,
+  limitedCountries: true,
+  timerDuration: true,
   languages: {
     select: {
       default: true,
