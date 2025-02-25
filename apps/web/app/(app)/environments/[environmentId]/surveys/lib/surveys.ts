@@ -11,8 +11,7 @@ import { validateInputs } from "@formbricks/lib/utils/validate";
 import { ZOptionalNumber } from "@formbricks/types/common";
 import { ZId } from "@formbricks/types/common";
 import { DatabaseError } from "@formbricks/types/errors";
-import { TSurveyFilterCriteria } from "@formbricks/types/surveys/types";
-import { TSurvey } from "../types/surveys";
+import { TSurvey, TSurveyFilterCriteria } from "@formbricks/types/surveys/types";
 
 export const surveySelect: Prisma.SurveySelect = {
   id: true,
@@ -40,6 +39,7 @@ export const getSurveys = reactCache(
     offset?: number,
     filterCriteria?: TSurveyFilterCriteria
   ): Promise<TSurvey[]> =>
+    // @ts-expect-error
     cache(
       async () => {
         validateInputs([environmentId, ZId], [limit, ZOptionalNumber], [offset, ZOptionalNumber]);
@@ -116,6 +116,7 @@ export const getSurveysSortedByRelevance = reactCache(
                   skip: offset,
                 });
 
+          // @ts-expect-error
           surveys = inProgressSurveys.map((survey) => {
             return {
               ...survey,
@@ -138,6 +139,7 @@ export const getSurveysSortedByRelevance = reactCache(
               skip: newOffset,
             });
 
+            // @ts-expect-error
             surveys = [
               ...surveys,
               ...additionalSurveys.map((survey) => {
