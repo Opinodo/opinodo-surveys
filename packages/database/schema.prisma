@@ -349,7 +349,6 @@ model Country {
 enum ActionType {
   code
   noCode
-  automatic
 }
 
 model ActionClass {

@@ -19,10 +19,10 @@ import { getAccessFlags } from "@formbricks/lib/membership/utils";
 import { getOrganizationByEnvironmentId } from "@formbricks/lib/organization/service";
 import { getProjectByEnvironmentId, getProjects } from "@formbricks/lib/project/service";
 import { DeleteProject } from "./components/delete-project";
-import { EditProjectNameForm } from "./components/edit-project-name-form";
-import { EditWaitingTimeForm } from "./components/edit-waiting-time-form";
-import { EditRedirectsForm } from "./components/edit-redirects-form";
 import { EditDefaultRewardForm } from "./components/edit-default-reward-form";
+import { EditProjectNameForm } from "./components/edit-project-name-form";
+import { EditRedirectsForm } from "./components/edit-redirects-form";
+import { EditWaitingTimeForm } from "./components/edit-waiting-time-form";
 
 export const GeneralSettingsPage = async (props: { params: Promise<{ environmentId: string }> }) => {
   const params = await props.params;
@@ -53,8 +53,8 @@ export const GeneralSettingsPage = async (props: { params: Promise<{ environment
 
   const isReadOnly = isMember && !hasManageAccess;
 
-  const isMultiLanguageAllowed = await getMultiLanguagePermission(organization);
-  const canDoRoleManagement = await getRoleManagementPermission(organization);
+  const isMultiLanguageAllowed = await getMultiLanguagePermission(organization.billing.plan);
+  const canDoRoleManagement = await getRoleManagementPermission(organization.billing.plan);
 
   const isOwnerOrManager = isOwner || isManager;
 
