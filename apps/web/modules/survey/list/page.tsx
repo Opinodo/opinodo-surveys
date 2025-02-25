@@ -17,10 +17,10 @@ import { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SURVEYS_PER_PAGE, WEBAPP_URL } from "@formbricks/lib/constants";
+import { DEFAULT_LOCALE, SURVEYS_PER_PAGE, WEBAPP_URL } from "@formbricks/lib/constants";
 import { getAccessFlags } from "@formbricks/lib/membership/utils";
 import { getTagsByEnvironmentId } from "@formbricks/lib/tag/service";
-import { findMatchingLocale } from "@formbricks/lib/utils/locale";
+import { getUserLocale } from "@formbricks/lib/user/service";
 import { TTemplateRole } from "@formbricks/types/templates";
 
 export const metadata: Metadata = {
@@ -82,7 +82,7 @@ export const SurveysPage = async ({
   const surveyCount = await getSurveyCount(params.environmentId);
 
   const currentProjectChannel = project.config.channel ?? null;
-  const locale = await findMatchingLocale();
+  const locale = (await getUserLocale(session.user.id)) ?? DEFAULT_LOCALE;
   const CreateSurveyButton = () => {
     return (
       <Button size="sm" asChild>
