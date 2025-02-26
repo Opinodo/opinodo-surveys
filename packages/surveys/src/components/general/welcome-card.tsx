@@ -117,7 +117,6 @@ export function WelcomeCard({
 
   // Function to handle ad completion event
   const handleAdEvent = () => {
-    console.log("Ad event fired - enabling Next button");
     setAdEventFired(true);
   };
 
@@ -125,49 +124,29 @@ export function WelcomeCard({
   const setupImaEventListeners = () => {
     if (listenersInitialized.current) return;
 
-    console.log("Setting up IMA SDK event listeners");
-
     // Method 1: Try accessing the global ima object directly
     if (window.google && window.google.ima) {
-      console.log("IMA SDK found via google.ima");
       const AdEvent = window.google.ima.AdEvent.Type;
 
       // Create a function that will be called when ads are loaded
       window.adEvents = {
-        onAdComplete: () => {
-          console.log("Ad event: COMPLETE - User watched the entire ad");
-          handleAdEvent();
-        },
-        onAdSkipped: () => {
-          console.log("Ad event: SKIPPED - User skipped the ad");
-          handleAdEvent();
-        },
-        onAllAdsCompleted: () => {
-          console.log("Ad event: ALL_ADS_COMPLETED - All ads in the pod finished playing");
-          handleAdEvent();
-        },
+        onAdComplete: () => handleAdEvent(),
+        onAdSkipped: () => handleAdEvent(),
+        onAllAdsCompleted: () => handleAdEvent(),
       };
 
       listenersInitialized.current = true;
     }
     // Method 2: Access via adsManager if available
     else if (window.adsManager) {
-      console.log("IMA SDK found via adsManager");
       try {
-        window.adsManager.addEventListener(window.google.ima.AdEvent.Type.COMPLETE, () => {
-          console.log("Ad event: COMPLETE - User watched the entire ad");
-          handleAdEvent();
-        });
+        window.adsManager.addEventListener(window.google.ima.AdEvent.Type.COMPLETE, () => handleAdEvent());
 
-        window.adsManager.addEventListener(window.google.ima.AdEvent.Type.SKIPPED, () => {
-          console.log("Ad event: SKIPPED - User skipped the ad");
-          handleAdEvent();
-        });
+        window.adsManager.addEventListener(window.google.ima.AdEvent.Type.SKIPPED, () => handleAdEvent());
 
-        window.adsManager.addEventListener(window.google.ima.AdEvent.Type.ALL_ADS_COMPLETED, () => {
-          console.log("Ad event: ALL_ADS_COMPLETED - All ads finished playing");
-          handleAdEvent();
-        });
+        window.adsManager.addEventListener(window.google.ima.AdEvent.Type.ALL_ADS_COMPLETED, () =>
+          handleAdEvent()
+        );
 
         listenersInitialized.current = true;
       } catch (e) {
@@ -176,24 +155,17 @@ export function WelcomeCard({
     }
     // Method 3: Try accessing any adnuntius specific API
     else if (window.adn) {
-      console.log("Adnuntius API found");
-
       if (typeof window.adn.queue === "function") {
         window.adn.queue(function () {
-          console.log("Adnuntius queue ready");
-
           // Register global callback functions
           window.adnuntiusCallbacks = {
             adCompleted: function () {
-              console.log("Ad event: COMPLETE - User watched the entire ad");
               handleAdEvent();
             },
             adSkipped: function () {
-              console.log("Ad event: SKIPPED - User skipped the ad");
               handleAdEvent();
             },
             allAdsCompleted: function () {
-              console.log("Ad event: ALL_ADS_COMPLETED - All ads in the pod finished playing");
               handleAdEvent();
             },
           };
@@ -202,14 +174,12 @@ export function WelcomeCard({
         });
       }
     } else {
-      console.log("IMA SDK or Adnuntius API not found yet, will retry");
       // If none of the above methods work, we'll try again after a delay
       setTimeout(setupImaEventListeners, 1000);
     }
   };
 
   useEffect(() => {
-    // Track script loading status
     let scriptLoaded = false;
 
     // Inject the Adnuntius script dynamically if not already added
@@ -221,16 +191,12 @@ export function WelcomeCard({
 
       // Set up a load handler to notify us when the script is available
       script.onload = () => {
-        console.log("Adnuntius script loaded");
         scriptLoaded = true;
-
-        // Add a small delay to ensure any initialization in the script completes
         setTimeout(setupImaEventListeners, 500);
       };
 
       // Handle errors
-      script.onerror = (e) => {
-        console.error("Failed to load Adnuntius script:", e);
+      script.onerror = () => {
         // Enable the button if ad script fails to load
         setAdEventFired(true);
       };
@@ -241,66 +207,20 @@ export function WelcomeCard({
       const existingScript = document.getElementById("adnuntius-script");
       if (existingScript) {
         scriptLoaded = true;
-
-        // Attempt to initialize event listeners immediately
         setupImaEventListeners();
       }
     }
 
-    // // Add script to inspect what's happening with ads (debugging only)
-    // const debugScript = document.createElement("script");
-    // debugScript.id = "ad-debug-script";
-    // debugScript.textContent = `
-    //   // Monitor when ad containers are created
-    //   const originalCreateElement = document.createElement;
-    //   document.createElement = function(tagName) {
-    //     const element = originalCreateElement.call(document, tagName);
-    //     if (tagName.toLowerCase() === 'div' || tagName.toLowerCase() === 'iframe') {
-    //       setTimeout(() => {
-    //         if (element.id && (element.id.includes('ad') || element.id.includes('bm-int'))) {
-    //           console.log('Ad element created:', element.id);
-    //         }
-    //       }, 0);
-    //     }
-    //     return element;
-    //   };
-    //
-    //   // Monitor global objects that might be related to ads
-    //   window.adDebugInterval = setInterval(() => {
-    //     const possibleObjects = ['ima', 'adn', 'AdnuntiusAPI', 'adnuntius', 'adsManager', 'adsLoader'];
-    //     for (const obj of possibleObjects) {
-    //       if (window[obj] && !window.reportedAdObjects?.[obj]) {
-    //         console.log('Found ad-related object:', obj, window[obj]);
-    //         window.reportedAdObjects = window.reportedAdObjects || {};
-    //         window.reportedAdObjects[obj] = true;
-    //       }
-    //     }
-    //   }, 1000);
-    // `;
-    // document.head.appendChild(debugScript);
-
     // Set a timeout to enable the button if ad events don't fire within 30 seconds
     const timeoutId = setTimeout(() => {
       if (!adEventFired) {
-        console.log("Ad event timeout - enabling Next button after 30 seconds");
         setAdEventFired(true);
       }
     }, 30000);
 
     // Return a cleanup function
     return () => {
-      // Clean up any event listeners and objects we created
-      if (window.adDebugInterval) {
-        clearInterval(window.adDebugInterval);
-      }
-
       clearTimeout(timeoutId);
-
-      // // Remove the debug script
-      // const debugScriptElem = document.getElementById("ad-debug-script");
-      // if (debugScriptElem) {
-      //   debugScriptElem.remove();
-      // }
 
       // Only remove the script if we created it
       if (!scriptLoaded) {
@@ -312,68 +232,26 @@ export function WelcomeCard({
     };
   }, [adEventFired]);
 
-  // Add another useEffect to ensure we're detecting when the #bm-int element is created
+  // Simple useEffect to detect when ad container is populated
   useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === "childList") {
-          const adContainer = document.getElementById("bm-int");
-          if (adContainer && adContainer.children.length > 0) {
-            console.log("Ad container populated:", adContainer);
-            setAdLoaded(true);
+    // Create a simpler observer that doesn't log anything
+    const observer = new MutationObserver(() => {
+      const adContainer = document.getElementById("bm-int");
+      if (adContainer && adContainer.children.length > 0) {
+        setAdLoaded(true);
 
-            // Try to detect video elements in the container
-            const setupVideoListeners = () => {
-              const videos = adContainer.querySelectorAll("video");
-              if (videos.length > 0) {
-                console.log(`Found ${videos.length} video elements`);
-                videos.forEach((video, idx) => {
-                  console.log(`Setting up listeners for video ${idx}`);
-
-                  // Add event listeners to the video element
-                  video.addEventListener("ended", () => {
-                    console.log("Ad event: COMPLETE - Video ended naturally");
-                    handleAdEvent();
-                  });
-
-                  video.addEventListener("play", () => {
-                    console.log("Video started playing");
-                  });
-                });
-              } else {
-                // If no videos are found immediately, check again after a delay
-                setTimeout(() => {
-                  const videos = adContainer.querySelectorAll("video");
-                  if (videos.length > 0) {
-                    console.log(`Found ${videos.length} video elements after delay`);
-                    videos.forEach((video) => {
-                      video.addEventListener("ended", () => {
-                        console.log("Ad event: COMPLETE - Video ended naturally");
-                        handleAdEvent();
-                      });
-                    });
-                  }
-                }, 1000);
-              }
-
-              // Look for iframe elements that might contain the video player
-              const iframes = adContainer.querySelectorAll("iframe");
-              if (iframes.length > 0) {
-                console.log(`Found ${iframes.length} iframes that might contain videos`);
-
-                if (!adEventFired) {
-                  setTimeout(() => {
-                    console.log("Enabling button after iframe display timeout");
-                    handleAdEvent();
-                  }, 15000);
-                }
-              }
-            };
-
-            setupVideoListeners();
-            setTimeout(setupVideoListeners, 2000);
-          }
+        // Single timeout to enable button after 30 seconds if no event fires
+        if (!adEventFired) {
+          setTimeout(() => {
+            handleAdEvent();
+          }, 30000);
         }
+
+        // Set up event listeners once
+        const videos = adContainer.querySelectorAll("video");
+        videos.forEach((video) => {
+          video.addEventListener("ended", handleAdEvent);
+        });
       }
     });
 
@@ -517,7 +395,5 @@ declare global {
       adSkipped: () => void;
       allAdsCompleted: () => void;
     };
-    adDebugInterval?: number;
-    reportedAdObjects?: Record<string, boolean>;
   }
 }
