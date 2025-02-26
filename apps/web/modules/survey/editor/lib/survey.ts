@@ -25,8 +25,30 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       throw new ResourceNotFoundError("Survey", surveyId);
     }
 
-    const { triggers, environmentId, segment, questions, languages, type, followUps, ...surveyData } =
-      updatedSurvey;
+    const {
+      triggers,
+      environmentId,
+      segment,
+      questions,
+      languages,
+      type,
+      followUps,
+      tags,
+      countries,
+      ...surveyData
+    } = updatedSurvey;
+
+    if (tags) {
+      data.tags = {
+        set: tags.map((tag) => ({ id: tag.id })),
+      };
+    }
+
+    if (countries) {
+      data.countries = {
+        set: countries.map((country) => ({ isoCode: country.isoCode })),
+      };
+    }
 
     if (languages) {
       // Process languages update logic here
