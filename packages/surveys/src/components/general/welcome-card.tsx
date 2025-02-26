@@ -108,27 +108,18 @@ export function WelcomeCard({
   const timeToFinish = survey.welcomeCard.timeToFinish;
   const showResponseCount = survey.welcomeCard.showResponseCount;
 
-  // Ref to track if listeners are initialized
   const listenersInitialized = useRef(false);
-  // State to track if ad has been completed/skipped
   const [adEventFired, setAdEventFired] = useState(false);
-  // State to track if ad container has been created
   const [adLoaded, setAdLoaded] = useState(false);
 
-  // Function to handle ad completion event
   const handleAdEvent = () => {
     setAdEventFired(true);
   };
 
-  // Function to setup listeners for IMA SDK events
   const setupImaEventListeners = () => {
     if (listenersInitialized.current) return;
 
-    // Method 1: Try accessing the global ima object directly
     if (window.google && window.google.ima) {
-      const AdEvent = window.google.ima.AdEvent.Type;
-
-      // Create a function that will be called when ads are loaded
       window.adEvents = {
         onAdComplete: () => handleAdEvent(),
         onAdSkipped: () => handleAdEvent(),
@@ -136,9 +127,7 @@ export function WelcomeCard({
       };
 
       listenersInitialized.current = true;
-    }
-    // Method 2: Access via adsManager if available
-    else if (window.adsManager) {
+    } else if (window.adsManager) {
       try {
         window.adsManager.addEventListener(window.google.ima.AdEvent.Type.COMPLETE, () => handleAdEvent());
 
@@ -152,12 +141,9 @@ export function WelcomeCard({
       } catch (e) {
         console.error("Error setting up IMA event listeners:", e);
       }
-    }
-    // Method 3: Try accessing any adnuntius specific API
-    else if (window.adn) {
+    } else if (window.adn) {
       if (typeof window.adn.queue === "function") {
         window.adn.queue(function () {
-          // Register global callback functions
           window.adnuntiusCallbacks = {
             adCompleted: function () {
               handleAdEvent();
@@ -174,7 +160,6 @@ export function WelcomeCard({
         });
       }
     } else {
-      // If none of the above methods work, we'll try again after a delay
       setTimeout(setupImaEventListeners, 1000);
     }
   };
@@ -182,28 +167,23 @@ export function WelcomeCard({
   useEffect(() => {
     let scriptLoaded = false;
 
-    // Inject the Adnuntius script dynamically if not already added
     if (!document.getElementById("adnuntius-script")) {
       const script = document.createElement("script");
       script.src = "https://tags.adnuntius.com/concept_cph/53o7zCYf1.prod.js";
       script.async = true;
       script.id = "adnuntius-script";
 
-      // Set up a load handler to notify us when the script is available
       script.onload = () => {
         scriptLoaded = true;
         setTimeout(setupImaEventListeners, 500);
       };
 
-      // Handle errors
       script.onerror = () => {
-        // Enable the button if ad script fails to load
         setAdEventFired(true);
       };
 
       document.head.appendChild(script);
     } else {
-      // Script already exists, check if it's loaded
       const existingScript = document.getElementById("adnuntius-script");
       if (existingScript) {
         scriptLoaded = true;
@@ -211,18 +191,15 @@ export function WelcomeCard({
       }
     }
 
-    // Set a timeout to enable the button if ad events don't fire within 30 seconds
     const timeoutId = setTimeout(() => {
       if (!adEventFired) {
         setAdEventFired(true);
       }
     }, 30000);
 
-    // Return a cleanup function
     return () => {
       clearTimeout(timeoutId);
 
-      // Only remove the script if we created it
       if (!scriptLoaded) {
         const existingScript = document.getElementById("adnuntius-script");
         if (existingScript) {
@@ -232,22 +209,18 @@ export function WelcomeCard({
     };
   }, [adEventFired]);
 
-  // Simple useEffect to detect when ad container is populated
   useEffect(() => {
-    // Create a simpler observer that doesn't log anything
     const observer = new MutationObserver(() => {
       const adContainer = document.getElementById("bm-int");
       if (adContainer && adContainer.children.length > 0) {
         setAdLoaded(true);
 
-        // Single timeout to enable button after 30 seconds if no event fires
         if (!adEventFired) {
           setTimeout(() => {
             handleAdEvent();
           }, 30000);
         }
 
-        // Set up event listeners once
         const videos = adContainer.querySelectorAll("video");
         videos.forEach((video) => {
           video.addEventListener("ended", handleAdEvent);
@@ -331,11 +304,7 @@ export function WelcomeCard({
         />
       </div>
       <div id="bm-int" className="fb-mt-4 fb-text-center"></div>
-      {adLoaded && !adEventFired && (
-        <div className="fb-text-center fb-text-sm fb-text-gray-500 fb-mt-2">
-          Please watch the ad to continue
-        </div>
-      )}
+      {/* Removed the duplicate text message that appears below the ad */}
       {timeToFinish && !showResponseCount ? (
         <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
           <TimerIcon />
