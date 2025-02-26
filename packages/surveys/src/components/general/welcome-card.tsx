@@ -111,6 +111,7 @@ export function WelcomeCard({
   const listenersInitialized = useRef(false);
   const [adEventFired, setAdEventFired] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
+  const [remainingTime, setRemainingTime] = useState(15); // Set to 15 seconds initially
 
   const handleAdEvent = () => {
     setAdEventFired(true);
@@ -194,11 +195,12 @@ export function WelcomeCard({
       }
     }
 
+    // Changed timeout from 30000 to 15000 (15 seconds)
     const timeoutId = setTimeout(() => {
       if (!adEventFired) {
         setAdEventFired(true);
       }
-    }, 30000);
+    }, 15000);
 
     return () => {
       clearTimeout(timeoutId);
@@ -212,6 +214,23 @@ export function WelcomeCard({
     };
   }, [adEventFired]);
 
+  // Add countdown timer effect
+  useEffect(() => {
+    if (adLoaded && !adEventFired) {
+      const countdownInterval = setInterval(() => {
+        setRemainingTime((prevTime) => {
+          if (prevTime <= 1) {
+            clearInterval(countdownInterval);
+            return 0;
+          }
+          return prevTime - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(countdownInterval);
+    }
+  }, [adLoaded, adEventFired]);
+
   useEffect(() => {
     const observer = new MutationObserver(() => {
       const adContainer = document.getElementById("bm-int");
@@ -219,9 +238,10 @@ export function WelcomeCard({
         setAdLoaded(true);
 
         if (!adEventFired) {
+          // Changed from 30000 to 15000 (15 seconds)
           setTimeout(() => {
             handleAdEvent();
-          }, 30000);
+          }, 15000);
         }
 
         const videos = adContainer.querySelectorAll("video");
@@ -290,7 +310,7 @@ export function WelcomeCard({
         <SubmitButton
           buttonLabel={
             adLoaded && !adEventFired
-              ? "Please watch ad to continue"
+              ? `Please watch ad to continue (${remainingTime}s)`
               : getLocalizedValue(buttonLabel, languageCode)
           }
           isLastQuestion={false}
@@ -307,7 +327,6 @@ export function WelcomeCard({
         />
       </div>
       <div id="bm-int" className="fb-mt-4 fb-text-center"></div>
-      {/* Removed the duplicate text message that appears below the ad */}
       {timeToFinish && !showResponseCount ? (
         <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
           <TimerIcon />
