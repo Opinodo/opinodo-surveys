@@ -129,10 +129,13 @@ export function WelcomeCard({
       listenersInitialized.current = true;
     } else if (window.adsManager) {
       try {
+        // @ts-ignore
         window.adsManager.addEventListener(window.google.ima.AdEvent.Type.COMPLETE, () => handleAdEvent());
 
+        // @ts-ignore
         window.adsManager.addEventListener(window.google.ima.AdEvent.Type.SKIPPED, () => handleAdEvent());
 
+        // @ts-ignore
         window.adsManager.addEventListener(window.google.ima.AdEvent.Type.ALL_ADS_COMPLETED, () =>
           handleAdEvent()
         );
