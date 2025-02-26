@@ -111,7 +111,6 @@ export function WelcomeCard({
   const listenersInitialized = useRef(false);
   const [adEventFired, setAdEventFired] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
-  const [remainingTime, setRemainingTime] = useState(15);
 
   // Handle ad event
   const handleAdEvent = () => {
@@ -277,12 +276,12 @@ export function WelcomeCard({
 
     const domObserver = watchForImaEvents();
 
-    // Fallback timer - 15 seconds
+    // Fallback timer - 30 seconds
     const timeoutId = setTimeout(() => {
       if (!adEventFired) {
         handleAdEvent();
       }
-    }, 15000);
+    }, 30000);
 
     return () => {
       clearTimeout(timeoutId);
@@ -312,23 +311,6 @@ export function WelcomeCard({
       observer.disconnect();
     };
   }, [adLoaded]);
-
-  // Add countdown timer effect
-  useEffect(() => {
-    if (adLoaded && !adEventFired) {
-      const countdownInterval = setInterval(() => {
-        setRemainingTime((prevTime) => {
-          if (prevTime <= 1) {
-            clearInterval(countdownInterval);
-            return 0;
-          }
-          return prevTime - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(countdownInterval);
-    }
-  }, [adLoaded, adEventFired]);
 
   const handleSubmit = () => {
     onSubmit({ welcomeCard: "clicked" }, {});
@@ -382,7 +364,7 @@ export function WelcomeCard({
         <SubmitButton
           buttonLabel={
             adLoaded && !adEventFired
-              ? `Please watch ad to continue (${remainingTime}s)`
+              ? "Please watch ad to continue"
               : getLocalizedValue(buttonLabel, languageCode)
           }
           isLastQuestion={false}
