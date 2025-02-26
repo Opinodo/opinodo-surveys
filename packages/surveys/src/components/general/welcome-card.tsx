@@ -169,7 +169,7 @@ export function WelcomeCard({
 
   useEffect(() => {
     let scriptLoaded = false;
-
+    //work
     if (!document.getElementById("adnuntius-script")) {
       const script = document.createElement("script");
       script.src = "https://tags.adnuntius.com/concept_cph/53o7zCYf1.prod.js";
