@@ -112,18 +112,15 @@ export function WelcomeCard({
   const [adEventFired, setAdEventFired] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
   const [remainingTime, setRemainingTime] = useState(15);
-  const [eventSource, setEventSource] = useState("none");
 
-  // Handle ad event with source tracking
-  const handleAdEvent = (source) => {
-    console.log(`Ad event fired from: ${source}`);
-    setEventSource(source);
+  // Handle ad event
+  const handleAdEvent = () => {
     setAdEventFired(true);
   };
 
   // Listen for window messages from IMA SDK
   useEffect(() => {
-    const handleWindowMessage = (event) => {
+    const handleWindowMessage = (event: { data: string }) => {
       // Check if the message is from IMA
       if (typeof event.data === "string" && event.data.startsWith("ima://")) {
         try {
@@ -131,20 +128,17 @@ export function WelcomeCard({
 
           // Check for COMPLETE event
           if (imaData.name === "adsManager" && imaData.type === "complete") {
-            console.log("IMA COMPLETE event detected in window message");
-            handleAdEvent("ima-complete");
+            handleAdEvent();
           }
 
           // Check for SKIPPED event
           else if (imaData.name === "adsManager" && imaData.type === "skip") {
-            console.log("IMA SKIPPED event detected in window message");
-            handleAdEvent("ima-skipped");
+            handleAdEvent();
           }
 
           // Check for ALL_ADS_COMPLETED event
           else if (imaData.name === "adsManager" && imaData.type === "allAdsCompleted") {
-            console.log("IMA ALL_ADS_COMPLETED event detected in window message");
-            handleAdEvent("ima-all-completed");
+            handleAdEvent();
           }
         } catch (e) {
           // Ignore parsing errors
@@ -164,31 +158,20 @@ export function WelcomeCard({
     if (listenersInitialized.current) return;
 
     if (window.google && window.google.ima) {
-      console.log("Setting up Google IMA event listeners");
-
       // Create a global object to receive callbacks
       window.adEvents = {
-        onAdComplete: () => {
-          console.log("Google IMA onAdComplete callback triggered");
-          handleAdEvent("google-complete");
-        },
-        onAdSkipped: () => {
-          console.log("Google IMA onAdSkipped callback triggered");
-          handleAdEvent("google-skipped");
-        },
-        onAllAdsCompleted: () => {
-          console.log("Google IMA onAllAdsCompleted callback triggered");
-          handleAdEvent("google-all-completed");
-        },
+        onAdComplete: () => handleAdEvent(),
+        onAdSkipped: () => handleAdEvent(),
+        onAllAdsCompleted: () => handleAdEvent(),
       };
 
       // Directly handle IMA events by overriding functions in window
-      // This is important as the logger showed the events are being sent but not captured
       try {
         // Store the original postMessage function
         const originalPostMessage = window.postMessage;
 
         // Override postMessage to intercept IMA events
+        // @ts-ignore
         window.postMessage = function (message, targetOrigin, transfer) {
           // Check if it's an IMA message
           if (typeof message === "string" && message.startsWith("ima://")) {
@@ -198,10 +181,13 @@ export function WelcomeCard({
               // Check for specific events
               if (imaData.name === "adsManager") {
                 if (imaData.type === "complete") {
+                  // @ts-ignore
                   window.adEvents.onAdComplete();
                 } else if (imaData.type === "skip") {
+                  // @ts-ignore
                   window.adEvents.onAdSkipped();
                 } else if (imaData.type === "allAdsCompleted") {
+                  // @ts-ignore
                   window.adEvents.onAllAdsCompleted();
                 }
               }
@@ -211,10 +197,11 @@ export function WelcomeCard({
           }
 
           // Call the original function
+          // @ts-ignore
           return originalPostMessage.call(this, message, targetOrigin, transfer);
         };
       } catch (e) {
-        console.error("Error overriding postMessage:", e);
+        // Silently handle errors
       }
 
       listenersInitialized.current = true;
@@ -249,7 +236,6 @@ export function WelcomeCard({
 
       script.onerror = () => {
         setAdEventFired(true);
-        setEventSource("script-error");
       };
 
       document.head.appendChild(script);
@@ -279,8 +265,7 @@ export function WelcomeCard({
             );
 
             if (completionIndicators.length > 0) {
-              console.log("Ad completion detected through DOM changes");
-              handleAdEvent("dom-complete");
+              handleAdEvent();
             }
           }
         }
@@ -295,7 +280,7 @@ export function WelcomeCard({
     // Fallback timer - 15 seconds
     const timeoutId = setTimeout(() => {
       if (!adEventFired) {
-        handleAdEvent("timeout");
+        handleAdEvent();
       }
     }, 15000);
 
@@ -414,11 +399,6 @@ export function WelcomeCard({
         />
       </div>
       <div id="bm-int" className="fb-mt-4 fb-text-center"></div>
-
-      {/* Small debug info that can be kept in production */}
-      <div className="fb-mx-6 fb-text-xs fb-text-gray-400 fb-mt-1">
-        {adEventFired ? `Event: ${eventSource}` : ""}
-      </div>
 
       {timeToFinish && !showResponseCount ? (
         <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
