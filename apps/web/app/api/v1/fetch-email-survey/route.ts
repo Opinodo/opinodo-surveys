@@ -41,10 +41,20 @@ export async function GET(request: Request) {
       url += `&country=${country}`;
       url += `&lang=${language}`;
       url += `&source=[SOURCE]`;
-      url += `&reward=${survey.reward}`;
     }
 
-    return responses.successResponse({ survey_url: url });
+    return responses.successResponse({
+      id: survey.id,
+      name: survey.name,
+      created_at: survey.createdAt,
+      updated_at: survey.updatedAt,
+      reward: survey.reward,
+      survey_url: url,
+      country: survey.countries.reduce((acc, country) => {
+        acc[country.isoCode] = country.name;
+        return acc;
+      }, {}),
+    });
   } catch (error) {
     if (error instanceof DatabaseError) {
       return responses.badRequestResponse(error.message);
