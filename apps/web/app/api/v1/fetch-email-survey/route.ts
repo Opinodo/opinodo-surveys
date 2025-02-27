@@ -41,6 +41,7 @@ export async function GET(request: Request) {
       url += `&country=${country}`;
       url += `&lang=${language}`;
       url += `&source=[SOURCE]`;
+      url += `&reward=${survey.reward}`;
     }
 
     return responses.successResponse({ survey_url: url });
