@@ -450,6 +450,7 @@ export function Survey({
               languageCode={selectedLanguage}
               autoFocusEnabled={autoFocusEnabled}
               currentQuestionId={questionId}
+              isBackButtonHidden={localSurvey.isBackButtonHidden}
             />
           )
         );

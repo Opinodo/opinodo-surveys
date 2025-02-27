@@ -884,6 +884,7 @@ export const ZSurvey = z
     singleUse: ZSurveySingleUse.nullable(),
     isVerifyEmailEnabled: z.boolean(),
     isSingleResponsePerEmailEnabled: z.boolean(),
+    isBackButtonHidden: z.boolean(),
     pin: z.string().min(4, { message: "PIN must be a four digit number" }).nullish(),
     resultShareKey: z.string().nullable(),
     reward: z.number(),
@@ -895,7 +896,7 @@ export const ZSurvey = z
     timerDuration: z.number().nullable(),
   })
   .superRefine((survey, ctx) => {
-    const { questions, languages, welcomeCard, endings } = survey;
+    const { questions, languages, welcomeCard, endings, isBackButtonHidden } = survey;
 
     let multiLangIssue: z.IssueData | null;
 
@@ -966,7 +967,9 @@ export const ZSurvey = z
       ];
 
       const fieldsToValidate =
-        questionIndex === 0 ? initialFieldsToValidate : [...initialFieldsToValidate, "backButtonLabel"];
+        questionIndex === 0 || isBackButtonHidden
+          ? initialFieldsToValidate
+          : [...initialFieldsToValidate, "backButtonLabel"];
 
       for (const field of fieldsToValidate) {
         // Skip label validation for consent questions as its called checkbox label
