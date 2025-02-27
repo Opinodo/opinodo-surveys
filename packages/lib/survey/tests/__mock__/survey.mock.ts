@@ -189,6 +189,7 @@ const baseSurveyProperties = {
   displayLimit: 3,
   welcomeCard: mockWelcomeCard,
   questions: [mockQuestion],
+  isBackButtonHidden: false,
   endings: [
     {
       id: "umyknohldc7w26ocjdhaa62c",

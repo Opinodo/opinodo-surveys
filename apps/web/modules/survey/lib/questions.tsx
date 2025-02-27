@@ -21,6 +21,7 @@ import {
   StarIcon,
 } from "lucide-react";
 import type { JSX } from "react";
+import { replaceQuestionPresetPlaceholders } from "@formbricks/lib/utils/templates";
 import {
   TSurveyQuestionTypeEnum as QuestionId,
   TSurveyAdQuestion,
@@ -40,7 +41,6 @@ import {
   TSurveyRankingQuestion,
   TSurveyRatingQuestion,
 } from "@formbricks/types/surveys/types";
-import { replaceQuestionPresetPlaceholders } from "./templates";
 
 export type TQuestion = {
   id: string;
