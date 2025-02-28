@@ -461,7 +461,7 @@ export function Survey({
       <AutoCloseWrapper survey={localSurvey} onClose={onClose} offset={offset}>
         <div
           className={cn(
-            "fb-no-scrollbar fb-rounded-custom fb-bg-survey-bg fb-flex fb-h-full fb-w-full fb-flex-col fb-justify-between fb-overflow-hidden fb-transition-all fb-duration-1000 fb-ease-in-out",
+            "fb-no-scrollbar fb-bg-survey-bg fb-flex fb-h-full fb-w-full fb-flex-col fb-justify-between fb-overflow-hidden fb-transition-all fb-duration-1000 fb-ease-in-out",
             cardArrangement === "simple" ? "fb-survey-shadow" : "",
             offset === 0 || cardArrangement === "simple" ? "fb-opacity-100" : "fb-opacity-0"
           )}>
@@ -491,7 +491,7 @@ export function Survey({
               </b>
             </p>
           )}
-          <div className="fb-mx-6 fb-mb-10 fb-mt-2 fb-space-y-3 sm:fb-mb-6 sm:fb-mt-6">
+          <div className="fb-space-y-4">
             {isBrandingEnabled ? <FormbricksBranding /> : null}
             {showProgressBar ? <ProgressBar survey={localSurvey} questionId={questionId} /> : null}
           </div>
