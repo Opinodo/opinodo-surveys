@@ -115,3 +115,4 @@ CMD supercronic -quiet /app/docker/cronjobs & \
     (cd packages/database && npm run db:migrate:deploy) && \
     (cd packages/database && npm run db:create-saml-database:deploy) && \
     exec node apps/web/server.js
+# please work!
