@@ -111,6 +111,7 @@ export function WelcomeCard({
   const listenersInitialized = useRef(false);
   const [adEventFired, setAdEventFired] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(15);
 
   // Handle ad event
   const handleAdEvent = () => {
@@ -207,6 +208,29 @@ export function WelcomeCard({
     }
   };
 
+  // Add countdown timer effect
+  useEffect(() => {
+    // Only run when ad is loaded but not completed
+    if (adLoaded && !adEventFired) {
+      // Initialize countdown at 15 seconds
+      setTimeRemaining(15);
+
+      const countdownInterval = setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        clearInterval(countdownInterval);
+      };
+    }
+  }, [adLoaded, adEventFired]);
+
   // Main effect for loading ad scripts and setting up listeners
   useEffect(() => {
     let scriptLoaded = false;
@@ -276,12 +300,12 @@ export function WelcomeCard({
 
     const domObserver = watchForImaEvents();
 
-    // Fallback timer - 30 seconds
+    // Fallback timer - 15 seconds (changed from 30 seconds)
     const timeoutId = setTimeout(() => {
       if (!adEventFired) {
         handleAdEvent();
       }
-    }, 30000);
+    }, 15000);
 
     return () => {
       clearTimeout(timeoutId);
@@ -360,7 +384,7 @@ export function WelcomeCard({
           />
         </div>
       </ScrollableContainer>
-      <div className="fb-mx-6 fb-mt-4 fb-flex fb-gap-4 fb-py-4">
+      <div className="fb-mx-6 fb-mt-4 fb-flex fb-items-center fb-gap-4 fb-py-4">
         <SubmitButton
           buttonLabel={
             adLoaded && !adEventFired
@@ -379,6 +403,12 @@ export function WelcomeCard({
           }}
           disabled={!adEventFired && adLoaded}
         />
+        {adLoaded && !adEventFired && (
+          <div className="fb-flex fb-items-center fb-text-sm fb-text-gray-600">
+            <TimerIcon />
+            <span className="fb-ml-1">{timeRemaining}s</span>
+          </div>
+        )}
       </div>
       <div id="bm-int" className="fb-mt-4 fb-text-center"></div>
 
