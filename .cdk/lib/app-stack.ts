@@ -171,13 +171,13 @@ export class AppStack extends Stack {
             certificate: Certificate.fromCertificateArn(this, `${projectName}-certificate`, props.certificateArn)
         });
 
-        webService.targetGroup.configureHealthCheck({
-            path: "/auth/login",
-            healthyThresholdCount: 3,
-            healthyHttpCodes: '200',
-            interval: Duration.seconds(10),
-            timeout: Duration.seconds(5),
-        });
+        // webService.targetGroup.configureHealthCheck({
+        //     path: "/auth/login",
+        //     healthyThresholdCount: 3,
+        //     healthyHttpCodes: '200',
+        //     interval: Duration.seconds(10),
+        //     timeout: Duration.seconds(5),
+        // });
 
         // Allow access to EFS from Fargate ECS
         fileSystem.connections.allowDefaultPortFrom(webService.service.connections);
