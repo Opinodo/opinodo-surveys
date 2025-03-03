@@ -17,7 +17,7 @@ import { useTranslate } from "@tolgee/react";
 import { RepeatIcon, Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import {RefObject, useRef, useState} from "react";
+import { useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { cn } from "@formbricks/lib/cn";
 import { TAllowedFileExtension } from "@formbricks/types/common";
@@ -216,7 +216,7 @@ export const EmailCustomizationSettings = ({
                   </div>
                 )}
                 <Uploader
-                  ref={inputRef as RefObject<HTMLInputElement>}
+                  ref={inputRef}
                   allowedFileExtensions={allowedFileExtensions}
                   id="email-customization"
                   name="email-customization"

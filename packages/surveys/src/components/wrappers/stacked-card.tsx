@@ -1,6 +1,7 @@
 import { MutableRef } from "preact/hooks";
 import { useEffect, useMemo, useState } from "preact/hooks";
-import React, { JSX } from "react";
+import { JSX } from "preact/jsx-runtime";
+import React from "react";
 import { TJsEnvironmentStateSurvey } from "@formbricks/types/js";
 import { TCardArrangementOptions } from "@formbricks/types/styling";
 

@@ -46,8 +46,8 @@ export const getDefaultSurveyPreset = (t: TFnType): TTemplate["preset"] => {
     welcomeCard: getDefaultWelcomeCard(t),
     endings: [getDefaultEndingCard([], t)],
     hiddenFields: hiddenFieldsDefault,
-    reward: 0,
-  questions: [],};
+    questions: [],
+  };
 };
 
 const cartAbandonmentSurvey = (t: TFnType): TTemplate => {

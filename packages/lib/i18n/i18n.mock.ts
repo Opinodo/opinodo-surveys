@@ -245,7 +245,7 @@ export const mockEndings = [
     subheader: {
       default: "We appreciate your feedback.",
     },
-    buttonLink: "https://digiopinion.com",
+    buttonLink: "https://formbricks.com",
     buttonLabel: { default: "Create your own Survey" },
   } as TSurveyEndScreenCard,
 ];

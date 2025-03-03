@@ -32,9 +32,6 @@ export const ZTemplate = z.object({
     questions: ZSurveyQuestions,
     endings: ZSurveyEndings,
     hiddenFields: ZSurveyHiddenFields,
-    reward: z.number(),
-    redirectUrl: z.string().url().nullish(),
-    redirectOnFailUrl: z.string().url().nullish(),
   }),
 });
 

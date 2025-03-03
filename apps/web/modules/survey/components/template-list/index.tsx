@@ -55,12 +55,12 @@ export const TemplateList = ({
 
   const createSurvey = async (activeTemplate: TTemplate) => {
     setLoading(true);
-    activeTemplate.preset.reward = project.defaultRewardInUSD;
-    activeTemplate.preset.redirectOnFailUrl = project.defaultRedirectOnFailUrl;
     const augmentedTemplate: TSurveyCreateInput = {
       ...activeTemplate.preset,
       type: surveyType,
       createdBy: userId,
+      reward: project.defaultRewardInUSD,
+      redirectOnFailUrl: project.defaultRedirectOnFailUrl,
     };
     const createSurveyResponse = await createSurveyAction({
       environmentId: environmentId,
