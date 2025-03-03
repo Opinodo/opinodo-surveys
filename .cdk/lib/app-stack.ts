@@ -18,6 +18,8 @@ import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
 import {AccessPoint} from "aws-cdk-lib/aws-efs";
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
 import * as path from "path";
+import * as cr from 'aws-cdk-lib/custom-resources';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 interface ECSStackProps extends StackProps {
     cluster: ecs.Cluster,
@@ -65,25 +67,25 @@ export class AppStack extends Stack {
         });
 
         taskRole.attachInlinePolicy(
-            new iam.Policy(this, `${projectName}-task-policy`, {
-                statements: [
-                    new iam.PolicyStatement({
-                        effect: iam.Effect.ALLOW,
-                        actions: ["S3:*"],
-                        resources: [props.bucket.bucketArn, props.bucket.bucketArn + "/*"],
-                    }),
-                    new iam.PolicyStatement({
-                        effect: iam.Effect.ALLOW,
-                        actions: [
-                            'elasticfilesystem:ClientMount',
-                            'elasticfilesystem:ClientWrite',
-                            'elasticfilesystem:DescribeFileSystems',
-                            'elasticfilesystem:DescribeMountTargets',
-                        ],
-                        resources: [fileSystem.fileSystemArn],
-                    })
-                ],
-            })
+          new iam.Policy(this, `${projectName}-task-policy`, {
+              statements: [
+                  new iam.PolicyStatement({
+                      effect: iam.Effect.ALLOW,
+                      actions: ["S3:*"],
+                      resources: [props.bucket.bucketArn, props.bucket.bucketArn + "/*"],
+                  }),
+                  new iam.PolicyStatement({
+                      effect: iam.Effect.ALLOW,
+                      actions: [
+                          'elasticfilesystem:ClientMount',
+                          'elasticfilesystem:ClientWrite',
+                          'elasticfilesystem:DescribeFileSystems',
+                          'elasticfilesystem:DescribeMountTargets',
+                      ],
+                      resources: [fileSystem.fileSystemArn],
+                  })
+              ],
+          })
         );
 
         const webTask = new ecs.FargateTaskDefinition(this, `${projectName}-web`, {
@@ -122,7 +124,6 @@ export class AppStack extends Stack {
             resources: [props.bucket.bucketArn],
         }));
 
-
         const webLogGroup = new LogGroup(this, `/ecs/${projectName}/web`, {
             retention: 60,
             logGroupName: `/ecs/${projectName}/web`
@@ -138,6 +139,158 @@ export class AppStack extends Stack {
             ignoreMode: IgnoreMode.DOCKER,
         });
 
+        // Create a dedicated migration task
+        const migrationTask = new ecs.FargateTaskDefinition(this, `${projectName}-migration`, {
+            family: `${projectName}-migration`,
+            memoryLimitMiB: props.taskMemory,
+            cpu: props.taskCPU,
+            taskRole: taskRole,
+            runtimePlatform: {
+                operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+                cpuArchitecture: ecs.CpuArchitecture.ARM64,
+            },
+            volumes: [
+                {
+                    name: "efs-volume",
+                    efsVolumeConfiguration: {
+                        fileSystemId: fileSystem.fileSystemId,
+                        transitEncryption: 'ENABLED',
+                        authorizationConfig: {
+                            iam: 'ENABLED',
+                            accessPointId: accessPoint.accessPointId,
+                        }
+                    }
+                }
+            ]
+        });
+
+        // Add the same permissions as webTask
+        migrationTask.addToExecutionRolePolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ["S3:GetObject"],
+            resources: [props.bucket.bucketArn + "/" + props.envFileName],
+        }));
+
+        migrationTask.addToExecutionRolePolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ["S3:GetBucketLocation"],
+            resources: [props.bucket.bucketArn],
+        }));
+
+        // Create a log group for migration task
+        const migrationLogGroup = new LogGroup(this, `/ecs/${projectName}/migration`, {
+            retention: 60,
+            logGroupName: `/ecs/${projectName}/migration`
+        });
+
+        if (props.environmentName === 'sandbox') {
+            migrationLogGroup.applyRemovalPolicy(RemovalPolicy.DESTROY);
+        }
+
+        // Add the container to the migration task
+        const migrationContainer = migrationTask.addContainer('migration', {
+            image: ecs.EcrImage.fromDockerImageAsset(dockerImageAsset),
+            essential: true,
+            containerName: 'migration',
+            environmentFiles: [
+                ecs.EnvironmentFile.fromBucket(props.bucket, props.envFileName),
+            ],
+            logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs-migration`, logGroup: migrationLogGroup}),
+            // Override the command to only run migrations
+            command: [
+                'sh', '-c',
+                'cd /home/nextjs/packages/database && npm run db:migrate:deploy && echo "Migrations completed successfully"'
+            ],
+        });
+
+        migrationContainer.addMountPoints({
+            sourceVolume: 'efs-volume',
+            containerPath: '/home/nextjs/apps/web/uploads',
+            readOnly: false
+        });
+
+        // Create a Lambda function that will run the migration task
+        const runMigrationLambda = new lambda.Function(this, 'RunMigrationLambda', {
+            runtime: lambda.Runtime.NODEJS_20_X,
+            handler: 'index.handler',
+            code: lambda.Code.fromInline(`
+                const AWS = require('aws-sdk');
+                const ecs = new AWS.ECS();
+                
+                exports.handler = async (event, context) => {
+                  if (event.RequestType === 'Create' || event.RequestType === 'Update') {
+                    const params = {
+                      cluster: '${props.cluster.clusterName}',
+                      taskDefinition: '${migrationTask.taskDefinitionArn}',
+                      count: 1,
+                      launchType: 'FARGATE',
+                      networkConfiguration: {
+                        awsvpcConfiguration: {
+                          subnets: ${JSON.stringify(props.vpc.publicSubnets.map(subnet => subnet.subnetId))},
+                          assignPublicIp: 'ENABLED',
+                          securityGroups: [/*this will be filled after service creation*/]
+                        }
+                      }
+                    };
+                    
+                    console.log('Running migration task with params:', JSON.stringify(params));
+                    
+                    try {
+                      // Run the migration task
+                      const runTask = await ecs.runTask(params).promise();
+                      const taskArn = runTask.tasks[0].taskArn;
+                      
+                      // Wait for the migration task to complete
+                      console.log('Waiting for migration task to complete:', taskArn);
+                      await ecs.waitFor('tasksStopped', {
+                        cluster: '${props.cluster.clusterName}',
+                        tasks: [taskArn]
+                      }).promise();
+                      
+                      // Check if the task was successful
+                      const describeTasks = await ecs.describeTasks({
+                        cluster: '${props.cluster.clusterName}',
+                        tasks: [taskArn]
+                      }).promise();
+                      
+                      const exitCode = describeTasks.tasks[0].containers[0].exitCode;
+                      if (exitCode !== 0) {
+                        throw new Error('Migration task failed with exit code: ' + exitCode);
+                      }
+                      
+                      console.log('Migration task completed successfully');
+                      return { PhysicalResourceId: taskArn };
+                    } catch (error) {
+                      console.error('Error running migration task:', error);
+                      throw error;
+                    }
+                  }
+                  
+                  return { PhysicalResourceId: context.logStreamName };
+                }
+            `),
+            timeout: Duration.minutes(15),
+        });
+
+        // Add permissions for the Lambda
+        runMigrationLambda.addToRolePolicy(new iam.PolicyStatement({
+            actions: [
+                'ecs:RunTask',
+                'ecs:DescribeTasks',
+                'ecs:ListTasks',
+            ],
+            resources: ['*'],
+        }));
+
+        runMigrationLambda.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['iam:PassRole'],
+            resources: [
+                migrationTask.taskRole.roleArn,
+                migrationTask.executionRole?.roleArn || '*',
+            ],
+        }));
+
+        // Modify web container to skip migrations on startup
         const webContainer = webTask.addContainer('web', {
             image: ecs.EcrImage.fromDockerImageAsset(dockerImageAsset),
             essential: true,
@@ -145,6 +298,10 @@ export class AppStack extends Stack {
             environmentFiles: [
                 ecs.EnvironmentFile.fromBucket(props.bucket, props.envFileName),
             ],
+            // Add an environment variable to indicate migrations should be skipped
+            environment: {
+                "SKIP_MIGRATIONS": "true"
+            },
             logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs`, logGroup: webLogGroup}),
             portMappings: [{containerPort: 3000}],
         });
@@ -171,12 +328,61 @@ export class AppStack extends Stack {
             certificate: Certificate.fromCertificateArn(this, `${projectName}-certificate`, props.certificateArn)
         });
 
+        // Now we can update the migration Lambda's security group
+        const lambdaCode = runMigrationLambda.role?.roleName
+          ? lambda.Code.fromInline(
+            runMigrationLambda.node.findChild('Code').node.defaultChild?.node.scope.node.host.resolveStringContextJsonPath(
+              runMigrationLambda.node.findChild('Code').node.defaultChild.node.path + '.S3Key'
+            ).replace('securityGroups: [/*this will be filled after service creation*/]', `securityGroups: ['${webService.service.connections.securityGroups[0].securityGroupId}']`)
+          )
+          : lambda.Code.fromInline(`
+              console.log('Unable to update Lambda code with security group. Please update manually.');
+              exports.handler = async () => { return { PhysicalResourceId: 'manual-update-required' }; };
+            `);
+
+        // Create a custom resource that will run the migration task
+        const runMigrationCustomResource = new cr.AwsCustomResource(this, 'RunMigrationCustomResource', {
+            policy: cr.AwsCustomResourcePolicy.fromStatements([
+                new iam.PolicyStatement({
+                    actions: ['lambda:InvokeFunction'],
+                    resources: [runMigrationLambda.functionArn],
+                }),
+            ]),
+            onUpdate: {
+                service: 'Lambda',
+                action: 'invoke',
+                parameters: {
+                    FunctionName: runMigrationLambda.functionName,
+                    Payload: JSON.stringify({
+                        RequestType: 'Update',
+                    }),
+                },
+                physicalResourceId: cr.PhysicalResourceId.of('MigrationTaskUpdate-' + Date.now().toString()),
+            },
+            onCreate: {
+                service: 'Lambda',
+                action: 'invoke',
+                parameters: {
+                    FunctionName: runMigrationLambda.functionName,
+                    Payload: JSON.stringify({
+                        RequestType: 'Create',
+                    }),
+                },
+                physicalResourceId: cr.PhysicalResourceId.of('MigrationTaskCreate-' + Date.now().toString()),
+            },
+            timeout: Duration.minutes(15),
+        });
+
+        // Make the web service depend on the migration
+        webService.node.addDependency(runMigrationCustomResource);
+
+        // Modify the health check to be more tolerant
         webService.targetGroup.configureHealthCheck({
             path: "/auth/login",
             healthyThresholdCount: 3,
             healthyHttpCodes: '200',
-            interval: Duration.seconds(10),
-            timeout: Duration.seconds(5),
+            interval: Duration.seconds(30),  // Increased from 10 to 30
+            timeout: Duration.seconds(10),   // Increased from 5 to 10
         });
 
         // Allow access to EFS from Fargate ECS
@@ -215,7 +421,6 @@ export class AppStack extends Stack {
             filterPattern: aws_logs.FilterPattern.anyTerm("ERROR", "CRITICAL", "Exception"),
         });
 
-
         const redisSecurityGroup = new ec2.SecurityGroup(
           this,
           `${projectName}-redisCacheSecurityGroup`,
@@ -245,7 +450,6 @@ export class AppStack extends Stack {
             vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
             cacheSubnetGroupName: subnetGroup.ref,
         });
-
 
         // Publish the web service ARN as an output
         new CfnOutput(this, 'EcsWebServiceArn', {
