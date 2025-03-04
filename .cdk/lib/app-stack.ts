@@ -16,12 +16,13 @@ import {
     Stack,
     CfnResource,
     IgnoreMode,
-    StackProps
+    StackProps,
+    LogGroup
 } from "aws-cdk-lib";
 import {Construct} from 'constructs';
 import {DockerImageAsset} from "aws-cdk-lib/aws-ecr-assets";
 import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
-import {LogGroup, SubscriptionFilter} from "aws-cdk-lib/aws-logs";
+import {SubscriptionFilter} from "aws-cdk-lib/aws-logs";
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
 import * as path from "path";
 
@@ -116,13 +117,17 @@ export class AppStack extends Stack {
             resources: [props.bucket.bucketArn],
         }));
 
-        const migrationLogGroup = new LogGroup(this, `/ecs/${projectName}/migrations`, {
-            retention: 60,
-            logGroupName: `/ecs/${projectName}/migrations`
-        });
+        // Import the existing log group instead of creating a new one
+        const migrationLogGroup = LogGroup.fromLogGroupName(
+            this, 
+            `${projectName}MigrationLogGroup`, 
+            `/ecs/${projectName}/migrations`
+        );
+        // Note: We can't set retention or removal policy on imported resources
 
         if (props.environmentName === 'sandbox') {
-            migrationLogGroup.applyRemovalPolicy(RemovalPolicy.DESTROY);
+            // Can't apply removal policy to imported resources
+            // migrationLogGroup.applyRemovalPolicy(RemovalPolicy.DESTROY);
         }
 
         const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
