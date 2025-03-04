@@ -19,6 +19,13 @@ COPY packages/database/schema.prisma ./
 RUN npm install
 RUN npm install prisma-json-types-generator
 
+# Install all dependencies that might be required by migrations
+RUN npm install @paralleldrive/cuid2
+RUN npm install zod
+RUN npm install lodash
+RUN npm install date-fns
+RUN npm install nanoid
+
 # Generate Prisma client code only - no database connection is made
 # This step validates the schema and generates TypeScript code
 RUN npx prisma generate
