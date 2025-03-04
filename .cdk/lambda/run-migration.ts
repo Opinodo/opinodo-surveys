@@ -48,6 +48,10 @@ export async function handler(event: CloudFormationCustomResourceEvent, context:
     }
 
     const taskArn = runTaskResponse.tasks[0].taskArn;
+    if (!taskArn) {
+      throw new Error('Task ARN is undefined');
+    }
+    
     console.log(`Migration task started with ARN: ${taskArn}`);
 
     // Wait for the task to complete
@@ -87,7 +91,10 @@ async function waitForTaskCompletion(clusterName: string, taskArn: string): Prom
     console.log(`Task status: ${taskStatus}`);
     
     // Check if the task failed
-    const containerStatuses = task.containers?.map(container => container.lastStatus);
+    const containerStatuses = task.containers?.map(container => {
+      return container.lastStatus;
+    });
+    
     if (containerStatuses?.includes('STOPPED') && task.stoppedReason) {
       throw new Error(`Task failed: ${task.stoppedReason}`);
     }
@@ -100,11 +107,15 @@ async function waitForTaskCompletion(clusterName: string, taskArn: string): Prom
   }).promise();
   
   const task = describeResponse.tasks?.[0];
-  const exitCodes = task?.containers?.map(container => container.exitCode);
+  const exitCodes = task?.containers?.map(container => {
+    return container.exitCode;
+  });
   
   if (!exitCodes || exitCodes.some(code => code !== 0)) {
     throw new Error(`Task completed with non-zero exit code: ${exitCodes}`);
   }
+  
+  return;
 }
 
 async function sendResponse(
@@ -112,7 +123,7 @@ async function sendResponse(
   context: Context,
   status: 'SUCCESS' | 'FAILED',
   data: Record<string, any>
-) {
+): Promise<void> {
   const responseBody = JSON.stringify({
     Status: status,
     Reason: `See the details in CloudWatch Log Stream: ${context.logStreamName}`,
@@ -143,7 +154,7 @@ async function sendResponse(
         },
       };
       
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         const request = https.request(requestOptions, (response: any) => {
           response.on('error', reject);
           response.on('end', resolve);
@@ -157,4 +168,6 @@ async function sendResponse(
       console.error('Error sending response:', error);
     }
   }
+  
+  return;
 }

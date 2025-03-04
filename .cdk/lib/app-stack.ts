@@ -12,9 +12,9 @@ import {
 } from 'aws-cdk-lib';
 import * as elasticcache from "aws-cdk-lib/aws-elasticache";
 import {Construct} from 'constructs';
-import {LogGroup, SubscriptionFilter} from "aws-cdk-lib/aws-logs";
 import {DockerImageAsset} from "aws-cdk-lib/aws-ecr-assets";
 import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
+import {LogGroup, SubscriptionFilter} from "aws-cdk-lib/aws-logs";
 import {AccessPoint} from "aws-cdk-lib/aws-efs";
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
 import * as path from "path";
@@ -198,6 +198,11 @@ export class AppStack extends Stack {
             ],
             logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs`, logGroup: webLogGroup}),
             portMappings: [{containerPort: 3000}],
+            command: [
+                "/bin/sh", 
+                "-c", 
+                "supercronic -quiet /app/docker/cronjobs & exec node apps/web/server.js"
+            ]
         });
 
         webContainer.addMountPoints({
@@ -205,13 +210,6 @@ export class AppStack extends Stack {
             containerPath: '/home/nextjs/apps/web/uploads',
             readOnly: false
         });
-
-        // Define a custom container command that doesn't run migrations
-        webContainer.addOverride('command', [
-            "/bin/sh", 
-            "-c", 
-            "supercronic -quiet /app/docker/cronjobs & exec node apps/web/server.js"
-        ]);
 
         const webService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${projectName}-web-service`, {
             cluster: props.cluster,
