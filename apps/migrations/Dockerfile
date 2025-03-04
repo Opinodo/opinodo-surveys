@@ -6,9 +6,7 @@ RUN apk update && apk add --no-cache g++ make gcc python3 openssl-dev
 # Set build-only environment variables
 # This is never used to connect to a real DB, just for Prisma code generation
 ENV DATABASE_URL="postgresql://fake:fake@localhost:5432/fake?schema=public"
-ENV PRISMA_SCHEMA_ENGINE_BINARY="/tmp/prisma-schema-engine"
-ENV PRISMA_QUERY_ENGINE_BINARY="/tmp/prisma-query-engine"
-ENV PRISMA_GENERATE_DATAPROXY=false
+# Remove problematic schema engine binary settings
 
 # Create app directory
 WORKDIR /app/packages/database
