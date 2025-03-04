@@ -111,7 +111,5 @@ VOLUME /home/nextjs/apps/web/uploads/
 RUN mkdir -p /home/nextjs/apps/web/saml-connection
 VOLUME /home/nextjs/apps/web/saml-connection
 
-CMD supercronic -quiet /app/docker/cronjobs & \
-    (cd packages/database && npm run db:migrate:deploy) && \
-    (cd packages/database && npm run db:create-saml-database:deploy) && \
-    exec node apps/web/server.js
+# Run the application without migrations
+CMD supercronic -quiet /app/docker/cronjobs & exec node apps/web/server.js

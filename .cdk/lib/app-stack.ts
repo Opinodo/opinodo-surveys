@@ -8,7 +8,7 @@ import {
     CfnOutput, IgnoreMode,
     RemovalPolicy,
     Stack,
-    StackProps, Duration, aws_lambda, aws_logs_destinations, aws_logs
+    StackProps, Duration, aws_lambda, aws_logs_destinations, aws_logs, CustomResource
 } from 'aws-cdk-lib';
 import * as elasticcache from "aws-cdk-lib/aws-elasticache";
 import {Construct} from 'constructs';
@@ -86,6 +86,63 @@ export class AppStack extends Stack {
             })
         );
 
+        // Create a separate task definition for migrations
+        const migrationTask = new ecs.FargateTaskDefinition(this, `${projectName}-migrations`, {
+            family: `${projectName}-migrations`,
+            memoryLimitMiB: 2048, // Smaller than the web task since it's just for migrations
+            cpu: 1024,
+            taskRole: taskRole,
+            runtimePlatform: {
+                operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+                cpuArchitecture: ecs.CpuArchitecture.ARM64,
+            }
+        });
+
+        migrationTask.addToExecutionRolePolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ["S3:GetObject"],
+            resources: [props.bucket.bucketArn + "/" + props.envFileName],
+        }));
+
+        migrationTask.addToExecutionRolePolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ["S3:GetBucketLocation"],
+            resources: [props.bucket.bucketArn],
+        }));
+
+        const migrationLogGroup = new LogGroup(this, `/ecs/${projectName}/migrations`, {
+            retention: 60,
+            logGroupName: `/ecs/${projectName}/migrations`
+        });
+
+        if (props.environmentName === 'sandbox') {
+            migrationLogGroup.applyRemovalPolicy(RemovalPolicy.DESTROY);
+        }
+
+        const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
+            directory: '../', // Specify the context directory
+            file: './apps/web/Dockerfile',
+            ignoreMode: IgnoreMode.DOCKER,
+        });
+
+        // Create a separate Docker image for migrations
+        const migrationsDockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysMigrationsDockerImage', {
+            directory: '../', // Specify the context directory
+            file: './apps/migrations/Dockerfile',
+            ignoreMode: IgnoreMode.DOCKER,
+        });
+
+        // Use the same Docker image but with a specific command for migrations
+        const migrationContainer = migrationTask.addContainer('migrations', {
+            image: ecs.EcrImage.fromDockerImageAsset(migrationsDockerImageAsset),
+            essential: true,
+            containerName: 'migrations',
+            environmentFiles: [
+                ecs.EnvironmentFile.fromBucket(props.bucket, props.envFileName),
+            ],
+            logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs`, logGroup: migrationLogGroup}),
+        });
+
         const webTask = new ecs.FargateTaskDefinition(this, `${projectName}-web`, {
             family: `${projectName}-web`,
             memoryLimitMiB: props.taskMemory,
@@ -132,12 +189,6 @@ export class AppStack extends Stack {
             webLogGroup.applyRemovalPolicy(RemovalPolicy.DESTROY);
         }
 
-        const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
-            directory: '../', // Specify the context directory
-            file: './apps/web/Dockerfile',
-            ignoreMode: IgnoreMode.DOCKER,
-        });
-
         const webContainer = webTask.addContainer('web', {
             image: ecs.EcrImage.fromDockerImageAsset(dockerImageAsset),
             essential: true,
@@ -154,6 +205,13 @@ export class AppStack extends Stack {
             containerPath: '/home/nextjs/apps/web/uploads',
             readOnly: false
         });
+
+        // Define a custom container command that doesn't run migrations
+        webContainer.addOverride('command', [
+            "/bin/sh", 
+            "-c", 
+            "supercronic -quiet /app/docker/cronjobs & exec node apps/web/server.js"
+        ]);
 
         const webService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${projectName}-web-service`, {
             cluster: props.cluster,
@@ -215,6 +273,52 @@ export class AppStack extends Stack {
             filterPattern: aws_logs.FilterPattern.anyTerm("ERROR", "CRITICAL", "Exception"),
         });
 
+        // Create a Lambda function that will run the migration task
+        const runMigrationLambda = new NodejsFunction(this, 'RunMigrationLambda', {
+            runtime: aws_lambda.Runtime.NODEJS_20_X,
+            handler: 'handler',
+            entry: path.join(__dirname, '/../lambda/run-migration.ts'),
+            timeout: Duration.minutes(15),
+            environment: {
+                CLUSTER_NAME: props.cluster.clusterName,
+                TASK_DEFINITION_ARN: migrationTask.taskDefinitionArn,
+                SUBNET_IDS: props.vpc.publicSubnets.map(subnet => subnet.subnetId).join(','),
+                SECURITY_GROUP_ID: webService.service.connections.securityGroups[0].securityGroupId
+            },
+            initialPolicy: [
+                new iam.PolicyStatement({
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        'ecs:RunTask',
+                        'ecs:DescribeTasks'
+                    ],
+                    resources: ['*']
+                }),
+                new iam.PolicyStatement({
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        'iam:PassRole'
+                    ],
+                    resources: [
+                        migrationTask.taskRole.roleArn, 
+                        migrationTask.executionRole?.roleArn || '*'
+                    ]
+                })
+            ]
+        });
+
+        // Create a custom resource that will trigger the Lambda to run the migration task
+        const migrationCustomResource = new CustomResource(this, 'MigrationCustomResource', {
+            serviceToken: runMigrationLambda.functionArn,
+            properties: {
+                // Add a timestamp to ensure the resource is updated on each deployment
+                Timestamp: new Date().toISOString()
+            }
+        });
+
+        // Make sure the web service depends on the migration custom resource
+        // This will ensure migrations run before the web service is updated
+        webService.node.addDependency(migrationCustomResource);
 
         const redisSecurityGroup = new ec2.SecurityGroup(
           this,
