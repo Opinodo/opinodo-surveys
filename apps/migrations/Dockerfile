@@ -2,11 +2,11 @@ FROM node:22-alpine3.20 AS build
 
 # Install dependencies
 RUN apk update && apk add --no-cache g++ make gcc python3 openssl-dev
+RUN npm install -g pnpm
 
 # Set build-only environment variables
 # This is never used to connect to a real DB, just for Prisma code generation
 ENV DATABASE_URL="postgresql://fake:fake@localhost:5432/fake?schema=public"
-# Remove problematic schema engine binary settings
 
 # Create app directory
 WORKDIR /app/packages/database
@@ -30,11 +30,15 @@ RUN npm install nanoid
 # This step validates the schema and generates TypeScript code
 RUN npx prisma generate
 
+# Create Prisma migrations directory
+RUN mkdir -p prisma/migrations
+
 # Start fresh for the runtime image (multi-stage build)
 FROM node:22-alpine3.20
 
 # Install runtime dependencies
 RUN apk update && apk add --no-cache python3 openssl
+RUN npm install -g pnpm
 
 WORKDIR /app/packages/database
 
@@ -43,8 +47,9 @@ COPY --from=build /app/packages/database/node_modules ./node_modules
 COPY --from=build /app/packages/database/package.json ./
 COPY --from=build /app/packages/database/schema.prisma ./
 
-# Copy migration files and scripts
-COPY packages/database/migration ./migration/
+# Create Prisma migrations directory and copy migrations
+RUN mkdir -p prisma/migrations
+COPY packages/database/migration/ ./migration/
 COPY packages/database/src ./src/
 
 # Copy the health check and entrypoint scripts into the container

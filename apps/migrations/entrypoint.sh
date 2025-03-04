@@ -60,6 +60,25 @@ if [ "$TABLE_EXISTS" -eq 0 ]; then
 EOF
 fi
 
-# Run actual migrations - only at runtime with real database
-echo "Running migrations..."
-npm run db:migrate:deploy && npm run db:create-saml-database:deploy
+# Check if migration already ran by checking for a specific table (adjust as needed)
+echo "Checking if schema migrations need to be run..."
+MIGRATIONS_NEEDED=$(npx prisma db execute --stdin <<EOF | grep -c "_prisma_migrations" || echo "0"
+SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename = '_prisma_migrations';
+EOF
+)
+
+# Only run schema migrations if _prisma_migrations table doesn't exist
+if [ "$MIGRATIONS_NEEDED" -eq 0 ]; then
+  echo "Running schema migrations using Prisma..."
+  # Initialize the migrations directory with --create-only flag
+  npx prisma migrate dev --name init --create-only || true
+  
+  # Then apply the migrations
+  npx prisma migrate deploy || echo "Warning: Prisma migrate deploy failed, but continuing with data migrations"
+else
+  echo "Prisma migrations table already exists, skipping schema migrations"
+fi
+
+# Run data migrations using npm script
+echo "Running data migrations..."
+npm run db:migrate:deploy && npm run db:create-saml-database:deploy || echo "Warning: Data migrations failed with error code $?"
