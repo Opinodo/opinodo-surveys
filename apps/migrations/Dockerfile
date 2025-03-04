@@ -1,26 +1,46 @@
-FROM node:22-alpine3.20
+FROM node:22-alpine3.20 AS build
 
 # Install dependencies
 RUN apk update && apk add --no-cache g++ make gcc python3 openssl-dev
 
-# Set environment variables for build only
-ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/database?schema=public"
+# Set build-only environment variables
+# This is never used to connect to a real DB, just for Prisma code generation
+ENV DATABASE_URL="postgresql://fake:fake@localhost:5432/fake?schema=public"
+ENV PRISMA_SCHEMA_ENGINE_BINARY="/tmp/prisma-schema-engine"
+ENV PRISMA_QUERY_ENGINE_BINARY="/tmp/prisma-query-engine"
+ENV PRISMA_GENERATE_DATAPROXY=false
 
 # Create app directory
 WORKDIR /app/packages/database
 
-# Copy only the necessary files for migrations
+# Copy only the necessary files for building
 COPY apps/migrations/migration-package.json ./package.json
 COPY packages/database/schema.prisma ./
+
+# Install dependencies including required Prisma generators
+RUN npm install
+RUN npm install prisma-json-types-generator
+
+# Generate Prisma client code only - no database connection is made
+# This step validates the schema and generates TypeScript code
+RUN npx prisma generate
+
+# Start fresh for the runtime image (multi-stage build)
+FROM node:22-alpine3.20
+
+# Install runtime dependencies
+RUN apk update && apk add --no-cache python3 openssl
+
+WORKDIR /app/packages/database
+
+# Copy from build stage and add migration files
+COPY --from=build /app/packages/database/node_modules ./node_modules
+COPY --from=build /app/packages/database/package.json ./
+COPY --from=build /app/packages/database/schema.prisma ./
+
+# Copy migration files and scripts
 COPY packages/database/migration ./migration/
 COPY packages/database/src ./src/
-
-# Install database dependencies
-RUN npm install
-
-# Generate Prisma client with a dummy URL during build - this is just for build time
-# The actual DATABASE_URL will be provided at runtime
-RUN npx prisma generate
 
 # Add a health check script to verify database connection
 RUN echo '#!/bin/sh\n\
@@ -36,7 +56,7 @@ else\n\
   exit 1\n\
 fi' > /app/health-check.sh && chmod +x /app/health-check.sh
 
-# Set up the entry point script
+# Create the entrypoint script
 RUN echo '#!/bin/sh\n\
 set -e\n\
 \n\
@@ -72,8 +92,7 @@ else\n\
   exit 1\n\
 fi\n\
 \n\
-# We don't need to regenerate the Prisma client at runtime as it was already generated during build\n\
-# Just check database connection\n\
+# Check database connection before attempting migrations\n\
 echo "Checking database connection..."\n\
 /app/health-check.sh\n\
 \n\
@@ -100,10 +119,10 @@ if [ "$TABLE_EXISTS" -eq 0 ]; then\n\
 EOF\n\
 fi\n\
 \n\
-# Run migrations\n\
+# Run actual migrations - only at runtime with real database\n\
 echo "Running migrations..."\n\
 npm run db:migrate:deploy && npm run db:create-saml-database:deploy\n\
 ' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
-# Run the entrypoint script
+# Run the entrypoint script when container starts
 CMD ["/app/entrypoint.sh"]
