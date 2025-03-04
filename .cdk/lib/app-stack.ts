@@ -3,19 +3,25 @@ import {
     aws_ecs as ecs,
     aws_ecs_patterns as ecsPatterns,
     aws_iam as iam,
-    aws_efs as efs,
+    aws_logs as aws_logs,
+    aws_lambda as aws_lambda,
+    aws_logs_destinations,
+    aws_elasticache as elasticcache,
     aws_s3 as s3,
-    CfnOutput, IgnoreMode,
+    aws_efs as efs,
+    CfnOutput,
+    CustomResource,
+    Duration,
     RemovalPolicy,
     Stack,
-    StackProps, Duration, aws_lambda, aws_logs_destinations, aws_logs, CustomResource
-} from 'aws-cdk-lib';
-import * as elasticcache from "aws-cdk-lib/aws-elasticache";
+    CfnResource,
+    IgnoreMode,
+    StackProps
+} from "aws-cdk-lib";
 import {Construct} from 'constructs';
 import {DockerImageAsset} from "aws-cdk-lib/aws-ecr-assets";
 import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
 import {LogGroup, SubscriptionFilter} from "aws-cdk-lib/aws-logs";
-import {AccessPoint} from "aws-cdk-lib/aws-efs";
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
 import * as path from "path";
 
@@ -45,17 +51,17 @@ export class AppStack extends Stack {
             removalPolicy: RemovalPolicy.DESTROY,
         });
 
-        const accessPoint = new AccessPoint(this, 'AccessPoint', {
+        const accessPoint = new efs.AccessPoint(this, 'AccessPoint', {
             fileSystem: fileSystem,
             path: "/data",
+            posixUser: {
+                uid: "1001",
+                gid: "1001"
+            },
             createAcl: {
                 ownerGid: "1001",
                 ownerUid: "1001",
                 permissions: "755"
-            },
-            posixUser: {
-                uid: "1001",
-                gid: "1001"
             }
         });
 
@@ -235,8 +241,17 @@ export class AppStack extends Stack {
             timeout: Duration.seconds(5),
         });
 
+        // Create a dedicated security group for the migration task
+        const migrationSecurityGroup = new ec2.SecurityGroup(this, 'MigrationSecurityGroup', {
+            vpc: props.vpc,
+            allowAllOutbound: true,
+            description: 'Security group for database migrations task'
+        });
+
         // Allow access to EFS from Fargate ECS
         fileSystem.connections.allowDefaultPortFrom(webService.service.connections);
+        // Also allow access from the migration task
+        fileSystem.connections.allowDefaultPortFrom(migrationSecurityGroup);
 
         const scalableTarget = webService.service.autoScaleTaskCount({
             minCapacity: 1,
@@ -281,7 +296,7 @@ export class AppStack extends Stack {
                 CLUSTER_NAME: props.cluster.clusterName,
                 TASK_DEFINITION_ARN: migrationTask.taskDefinitionArn,
                 SUBNET_IDS: props.vpc.publicSubnets.map(subnet => subnet.subnetId).join(','),
-                SECURITY_GROUP_ID: webService.service.connections.securityGroups[0].securityGroupId
+                SECURITY_GROUP_ID: migrationSecurityGroup.securityGroupId // Use the dedicated security group
             },
             initialPolicy: [
                 new iam.PolicyStatement({
@@ -314,9 +329,15 @@ export class AppStack extends Stack {
             }
         });
 
-        // Make sure the web service depends on the migration custom resource
-        // This will ensure migrations run before the web service is updated
-        webService.node.addDependency(migrationCustomResource);
+        // Make sure the migration custom resource depends on all resources it needs
+        migrationCustomResource.node.addDependency(migrationTask);
+        migrationCustomResource.node.addDependency(migrationSecurityGroup);
+        migrationCustomResource.node.addDependency(runMigrationLambda);
+        
+        // Use the web service's CloudFormation resource to explicitly set a dependency
+        // on the migration custom resource without creating a circular reference
+        const cfnWebService = webService.service.node.defaultChild as CfnResource;
+        cfnWebService.addDependency(migrationCustomResource.node.defaultChild as CfnResource);
 
         const redisSecurityGroup = new ec2.SecurityGroup(
           this,
@@ -327,10 +348,19 @@ export class AppStack extends Stack {
               description: "Security group for the redis cluster",
           }
         );
+        
+        // Use addIngressRule instead of depending on the webService directly
         redisSecurityGroup.addIngressRule(
-          webService.service.connections.securityGroups[0],
+          ec2.Peer.securityGroupId(webService.service.connections.securityGroups[0].securityGroupId),
           ec2.Port.allTraffic(),
           "Allow access to redis from the web service"
+        );
+        
+        // Also allow the migration task to access Redis
+        redisSecurityGroup.addIngressRule(
+          ec2.Peer.securityGroupId(migrationSecurityGroup.securityGroupId),
+          ec2.Port.allTraffic(),
+          "Allow access to redis from the migration task"
         );
 
         // Create a subnet group
