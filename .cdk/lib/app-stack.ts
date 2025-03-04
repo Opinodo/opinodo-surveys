@@ -275,7 +275,7 @@ export class AppStack extends Stack {
         const runMigrationLambda = new NodejsFunction(this, 'RunMigrationLambda', {
             runtime: aws_lambda.Runtime.NODEJS_20_X,
             handler: 'handler',
-            entry: path.join(__dirname, '/../lambda/run-migration.ts'),
+            entry: path.join(__dirname, '../lambda/run-migration.ts'),
             timeout: Duration.minutes(15),
             environment: {
                 CLUSTER_NAME: props.cluster.clusterName,

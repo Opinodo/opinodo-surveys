@@ -1,0 +1,19 @@
+{
+  "name": "database-migrations",
+  "version": "1.0.0",
+  "description": "Database migrations for the opinodo-surveys project",
+  "main": "index.js",
+  "scripts": {
+    "db:migrate:deploy": "tsx ./src/scripts/apply-migrations.ts",
+    "db:create-saml-database:deploy": "tsx ./src/scripts/create-saml-database.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "6.0.1",
+    "@prisma/extension-accelerate": "1.2.1",
+    "dotenv-cli": "7.4.4",
+    "pg": "^8.11.3",
+    "prisma": "6.0.1",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}
