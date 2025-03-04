@@ -16,13 +16,12 @@ import {
     Stack,
     CfnResource,
     IgnoreMode,
-    StackProps,
-    LogGroup
+    StackProps
 } from "aws-cdk-lib";
 import {Construct} from 'constructs';
 import {DockerImageAsset} from "aws-cdk-lib/aws-ecr-assets";
 import {Certificate} from "aws-cdk-lib/aws-certificatemanager";
-import {SubscriptionFilter} from "aws-cdk-lib/aws-logs";
+import {LogGroup, SubscriptionFilter} from "aws-cdk-lib/aws-logs";
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
 import * as path from "path";
 
