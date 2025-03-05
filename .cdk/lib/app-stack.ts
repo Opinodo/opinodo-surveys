@@ -116,18 +116,24 @@ export class AppStack extends Stack {
             resources: [props.bucket.bucketArn],
         }));
 
-        // Import the existing log group instead of creating a new one
-        const migrationLogGroup = LogGroup.fromLogGroupName(
-            this, 
-            `${projectName}MigrationLogGroup`, 
-            `/ecs/${projectName}/migrations`
-        );
-        // Note: We can't set retention or removal policy on imported resources
+        migrationTask.addToExecutionRolePolicy(new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+                'logs:CreateLogGroup',
+                'logs:CreateLogStream',
+                'logs:PutLogEvents',
+                'logs:DescribeLogGroups',
+                'logs:DescribeLogStreams'
+            ],
+            resources: ['*']
+        }));
 
-        if (props.environmentName === 'sandbox') {
-            // Can't apply removal policy to imported resources
-            // migrationLogGroup.applyRemovalPolicy(RemovalPolicy.DESTROY);
-        }
+        // Create the migration log group instead of importing it
+        const migrationLogGroup = new LogGroup(this, `${projectName}MigrationLogGroup`, {
+            retention: 60,
+            logGroupName: `/ecs/${projectName}/migrations`,
+            removalPolicy: props.environmentName === 'sandbox' ? RemovalPolicy.DESTROY : RemovalPolicy.RETAIN
+        });
 
         const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
             directory: '../', // Specify the context directory
@@ -320,6 +326,17 @@ export class AppStack extends Stack {
                         migrationTask.taskRole.roleArn, 
                         migrationTask.executionRole?.roleArn || '*'
                     ]
+                }),
+                new iam.PolicyStatement({
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        'logs:CreateLogGroup',
+                        'logs:CreateLogStream',
+                        'logs:PutLogEvents',
+                        'logs:DescribeLogGroups',
+                        'logs:DescribeLogStreams'
+                    ],
+                    resources: ['*']
                 })
             ]
         });

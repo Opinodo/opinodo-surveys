@@ -26,6 +26,30 @@ export async function handler(event: CloudFormationCustomResourceEvent, context:
   }
 
   try {
+    // Ensure the log group exists before running the task
+    try {
+      const cloudwatchLogs = new AWS.CloudWatchLogs();
+      const logGroupName = `/ecs/${clusterName.split('/').pop()}/migrations`;
+      
+      console.log(`Checking if log group ${logGroupName} exists...`);
+      
+      try {
+        await cloudwatchLogs.describeLogGroups({
+          logGroupNamePrefix: logGroupName
+        }).promise();
+        console.log(`Log group ${logGroupName} exists.`);
+      } catch (error) {
+        console.log(`Creating log group ${logGroupName}...`);
+        await cloudwatchLogs.createLogGroup({
+          logGroupName
+        }).promise();
+        console.log(`Log group ${logGroupName} created.`);
+      }
+    } catch (error) {
+      console.warn('Error checking/creating log group:', error);
+      // Continue anyway, as the log group might be created by CDK
+    }
+
     // Run the migration task
     console.log(`Running migration task in cluster ${clusterName} with task definition ${taskDefinitionArn}`);
     
