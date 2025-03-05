@@ -128,12 +128,13 @@ export class AppStack extends Stack {
             resources: ['*']
         }));
 
-        // Create the migration log group instead of importing it
-        const migrationLogGroup = new LogGroup(this, `${projectName}MigrationLogGroup`, {
-            retention: 60,
-            logGroupName: `/ecs/${projectName}/migrations`,
-            removalPolicy: props.environmentName === 'sandbox' ? RemovalPolicy.DESTROY : RemovalPolicy.RETAIN
-        });
+        // Import the existing log group
+        const migrationLogGroupName = `/ecs/${projectName}/migrations`;
+        const migrationLogGroup = LogGroup.fromLogGroupName(
+            this, 
+            `${projectName}MigrationLogGroup`, 
+            migrationLogGroupName
+        );
 
         const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
             directory: '../', // Specify the context directory

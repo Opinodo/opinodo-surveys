@@ -40,10 +40,26 @@ export async function handler(event: CloudFormationCustomResourceEvent, context:
         console.log(`Log group ${logGroupName} exists.`);
       } catch (error) {
         console.log(`Creating log group ${logGroupName}...`);
-        await cloudwatchLogs.createLogGroup({
-          logGroupName
-        }).promise();
-        console.log(`Log group ${logGroupName} created.`);
+        try {
+          await cloudwatchLogs.createLogGroup({
+            logGroupName
+          }).promise();
+          console.log(`Log group ${logGroupName} created.`);
+          
+          // Set retention policy
+          await cloudwatchLogs.putRetentionPolicy({
+            logGroupName,
+            retentionInDays: 60
+          }).promise();
+          console.log(`Retention policy set for log group ${logGroupName}.`);
+        } catch (createError) {
+          // If the log group already exists (race condition), that's fine
+          if (createError.code === 'ResourceAlreadyExistsException') {
+            console.log(`Log group ${logGroupName} already exists (created by another process).`);
+          } else {
+            throw createError;
+          }
+        }
       }
     } catch (error) {
       console.warn('Error checking/creating log group:', error);
