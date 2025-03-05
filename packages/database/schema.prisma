@@ -3,7 +3,7 @@
 
 datasource db {
   provider   = "postgresql"
-  url        = env("DATABASE_URL")
+  url        = "postgresql://postgres:postgres@localhost:5432/formbricks?schema=public"
   extensions = [pgvector(map: "vector")]
 }
 
@@ -1083,4 +1083,10 @@ model ProjectTeam {
 
   @@id([projectId, teamId])
   @@index([teamId])
+}
+
+model DummyTable {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  name      String
 }
