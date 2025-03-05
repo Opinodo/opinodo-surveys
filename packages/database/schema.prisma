@@ -3,7 +3,7 @@
 
 datasource db {
   provider   = "postgresql"
-  url        = "postgresql://postgres:postgres@localhost:5432/formbricks?schema=public"
+  url        = env("DATABASE_URL")
   extensions = [pgvector(map: "vector")]
 }
 
