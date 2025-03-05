@@ -443,7 +443,7 @@ export function WelcomeCard({
   );
 }
 
-// Add TypeScript typess
+// Add TypeScript types
 declare global {
   interface Window {
     google?: {
