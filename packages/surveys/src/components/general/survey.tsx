@@ -9,6 +9,7 @@ import { WelcomeCard } from "@/components/general/welcome-card";
 import { AutoCloseWrapper } from "@/components/wrappers/auto-close-wrapper";
 import { StackedCardsContainer } from "@/components/wrappers/stacked-cards-container";
 import { ApiClient } from "@/lib/api-client";
+import { evaluateLogic, performActions } from "@/lib/logic";
 import { parseRecallInformation } from "@/lib/recall";
 import { ResponseQueue } from "@/lib/response-queue";
 import { SurveyState } from "@/lib/survey-state";
@@ -16,7 +17,6 @@ import { surveyTranslations } from "@/lib/surveyTranslations.ts";
 import { cn, getDefaultLanguageCode } from "@/lib/utils";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { type JSX, useCallback } from "react";
-import { evaluateLogic, performActions } from "@formbricks/lib/surveyLogic/utils";
 import { SurveyContainerProps } from "@formbricks/types/formbricks-surveys";
 import { type TJsEnvironmentStateSurvey, TJsFileUploadParams } from "@formbricks/types/js";
 import type {
@@ -122,6 +122,8 @@ export function Survey({
   }, [apiHost, environmentId, getSetIsError, getSetIsResponseSendingFinished, surveyState]);
 
   const [localSurvey, setlocalSurvey] = useState<TJsEnvironmentStateSurvey>(survey);
+  const [currentVariables, setCurrentVariables] = useState<TResponseVariables>({});
+
   const [timeLeft, setTimeLeft] = useState<number | undefined>(survey.timerDuration ?? undefined);
   const [isEndingPage, setIsEndingPage] = useState(false);
   const [isPreview] = useState(!getSetIsResponseSendingFinished);
@@ -130,6 +132,15 @@ export function Survey({
   useEffect(() => {
     setlocalSurvey(survey);
   }, [survey]);
+
+  useEffect(() => {
+    setCurrentVariables(
+      survey.variables.reduce<TResponseVariables>((acc, variable) => {
+        acc[variable.id] = variable.value;
+        return acc;
+      }, {})
+    );
+  }, [survey.variables]);
 
   const autoFocusEnabled = autoFocus ?? window.self === window.top;
 
@@ -153,12 +164,6 @@ export function Survey({
   const [history, setHistory] = useState<string[]>([]);
   const [responseData, setResponseData] = useState<TResponseData>(hiddenFieldsRecord ?? {});
   const [_variableStack, setVariableStack] = useState<VariableStackEntry[]>([]);
-  const [currentVariables, setCurrentVariables] = useState<TResponseVariables>(() => {
-    return localSurvey.variables.reduce<TResponseVariables>((acc, variable) => {
-      acc[variable.id] = variable.value;
-      return acc;
-    }, {});
-  });
 
   const [ttc, setTtc] = useState<TResponseTtc>({});
   const cardArrangement = useMemo(() => {
@@ -169,9 +174,7 @@ export function Survey({
   }, [localSurvey.type, styling.cardArrangement?.linkSurveys, styling.cardArrangement?.appSurveys]);
 
   const currentQuestionIndex = localSurvey.questions.findIndex((q) => q.id === questionId);
-  const currentQuestion = useMemo(() => {
-    return localSurvey.questions.find((q) => q.id === questionId);
-  }, [questionId, localSurvey.questions]);
+  const currentQuestion = localSurvey.questions[currentQuestionIndex];
 
   const contentRef = useRef<HTMLDivElement | null>(null);
   const showProgressBar = !styling.hideProgressBar;
