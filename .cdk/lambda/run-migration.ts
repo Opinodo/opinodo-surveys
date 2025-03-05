@@ -26,6 +26,11 @@ export async function handler(event: CloudFormationCustomResourceEvent, context:
   }
 
   try {
+    // Log group is now created by a custom resource before this Lambda is called
+    // So we can directly run the migration task
+    console.log(`Running migration task in cluster ${clusterName} with task definition ${taskDefinitionArn}`);
+    
+    // Run the migration task
     console.log(`Running migration task in cluster ${clusterName} with task definition ${taskDefinitionArn}`);
     
     // Add retry logic for starting the task
@@ -49,38 +54,40 @@ export async function handler(event: CloudFormationCustomResourceEvent, context:
           }
         }).promise();
         
-        if (runTaskResponse.failures && runTaskResponse.failures.length > 0) {
-          console.error('Task run failures:', JSON.stringify(runTaskResponse.failures, null, 2));
-          throw new Error(`Failed to run task: ${runTaskResponse.failures[0].reason}`);
-        }
-        
-        if (!runTaskResponse.tasks || runTaskResponse.tasks.length === 0) {
-          throw new Error('No tasks were started');
-        }
-        
-        // Successfully started task
+        // If we got here, the task was started successfully
         break;
       } catch (err) {
         retries++;
-        console.error(`Error starting task (attempt ${retries}/${maxRetries}):`, err);
+        console.log(`Error starting task (attempt ${retries}/${maxRetries}):`, err);
         
         if (retries >= maxRetries) {
           throw err;
         }
         
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 2000 * Math.pow(2, retries)));
       }
     }
+
+    if (!runTaskResponse || !runTaskResponse.tasks || runTaskResponse.tasks.length === 0) {
+      throw new Error('Failed to start the migration task');
+    }
+
+    const taskArn = runTaskResponse.tasks[0].taskArn;
+    if (!taskArn) {
+      throw new Error('Task ARN is undefined');
+    }
     
+    console.log(`Migration task started with ARN: ${taskArn}`);
+
     // Wait for the task to complete
-    const taskArn = runTaskResponse!.tasks![0].taskArn!;
-    console.log(`Task started with ARN: ${taskArn}`);
-    
     await waitForTaskCompletion(clusterName, taskArn);
-    
     console.log('Migration task completed successfully');
-    await sendResponse(event, context, 'SUCCESS', { Message: 'Migration task completed successfully' });
+
+    await sendResponse(event, context, 'SUCCESS', { 
+      Message: 'Migration task completed successfully', 
+      TaskArn: taskArn 
+    });
   } catch (error) {
     console.error('Error running migration task:', error);
     await sendResponse(event, context, 'FAILED', { 
@@ -90,66 +97,77 @@ export async function handler(event: CloudFormationCustomResourceEvent, context:
 }
 
 async function waitForTaskCompletion(clusterName: string, taskArn: string): Promise<void> {
-  const maxAttempts = 60; // 30 minutes (60 attempts * 30 seconds)
+  let taskStatus: string | undefined;
   let attempts = 0;
+  const maxAttempts = 60; // 5 minutes timeout (5 seconds * 60)
   
-  while (attempts < maxAttempts) {
+  do {
+    // Wait 5 seconds between checks
+    await new Promise(resolve => setTimeout(resolve, 5000));
     attempts++;
     
     try {
-      const describeTasksResponse = await ecs.describeTasks({
+      const describeResponse = await ecs.describeTasks({
         cluster: clusterName,
         tasks: [taskArn]
       }).promise();
-      
-      if (!describeTasksResponse.tasks || describeTasksResponse.tasks.length === 0) {
-        throw new Error('Task not found');
-      }
-      
-      const task = describeTasksResponse.tasks[0];
-      const lastStatus = task.lastStatus;
-      
-      console.log(`Task status (attempt ${attempts}/${maxAttempts}): ${lastStatus}`);
-      
-      if (lastStatus === 'STOPPED') {
-        const exitCode = task.containers?.[0]?.exitCode;
-        const reason = task.containers?.[0]?.reason || task.stoppedReason;
-        
-        if (exitCode === 0) {
-          console.log('Task completed successfully');
-          return;
-        } else {
-          // Get detailed information about the container status
-          const containerDetails = task.containers?.map(container => ({
-            name: container.name,
-            exitCode: container.exitCode,
-            reason: container.reason,
-            status: container.lastStatus
-          }));
-          
-          console.error('Container details:', JSON.stringify(containerDetails, null, 2));
-          console.error('Task stopped reason:', task.stoppedReason);
-          
-          throw new Error(`Task failed: ${reason || task.stoppedReason || 'Unknown error'}`);
+
+      if (!describeResponse.tasks || describeResponse.tasks.length === 0) {
+        console.warn(`Task not found, attempt ${attempts}/${maxAttempts}`);
+        if (attempts >= maxAttempts) {
+          throw new Error('Task not found after maximum attempts');
         }
+        continue;
+      }
+
+      const task = describeResponse.tasks[0];
+      taskStatus = task.lastStatus;
+      console.log(`Task status: ${taskStatus} (attempt ${attempts}/${maxAttempts})`);
+      
+      // Check if the task failed
+      const containerStatuses = task.containers?.map(container => {
+        return container.lastStatus;
+      });
+      
+      if (containerStatuses?.includes('STOPPED') && task.stoppedReason) {
+        throw new Error(`Task failed: ${task.stoppedReason}`);
       }
       
-      // Wait 30 seconds before checking again
-      await new Promise(resolve => setTimeout(resolve, 30000));
+      // Exit if we've waited too long
+      if (attempts >= maxAttempts) {
+        throw new Error(`Task did not complete within the timeout period (${maxAttempts * 5} seconds)`);
+      }
     } catch (error) {
       console.error(`Error checking task status (attempt ${attempts}/${maxAttempts}):`, error);
       
-      // If we've reached the maximum number of attempts, throw the error
+      // Only throw the error if we've reached max attempts
       if (attempts >= maxAttempts) {
         throw error;
       }
-      
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, 30000));
     }
+  } while (taskStatus !== 'STOPPED');
+  
+  // Verify that the task was successful by checking exit code
+  try {
+    const describeResponse = await ecs.describeTasks({
+      cluster: clusterName,
+      tasks: [taskArn]
+    }).promise();
+    
+    const task = describeResponse.tasks?.[0];
+    const exitCodes = task?.containers?.map(container => {
+      return container.exitCode;
+    });
+    
+    if (!exitCodes || exitCodes.some(code => code !== 0)) {
+      throw new Error(`Task completed with non-zero exit code: ${exitCodes}`);
+    }
+  } catch (error) {
+    console.error('Error verifying task completion:', error);
+    throw error;
   }
   
-  throw new Error('Task did not complete within the timeout period');
+  return;
 }
 
 async function sendResponse(

@@ -128,14 +128,53 @@ export class AppStack extends Stack {
             resources: ['*']
         }));
 
-        // Create the log group directly instead of using a custom resource
+        // Create a custom resource to ensure the log group exists
         const migrationLogGroupName = `/ecs/${projectName}/migrations`;
-        const migrationLogGroup = new aws_logs.LogGroup(this, `${projectName}MigrationLogGroup`, {
-            logGroupName: migrationLogGroupName,
-            retention: aws_logs.RetentionDays.TWO_MONTHS,
-            removalPolicy: RemovalPolicy.DESTROY
+        
+        // Create a Lambda function to handle the custom resource
+        const ensureLogGroupLambda = new NodejsFunction(this, 'EnsureLogGroupLambda', {
+            runtime: aws_lambda.Runtime.NODEJS_20_X,
+            handler: 'handler',
+            entry: path.join(__dirname, '../lambda/ensure-log-group.ts'),
+            timeout: Duration.minutes(1),
+            initialPolicy: [
+                new iam.PolicyStatement({
+                    effect: iam.Effect.ALLOW,
+                    actions: [
+                        'logs:CreateLogGroup',
+                        'logs:PutRetentionPolicy',
+                        'logs:DescribeLogGroups'
+                    ],
+                    resources: ['*']
+                })
+            ]
         });
         
+        // Create a custom resource that will ensure the log group exists
+        const ensureLogGroup = new CustomResource(this, 'EnsureLogGroupExists', {
+            serviceToken: ensureLogGroupLambda.functionArn,
+            properties: {
+                LogGroupName: migrationLogGroupName,
+                RetentionInDays: 60
+            }
+        });
+        
+        // Import the log group (whether it existed before or was just created)
+        const migrationLogGroup = LogGroup.fromLogGroupName(
+            this, 
+            `${projectName}MigrationLogGroup`, 
+            migrationLogGroupName
+        );
+        
+        // Add explicit dependency to ensure log group is created before the task
+        migrationTask.node.addDependency(ensureLogGroup);
+
+        const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
+            directory: '../', // Specify the context directory
+            file: './apps/web/Dockerfile',
+            ignoreMode: IgnoreMode.DOCKER,
+        });
+
         // Create a separate Docker image for migrations
         const migrationsDockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysMigrationsDockerImage', {
             directory: '../', // Specify the context directory
@@ -151,19 +190,7 @@ export class AppStack extends Stack {
             environmentFiles: [
                 ecs.EnvironmentFile.fromBucket(props.bucket, props.envFileName),
             ],
-            logging: ecs.LogDriver.awsLogs({
-                streamPrefix: `ecs`,
-                logGroup: migrationLogGroup
-            }),
-        });
-
-        // Add explicit dependency to ensure log group is created before the task
-        migrationTask.node.addDependency(migrationLogGroup);
-
-        const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
-            directory: '../', // Specify the context directory
-            file: './apps/web/Dockerfile',
-            ignoreMode: IgnoreMode.DOCKER,
+            logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs`, logGroup: migrationLogGroup}),
         });
 
         const webTask = new ecs.FargateTaskDefinition(this, `${projectName}-web`, {
