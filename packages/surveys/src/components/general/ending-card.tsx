@@ -128,7 +128,7 @@ export function EndingCard({
                         responseData,
                         variablesData
                       )
-                    : "Respondents will not see this card"
+                    : "One moment..."
                 }
                 questionId="EndingCard"
               />
@@ -140,7 +140,7 @@ export function EndingCard({
                         responseData,
                         variablesData
                       )
-                    : "They will be forwarded immediately"
+                    : "You are being forwarded"
                 }
                 questionId="EndingCard"
               />
