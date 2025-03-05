@@ -1084,9 +1084,3 @@ model ProjectTeam {
   @@id([projectId, teamId])
   @@index([teamId])
 }
-
-model DummyTable {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  name      String
-}
