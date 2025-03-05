@@ -1,36 +1,34 @@
 FROM node:22-alpine3.20 AS build
 
-# Install dependencies
-RUN apk update && apk add --no-cache g++ make gcc python3 openssl-dev
+# Install build dependencies
+RUN apk update && apk add --no-cache \
+    g++ \
+    make \
+    gcc \
+    python3 \
+    openssl-dev
 RUN npm install -g pnpm
 
-# Set build-only environment variables
-# This is never used to connect to a real DB, just for Prisma code generation
+# Set build-only environment variables for Prisma code generation
 ENV DATABASE_URL="postgresql://fake:fake@localhost:5432/fake?schema=public"
 
-# Create app directory
+# Set up working directory
 WORKDIR /app/packages/database
 
-# Copy only the necessary files for building
+# Copy necessary files for building
 COPY apps/migrations/migration-package.json ./package.json
 COPY packages/database/schema.prisma ./
 
-# Install dependencies including required Prisma generators
-RUN npm install
-RUN npm install prisma-json-types-generator
+# Install dependencies
+RUN npm install && \
+    npm install prisma-json-types-generator && \
+    # Install dependencies required by migrations
+    npm install @paralleldrive/cuid2 zod lodash date-fns nanoid
 
-# Install all dependencies that might be required by migrations
-RUN npm install @paralleldrive/cuid2
-RUN npm install zod
-RUN npm install lodash
-RUN npm install date-fns
-RUN npm install nanoid
-
-# Generate Prisma client code only - no database connection is made
-# This step validates the schema and generates TypeScript code
+# Generate Prisma client code
 RUN npx prisma generate
 
-# Create Prisma migrations directory
+# Create Prisma migrations directory structure
 RUN mkdir -p prisma/migrations
 
 # Start fresh for the runtime image (multi-stage build)
@@ -40,24 +38,23 @@ FROM node:22-alpine3.20
 RUN apk update && apk add --no-cache python3 openssl
 RUN npm install -g pnpm
 
+# Set up working directory
 WORKDIR /app/packages/database
 
-# Copy from build stage and add migration files
+# Copy build artifacts and migration files
 COPY --from=build /app/packages/database/node_modules ./node_modules
 COPY --from=build /app/packages/database/package.json ./
 COPY --from=build /app/packages/database/schema.prisma ./
 
-# Create Prisma migrations directory and copy migrations
+# Set up migration directories and copy files
 RUN mkdir -p prisma/migrations
 COPY packages/database/migration/ ./migration/
 COPY packages/database/src ./src/
 
-# Copy the health check and entrypoint scripts into the container
+# Copy and configure scripts
 COPY apps/migrations/health-check.sh /app/health-check.sh
 COPY apps/migrations/entrypoint.sh /app/entrypoint.sh
-
-# Make the scripts executable
 RUN chmod +x /app/health-check.sh /app/entrypoint.sh
 
-# Run the entrypoint script when container starts
+# Set entrypoint
 CMD ["/app/entrypoint.sh"]
