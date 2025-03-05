@@ -1,15 +1,8 @@
 #!/bin/sh
-set -e
-
-#===================================
-# DATABASE CONNECTION CHECK
-#===================================
-
 echo "Checking database connection..."
 npx prisma db execute --stdin <<EOF
 SELECT 1;
 EOF
-
 if [ $? -eq 0 ]; then
   echo "Database connection successful!"
   exit 0
