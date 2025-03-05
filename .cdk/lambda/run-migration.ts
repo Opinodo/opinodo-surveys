@@ -26,46 +26,10 @@ export async function handler(event: CloudFormationCustomResourceEvent, context:
   }
 
   try {
-    // Ensure the log group exists before running the task
-    try {
-      const cloudwatchLogs = new AWS.CloudWatchLogs();
-      const logGroupName = `/ecs/${clusterName.split('/').pop()}/migrations`;
-      
-      console.log(`Checking if log group ${logGroupName} exists...`);
-      
-      try {
-        await cloudwatchLogs.describeLogGroups({
-          logGroupNamePrefix: logGroupName
-        }).promise();
-        console.log(`Log group ${logGroupName} exists.`);
-      } catch (error) {
-        console.log(`Creating log group ${logGroupName}...`);
-        try {
-          await cloudwatchLogs.createLogGroup({
-            logGroupName
-          }).promise();
-          console.log(`Log group ${logGroupName} created.`);
-          
-          // Set retention policy
-          await cloudwatchLogs.putRetentionPolicy({
-            logGroupName,
-            retentionInDays: 60
-          }).promise();
-          console.log(`Retention policy set for log group ${logGroupName}.`);
-        } catch (createError) {
-          // If the log group already exists (race condition), that's fine
-          if (createError.code === 'ResourceAlreadyExistsException') {
-            console.log(`Log group ${logGroupName} already exists (created by another process).`);
-          } else {
-            throw createError;
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('Error checking/creating log group:', error);
-      // Continue anyway, as the log group might be created by CDK
-    }
-
+    // Log group is now created by a custom resource before this Lambda is called
+    // So we can directly run the migration task
+    console.log(`Running migration task in cluster ${clusterName} with task definition ${taskDefinitionArn}`);
+    
     // Run the migration task
     console.log(`Running migration task in cluster ${clusterName} with task definition ${taskDefinitionArn}`);
     
