@@ -888,6 +888,7 @@ export const ZSurvey = z
     pin: z.string().min(4, { message: "PIN must be a four digit number" }).nullish(),
     resultShareKey: z.string().nullable(),
     reward: z.number(),
+    priority: z.number(),
     countries: z.array(ZCountry),
     tags: z.array(ZTag),
     limitedCountries: z.boolean(),

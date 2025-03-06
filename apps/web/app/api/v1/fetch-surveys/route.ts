@@ -134,6 +134,7 @@ export async function GET(request: Request) {
             created_at: survey.createdAt,
             updated_at: survey.updatedAt,
             reward: survey.reward,
+            priority: survey.priority,
             survey_url: url,
             loi: calculateTimeToComplete(survey),
             background_image: backgroundImage,

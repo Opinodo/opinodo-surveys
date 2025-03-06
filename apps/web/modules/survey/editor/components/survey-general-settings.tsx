@@ -22,12 +22,12 @@ interface SurveyGeneralSettingsProps {
 }
 
 export function SurveyGeneralSettings({
-  localSurvey,
-  setLocalSurvey,
-  project,
-  environmentTags,
-  environmentId,
-}: SurveyGeneralSettingsProps) {
+                                        localSurvey,
+                                        setLocalSurvey,
+                                        project,
+                                        environmentTags,
+                                        environmentId,
+                                      }: SurveyGeneralSettingsProps) {
   const [open, setOpen] = useState(true);
   const [customReward, setCustomReward] = useState(localSurvey.reward);
   const [usingCustomReward, setUsingCustomReward] = useState(
@@ -39,6 +39,7 @@ export function SurveyGeneralSettings({
   const [timerDuration, setTimerDuration] = useState<number | undefined>(
     localSurvey.timerDuration ?? undefined
   );
+  const [priority, setPriority] = useState<number>(localSurvey.priority ?? 0);
 
   const toggleUsingDefaultReward = (isChecked: boolean) => {
     setUsingCustomReward(isChecked);
@@ -56,6 +57,16 @@ export function SurveyGeneralSettings({
     setLocalSurvey({
       ...localSurvey,
       reward: newValue,
+    });
+  };
+
+  const updatePriority = (e) => {
+    let newValue = parseInt(e.target.value, 10);
+    if (isNaN(newValue)) newValue = 0;
+    setPriority(newValue);
+    setLocalSurvey({
+      ...localSurvey,
+      priority: newValue,
     });
   };
 
@@ -149,7 +160,7 @@ export function SurveyGeneralSettings({
           <div>
             <p className="font-semibold text-slate-800">Survey General Settings</p>
             <p className="mt-1 text-sm text-slate-500">
-              Choose language, countries, reward, and timer settings for survey.
+              Choose language, countries, reward, priority, and timer settings for survey.
             </p>
           </div>
         </div>
@@ -191,6 +202,27 @@ export function SurveyGeneralSettings({
               </div>
             )}
           </div>
+
+          {/* Priority Setting */}
+          <div className="p-3">
+            <div className="ml-2">
+              <Label htmlFor="priorityInput" className="block text-sm font-semibold text-slate-700">
+                Survey Priority:
+              </Label>
+              <p className="text-xs font-normal text-slate-500 mb-2">
+                Set the priority of this survey. Higher values mean higher priority.
+              </p>
+              <Input
+                type="number"
+                id="priorityInput"
+                step="1"
+                onChange={updatePriority}
+                value={priority}
+                className="w-24 bg-white text-center text-sm"
+              />
+            </div>
+          </div>
+
           <div className="p-3">
             <div className="ml-2 flex items-center space-x-1">
               <Switch

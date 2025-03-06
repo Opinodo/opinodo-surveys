@@ -49,6 +49,7 @@ export async function GET(request: Request) {
       created_at: survey.createdAt,
       updated_at: survey.updatedAt,
       reward: survey.reward,
+      priority: survey.priority,
       survey_url: url,
       country: survey.countries.reduce((acc, country) => {
         acc[country.isoCode] = country.name;

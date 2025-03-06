@@ -291,6 +291,7 @@ export const mockSurvey: TSurvey = {
   countries: [],
   limitedCountries: false,
   reward: 0,
+  priority: 0,
   redirectOnFailUrl: "https://member.digiopinion.com/overview",
   hiddenFields: {
     enabled: true,

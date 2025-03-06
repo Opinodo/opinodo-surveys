@@ -79,6 +79,7 @@ export const selectSurvey = {
   pin: true,
   resultShareKey: true,
   reward: true,
+  priority: true,
   countries: true,
   tags: true,
   limitedCountries: true,

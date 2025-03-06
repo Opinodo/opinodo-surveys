@@ -205,6 +205,7 @@ const baseSurveyProperties = {
   isSingleResponsePerEmailEnabled: false,
   attributeFilters: [],
   reward: 5,
+  priority: 0,
   countries: [],
   tags: [],
   limitedCountries: false,

@@ -43,6 +43,7 @@ export const selectSurvey = {
   resultShareKey: true,
   showLanguageSwitch: true,
   reward: true,
+  priority: true,
   countries: true,
   tags: true,
   limitedCountries: true,
