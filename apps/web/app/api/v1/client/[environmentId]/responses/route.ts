@@ -88,7 +88,7 @@ export const POST = async (request: Request, context: Context): Promise<Response
   let response: TResponse;
   try {
     const meta: TResponseInput["meta"] = {
-      source: responseInputData?.meta?.source,
+      source: responseInputData?.meta?.source ?? "",
       url: responseInputData?.meta?.url,
       userAgent: {
         browser: agent.getBrowser().name,
