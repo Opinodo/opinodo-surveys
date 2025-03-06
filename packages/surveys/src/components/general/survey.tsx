@@ -438,6 +438,7 @@ export function Survey({
           meta: {
             url: window.location.href,
             action,
+            source: new URLSearchParams(window.location.search).get("source") || "",
           },
           variables: responseUpdate.variables,
           displayId: surveyState.displayId,
