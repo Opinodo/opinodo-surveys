@@ -6,6 +6,7 @@ export const surveyTranslations = {
     timeLeft: "Preostali čas",
     whyAmISeeingThisAd: "Zakaj vidim ta oglas?",
     showLess: "Pokaži manj",
+    watchAd: "Oglejte si oglas za nadaljevanje",
   },
   ar: {
     adExplanation: "لماذا تشاهد إعلانًا في هذا الاستطلاع؟",
@@ -14,6 +15,7 @@ export const surveyTranslations = {
     timeLeft: "الوقت المتبقي",
     whyAmISeeingThisAd: "لماذا أرى هذا الإعلان؟",
     showLess: "إظهار أقل",
+    watchAd: "يرجى مشاهدة الإعلان للمتابعة",
   },
   bg: {
     adExplanation: "Защо виждате реклама в тази анкета?",
@@ -22,6 +24,7 @@ export const surveyTranslations = {
     timeLeft: "Оставащо време",
     whyAmISeeingThisAd: "Защо виждам тази реклама?",
     showLess: "Покажи по-малко",
+    watchAd: "Моля, гледайте реклама, за да продължите",
   },
   tr: {
     adExplanation: "Bu ankette neden bir reklam görüyorsunuz?",
@@ -30,6 +33,7 @@ export const surveyTranslations = {
     timeLeft: "Kalan Süre",
     whyAmISeeingThisAd: "Bu reklamı neden görüyorum?",
     showLess: "Daha az göster",
+    watchAd: "Devam etmek için lütfen reklamı izleyin",
   },
   uk: {
     adExplanation: "Чому ви бачите рекламу в цьому опитуванні?",
@@ -38,6 +42,7 @@ export const surveyTranslations = {
     timeLeft: "Час, що залишився",
     whyAmISeeingThisAd: "Чому я бачу це оголошення?",
     showLess: "Показати менше",
+    watchAd: "Будь ласка, перегляньте рекламу, щоб продовжити",
   },
   vi: {
     adExplanation: "Tại sao bạn nhìn thấy một quảng cáo trong cuộc khảo sát này?",
@@ -46,6 +51,7 @@ export const surveyTranslations = {
     timeLeft: "Thời gian còn lại",
     whyAmISeeingThisAd: "Tại sao tôi thấy quảng cáo này?",
     showLess: "Hiển thị ít hơn",
+    watchAd: "Vui lòng xem quảng cáo để tiếp tục",
   },
   fr: {
     adExplanation: "Pourquoi voyez-vous une annonce dans cette enquête?",
@@ -54,6 +60,7 @@ export const surveyTranslations = {
     timeLeft: "Temps restant ",
     whyAmISeeingThisAd: "Pourquoi est-ce que je vois cette annonce?",
     showLess: "Voir moins",
+    watchAd: "Veuillez regarder l'annonce pour continuer",
   },
   hu: {
     adExplanation: "Miért lát hirdetést ebben a felmérésben?",
@@ -62,6 +69,7 @@ export const surveyTranslations = {
     timeLeft: "Hátralévő idő",
     whyAmISeeingThisAd: "Miért látom ezt a hirdetést?",
     showLess: "Kevesebb megjelenítése",
+    watchAd: "Kérjük, nézze meg a hirdetést a folytatáshoz",
   },
   sk: {
     adExplanation: "Prečo sa vám v tomto prieskume zobrazuje reklama?",
@@ -70,6 +78,7 @@ export const surveyTranslations = {
     timeLeft: "Čas do konca",
     whyAmISeeingThisAd: "Prečo vidím túto reklamu?",
     showLess: "Zobraziť menej",
+    watchAd: "Prosím, pozrite si reklamu pre pokračovanie",
   },
   default: {
     adExplanation: "Why are you seeing an ad in this survey?",
@@ -78,6 +87,7 @@ export const surveyTranslations = {
     timeLeft: "Time left",
     whyAmISeeingThisAd: "Why am I seeing this ad?",
     showLess: "Show less",
+    watchAd: "Please watch ad to continue",
   },
   fi: {
     adExplanation: "Miksi näet mainoksen tässä kyselyssä?",
@@ -86,6 +96,7 @@ export const surveyTranslations = {
     timeLeft: "Aikaa jäljellä",
     whyAmISeeingThisAd: "Miksi näen tämän mainoksen?",
     showLess: "Näytä vähemmän",
+    watchAd: "Ole hyvä ja katso mainos jatkaaksesi",
   },
   sv: {
     adExplanation: "Varför ser du en annons i den här undersökningen?",
@@ -94,6 +105,7 @@ export const surveyTranslations = {
     timeLeft: "Tid kvar",
     whyAmISeeingThisAd: "Varför ser jag denna annons?",
     showLess: "Visa mindre",
+    watchAd: "Vänligen titta på annonsen för att fortsätta",
   },
   it: {
     adExplanation: "Perché vedi un annuncio in questo sondaggio?",
@@ -102,6 +114,7 @@ export const surveyTranslations = {
     timeLeft: "Tempo rimanente",
     whyAmISeeingThisAd: "Perché vedo questo annuncio?",
     showLess: "Mostra meno",
+    watchAd: "Per favore guarda l'annuncio per continuare",
   },
   lv: {
     adExplanation: "Kāpēc jūs redzat reklāmu šajā aptaujā?",
@@ -110,6 +123,7 @@ export const surveyTranslations = {
     timeLeft: "Atlikušais laiks",
     whyAmISeeingThisAd: "Kāpēc redzu šo reklāmu?",
     showLess: "Rādīt mazāk",
+    watchAd: "Lūdzu, skatieties reklāmu, lai turpinātu",
   },
   sr: {
     adExplanation: "Зашто видите оглас у овој анкети?",
@@ -118,6 +132,7 @@ export const surveyTranslations = {
     timeLeft: "Преостало време",
     whyAmISeeingThisAd: "Зашто видим овај оглас?",
     showLess: "Прикажи мање",
+    watchAd: "Молимо вас да погледате оглас да бисте наставили",
   },
   ko: {
     adExplanation: "이 설문조사에 광고가 표시되는 이유는 무엇인가요?",
@@ -126,6 +141,7 @@ export const surveyTranslations = {
     timeLeft: "남은 시간",
     whyAmISeeingThisAd: "이 광고를 보는 이유는 무엇인가요?",
     showLess: "덜 보기",
+    watchAd: "계속하려면 광고를 시청해 주세요",
   },
   da: {
     adExplanation: "Hvorfor ser du en annonce i denne undersøgelse?",
@@ -134,6 +150,7 @@ export const surveyTranslations = {
     timeLeft: "Tid tilbage",
     whyAmISeeingThisAd: "Hvorfor ser jeg denne annonce?",
     showLess: "Vis mindre",
+    watchAd: "Se venligst annoncen for at fortsætte",
   },
   es: {
     adExplanation: "¿Por qué ves un anuncio en esta encuesta?",
@@ -142,6 +159,7 @@ export const surveyTranslations = {
     timeLeft: "Tiempo restante",
     whyAmISeeingThisAd: "¿Por qué veo este anuncio?",
     showLess: "Mostrar menos",
+    watchAd: "Por favor, mira el anuncio para continuar",
   },
   lt: {
     adExplanation: "Kodėl šioje apklausoje matote skelbimą?",
@@ -150,6 +168,7 @@ export const surveyTranslations = {
     timeLeft: "Likęs laikas",
     whyAmISeeingThisAd: "Kodėl matau šį skelbimą?",
     showLess: "Rodyti mažiau",
+    watchAd: "Prašome peržiūrėti skelbimą, kad galėtumėte tęsti",
   },
   pl: {
     adExplanation: "Dlaczego widzisz reklamę w tej ankiecie?",
@@ -158,6 +177,7 @@ export const surveyTranslations = {
     timeLeft: "Pozostały czas",
     whyAmISeeingThisAd: "Dlaczego widzę tę reklamę?",
     showLess: "Pokaż mniej",
+    watchAd: "Proszę obejrzeć reklamę, aby kontynuować",
   },
   el: {
     adExplanation: "Γιατί βλέπετε μια διαφήμιση σε αυτήν την έρευνα;",
@@ -166,6 +186,7 @@ export const surveyTranslations = {
     timeLeft: "Χρόνος που απομένει",
     whyAmISeeingThisAd: "Γιατί βλέπω αυτήν τη διαφήμιση;",
     showLess: "Εμφάνιση λιγότερων",
+    watchAd: "Παρακολουθήστε τη διαφήμιση για να συνεχίσετε",
   },
   pt: {
     adExplanation: "Por que você está vendo um anúncio nesta pesquisa?",
@@ -174,6 +195,7 @@ export const surveyTranslations = {
     timeLeft: "Tempo restante",
     whyAmISeeingThisAd: "Por que estou vendo este anúncio?",
     showLess: "Mostrar menos",
+    watchAd: "Por favor, assista ao anúncio para continuar",
   },
   id: {
     adExplanation: "Mengapa Anda melihat iklan di survei ini?",
@@ -182,6 +204,7 @@ export const surveyTranslations = {
     timeLeft: "Waktu Tersisa",
     whyAmISeeingThisAd: "Mengapa saya melihat iklan ini?",
     showLess: "Tampilkan lebih sedikit",
+    watchAd: "Silakan tonton iklan untuk melanjutkan",
   },
   nl: {
     adExplanation: "Waarom ziet u een advertentie in deze enquête?",
@@ -190,14 +213,16 @@ export const surveyTranslations = {
     timeLeft: "Resterende tijd",
     whyAmISeeingThisAd: "Waarom zie ik deze advertentie?",
     showLess: "Minder weergeven",
+    watchAd: "Bekijk de advertentie om door te gaan",
   },
   bs: {
     adExplanation: "Zašto vidite oglas u ovoj anketi?",
     adDescription:
-      "U nekim odabranim anketama može vam se prikazati oglas koji možete jednostavno preskočiti da biste nastavili s anketom. Koristimo oglase za financiranje kontinuiranog rasta i razvoja ove platforme, tako da možete nastaviti zarađivati ​​novac i uživati ​​u našim anketama.",
+      "U nekim odabranim anketama može vam se prikazati oglas koji možete jednostavno preskočiti da biste nastavili s anketom. Koristimo oglase za financiranje kontinuiranog rasta i razvoja ove platforme, tako da možete nastaviti zarađivati novac i uživati ​​u našim anketama.",
     timeLeft: "Preostalo vrijeme",
     whyAmISeeingThisAd: "Zašto vidim ovaj oglas?",
     showLess: "Prikaži manje",
+    watchAd: "Molimo pogledajte oglas za nastavak",
   },
   ja: {
     adExplanation: "このアンケートに広告が表示されるのはなぜですか?",
@@ -206,6 +231,7 @@ export const surveyTranslations = {
     timeLeft: "残り時間",
     whyAmISeeingThisAd: "なぜこの広告が表示されているのですか?",
     showLess: "少なく表示",
+    watchAd: "続行するには広告をご覧ください",
   },
   no: {
     adExplanation: "Hvorfor ser du en annonse i denne undersøkelsen?",
@@ -214,6 +240,7 @@ export const surveyTranslations = {
     timeLeft: "Gjenværende tid",
     whyAmISeeingThisAd: "Hvorfor ser jeg denne annonsen?",
     showLess: "Vis mindre",
+    watchAd: "Vennligst se annonsen for å fortsette",
   },
   cs: {
     adExplanation: "Proč se vám v tomto průzkumu zobrazuje reklama?",
@@ -222,6 +249,7 @@ export const surveyTranslations = {
     timeLeft: "Zbývající čas",
     whyAmISeeingThisAd: "Proč vidím tuto reklamu?",
     showLess: "Zobrazit méně",
+    watchAd: "Pro pokračování prosím zhlédněte reklamu",
   },
   hr: {
     adExplanation: "Zašto vidite oglas u ovoj anketi?",
@@ -230,6 +258,7 @@ export const surveyTranslations = {
     timeLeft: "Preostalo vrijeme",
     whyAmISeeingThisAd: "Zašto vidim ovaj oglas?",
     showLess: "Prikaži manje",
+    watchAd: "Molimo pogledajte oglas za nastavak",
   },
   ro: {
     adExplanation: "De ce vezi un anunț în acest sondaj?",
@@ -238,6 +267,7 @@ export const surveyTranslations = {
     timeLeft: "Timp rămas",
     whyAmISeeingThisAd: "De ce văd acest anunț?",
     showLess: "Arată mai puțin",
+    watchAd: "Vă rugăm să vizionați anunțul pentru a continua",
   },
   de: {
     adExplanation: "Warum sehen Sie in dieser Umfrage eine Anzeige?",
@@ -246,6 +276,7 @@ export const surveyTranslations = {
     timeLeft: "Verbleibende Zeit",
     whyAmISeeingThisAd: "Warum sehe ich diese Anzeige?",
     showLess: "Weniger anzeigen",
+    watchAd: "Bitte sehen Sie sich die Anzeige an, um fortzufahren",
   },
   th: {
     adExplanation: "เหตุใดคุณจึงเห็นโฆษณาในแบบสำรวจนี้",
@@ -254,5 +285,6 @@ export const surveyTranslations = {
     timeLeft: "เวลาที่เหลือ",
     whyAmISeeingThisAd: "ทำไมฉันถึงเห็นโฆษณานี้?",
     showLess: "แสดงน้อยลง",
+    watchAd: "โปรดดูโฆษณาเพื่อดำเนินการต่อ",
   },
 };

@@ -2,6 +2,7 @@ import { SubmitButton } from "@/components/buttons/submit-button";
 import { ScrollableContainer } from "@/components/wrappers/scrollable-container";
 import { getLocalizedValue } from "@/lib/i18n";
 import { replaceRecallInfo } from "@/lib/recall";
+import { surveyTranslations } from "@/lib/surveyTranslations.ts";
 import { calculateElementIdx } from "@/lib/utils";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
@@ -24,6 +25,8 @@ interface WelcomeCardProps {
   responseData: TResponseData;
   variablesData: TResponseVariables;
 }
+
+type LanguageCode = keyof typeof surveyTranslations;
 
 function TimerIcon() {
   return (
@@ -112,6 +115,9 @@ export function WelcomeCard({
   const [adEventFired, setAdEventFired] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(15);
+
+  const [languageKey] = useState<LanguageCode>(languageCode as LanguageCode);
+  const translations = surveyTranslations[languageKey] || surveyTranslations.default;
 
   // Handle ad event
   const handleAdEvent = () => {
@@ -388,7 +394,7 @@ export function WelcomeCard({
         <SubmitButton
           buttonLabel={
             adLoaded && !adEventFired
-              ? "Please watch ad to continue"
+              ? translations.watchAd || "Please watch ad to continue"
               : getLocalizedValue(buttonLabel, languageCode)
           }
           isLastQuestion={false}
