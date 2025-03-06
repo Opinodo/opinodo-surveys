@@ -7065,6 +7065,7 @@ export const previewSurvey = (projectName: string, t: TFnType) => {
     showLanguageSwitch: false,
     followUps: [],
     reward: 0,
+    priority: 0,
     redirectOnFailUrl: null,
     countries: [],
     limitedCountries: false,
