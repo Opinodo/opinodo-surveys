@@ -2,7 +2,9 @@ import { type Survey, SurveyStatus, SurveyType } from "@prisma/client";
 import { z } from "zod";
 import { extendZodWithOpenApi } from "zod-openapi";
 // eslint-disable-next-line import/no-relative-packages -- Need to import from parent package
-import { ZSurveyEnding, ZSurveyQuestion, ZSurveyVariable } from "../../types/surveys/types";
+import { ZCountry, ZSurveyEnding, ZSurveyQuestion, ZSurveyVariable } from "../../types/surveys/types";
+// eslint-disable-next-line import/no-relative-packages -- Need to import from parent package
+import { ZTag } from "../../types/tags";
 
 extendZodWithOpenApi(z);
 
@@ -217,6 +219,14 @@ const ZSurveyBase = z.object({
   displayPercentage: z.number().nullable().openapi({
     description: "The display percentage of the survey",
   }) as z.ZodType<Survey["displayPercentage"]>,
+  reward: z.number(),
+  priority: z.number(),
+  countries: z.array(ZCountry),
+  tags: z.array(ZTag),
+  limitedCountries: z.boolean(),
+  timerDuration: z.number().nullable(),
+  redirectOnFailUrl: z.string().url().nullable(),
+  failureCard: z.object({}),
 });
 
 export const ZSurvey = ZSurveyBase satisfies z.ZodType<Survey>;

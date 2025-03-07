@@ -385,37 +385,6 @@ export const getSurveyCount = reactCache(
     )()
 );
 
-export const getInProgressSurveyCount = reactCache(
-  async (environmentId: string, filterCriteria?: TSurveyFilterCriteria): Promise<number> =>
-    cache(
-      async () => {
-        validateInputs([environmentId, ZId]);
-        try {
-          const surveyCount = await prisma.survey.count({
-            where: {
-              environmentId: environmentId,
-              status: "inProgress",
-              ...buildWhereClause(filterCriteria),
-            },
-          });
-
-          return surveyCount;
-        } catch (error) {
-          if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            console.error(error);
-            throw new DatabaseError(error.message);
-          }
-
-          throw error;
-        }
-      },
-      [`getInProgressSurveyCount-${environmentId}-${JSON.stringify(filterCriteria)}`],
-      {
-        tags: [surveyCache.tag.byEnvironmentId(environmentId)],
-      }
-    )()
-);
-
 export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => {
   validateInputs([updatedSurvey, ZSurvey]);
 

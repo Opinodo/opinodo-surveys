@@ -108,6 +108,7 @@ export const ZResponse = z.object({
   displayId: z.string().nullable().openapi({
     description: "The display ID of the response",
   }),
+  panelistId: z.string().nullable(),
 }) satisfies z.ZodType<Response>;
 
 ZResponse.openapi({
