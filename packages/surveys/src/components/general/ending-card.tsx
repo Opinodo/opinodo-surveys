@@ -75,10 +75,10 @@ export function EndingCard({
     try {
       const url = replaceRecallInfo(urlString, responseData, variablesData);
       if (url && new URL(url)) {
+        const urlWithParams = appendQueryParams(url, survey.id, panelistId);
         if (onOpenExternalURL) {
-          onOpenExternalURL(url);
+          onOpenExternalURL(urlWithParams);
         } else {
-          const urlWithParams = appendQueryParams(url, survey.id, panelistId);
           window.top?.location.replace(urlWithParams);
         }
       }
