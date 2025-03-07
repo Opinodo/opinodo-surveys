@@ -21,6 +21,7 @@ interface EndingCardProps {
   languageCode: string;
   responseData: TResponseData;
   variablesData: TResponseVariables;
+  onOpenExternalURL?: (url: string) => void | Promise<void>;
   panelistId: string | null;
 }
 
@@ -35,11 +36,13 @@ export function EndingCard({
   responseData,
   panelistId,
   variablesData,
+  onOpenExternalURL,
 }: EndingCardProps) {
   const media =
     endingCard.type === "endScreen" && (endingCard.imageUrl ?? endingCard.videoUrl) ? (
       <QuestionMedia imgUrl={endingCard.imageUrl} videoUrl={endingCard.videoUrl} />
     ) : null;
+
   const checkmark = (
     <div className="fb-text-brand fb-flex fb-flex-col fb-items-center fb-justify-center">
       <svg
@@ -72,8 +75,12 @@ export function EndingCard({
     try {
       const url = replaceRecallInfo(urlString, responseData, variablesData);
       if (url && new URL(url)) {
-        const urlWithParams = appendQueryParams(url, survey.id, panelistId);
-        window.top?.location.replace(urlWithParams);
+        if (onOpenExternalURL) {
+          onOpenExternalURL(url);
+        } else {
+          const urlWithParams = appendQueryParams(url, survey.id, panelistId);
+          window.top?.location.replace(urlWithParams);
+        }
       }
     } catch (error) {
       console.error("Invalid URL after recall processing:", error);
