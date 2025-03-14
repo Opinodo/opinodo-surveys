@@ -3,9 +3,9 @@
 import { Input } from "@/modules/ui/components/input";
 import { Label } from "@/modules/ui/components/label";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
-import { TSurvey, TSurveyAffiliateOfferCard } from "@formbricks/types/surveys/types";
-import { TUserLocale } from "@formbricks/types/user";
+import { debounce } from "lodash";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { TSurveyAffiliateOfferCard } from "@formbricks/types/surveys/types";
 
 interface AffiliateOfferFormProps {
   isInvalid: boolean;
@@ -13,23 +13,6 @@ interface AffiliateOfferFormProps {
   updateSurvey: (data: Partial<TSurveyAffiliateOfferCard>) => void;
   endingCard: TSurveyAffiliateOfferCard;
   defaultRedirect: string;
-}
-
-// Custom hook for debouncing
-function useDebounce(callback, delay) {
-  const timeoutRef = useRef(null);
-
-  return (...args) => {
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Set a new timeout
-    timeoutRef.current = setTimeout(() => {
-      callback(...args);
-    }, delay);
-  };
 }
 
 export const AffiliateOfferForm = ({
@@ -42,6 +25,7 @@ export const AffiliateOfferForm = ({
   const { t } = useTranslate();
   const affiliateUrlInputRef = useRef<HTMLInputElement>(null);
   const skipLinkInputRef = useRef<HTMLInputElement>(null);
+  const isFirstRender = useRef(true);
 
   // Local form state
   const [formValues, setFormValues] = useState({
@@ -54,19 +38,23 @@ export const AffiliateOfferForm = ({
     skipLink: "",
   });
 
-  // Create a debounced version of updateSurvey
-  const debouncedUpdate = useDebounce((field, value) => {
-    if (field === "affiliateOfferUrl" || field === "skipLink") {
-      updateSurvey({ [field]: value });
-    } else {
-      // Create an updated value object that preserves language keys
-      const updatedValue = {
-        ...(typeof endingCard[field] === "object" ? endingCard[field] : {}),
-        [selectedLanguageCode]: value,
-      };
-      updateSurvey({ [field]: updatedValue });
-    }
-  }, 300); // 300ms is usually a good balance
+  // Create a debounced update function using lodash
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce((field: string, value: string) => {
+        if (field === "affiliateOfferUrl" || field === "skipLink") {
+          updateSurvey({ [field]: value });
+        } else {
+          // Create an updated value object that preserves language keys
+          const updatedValue = {
+            ...(typeof endingCard[field] === "object" ? endingCard[field] : {}),
+            [selectedLanguageCode]: value,
+          };
+          updateSurvey({ [field]: updatedValue });
+        }
+      }, 300),
+    [updateSurvey, endingCard, selectedLanguageCode]
+  );
 
   // Initialize form values from props
   useEffect(() => {
@@ -93,36 +81,45 @@ export const AffiliateOfferForm = ({
 
   // Initialize default values if needed
   useEffect(() => {
-    // Initialize default URLs if not set or empty
-    if (!endingCard.affiliateOfferUrl || endingCard.affiliateOfferUrl.trim() === "") {
-      updateSurvey({ affiliateOfferUrl: defaultRedirect });
-    }
+    if (isFirstRender.current) {
+      // Initialize default URLs if not set or empty
+      if (!endingCard.affiliateOfferUrl || endingCard.affiliateOfferUrl.trim() === "") {
+        updateSurvey({ affiliateOfferUrl: defaultRedirect });
+      }
 
-    if (!endingCard.skipLink || endingCard.skipLink.trim() === "") {
-      updateSurvey({ skipLink: defaultRedirect });
-    }
+      if (!endingCard.skipLink || endingCard.skipLink.trim() === "") {
+        updateSurvey({ skipLink: defaultRedirect });
+      }
 
-    // Ensure all text fields have a default value
-    if (!endingCard.headline || Object.keys(endingCard.headline).length === 0) {
-      updateSurvey({ headline: { default: "" } });
-    }
+      if (!endingCard.headline || Object.keys(endingCard.headline).length === 0) {
+        updateSurvey({ headline: { default: "" } });
+      }
 
-    if (!endingCard.subheader || Object.keys(endingCard.subheader).length === 0) {
-      updateSurvey({ subheader: { default: "" } });
-    }
+      if (!endingCard.subheader || Object.keys(endingCard.subheader).length === 0) {
+        updateSurvey({ subheader: { default: "" } });
+      }
 
-    if (!endingCard.promotionalMessage || Object.keys(endingCard.promotionalMessage).length === 0) {
-      updateSurvey({ promotionalMessage: { default: "" } });
-    }
+      if (!endingCard.promotionalMessage || Object.keys(endingCard.promotionalMessage).length === 0) {
+        updateSurvey({ promotionalMessage: { default: "" } });
+      }
 
-    if (!endingCard.affiliateButtonLabel || Object.keys(endingCard.affiliateButtonLabel).length === 0) {
-      updateSurvey({ affiliateButtonLabel: { default: "" } });
-    }
+      if (!endingCard.affiliateButtonLabel || Object.keys(endingCard.affiliateButtonLabel).length === 0) {
+        updateSurvey({ affiliateButtonLabel: { default: "" } });
+      }
 
-    if (!endingCard.skipLinkLabel || Object.keys(endingCard.skipLinkLabel).length === 0) {
-      updateSurvey({ skipLinkLabel: { default: "" } });
+      if (!endingCard.skipLinkLabel || Object.keys(endingCard.skipLinkLabel).length === 0) {
+        updateSurvey({ skipLinkLabel: { default: "" } });
+      }
+
+      isFirstRender.current = false;
     }
   }, [endingCard, defaultRedirect, updateSurvey]);
+
+  useEffect(() => {
+    return () => {
+      debouncedUpdate.cancel();
+    };
+  }, [debouncedUpdate]);
 
   // Handle input changes
   const handleInputChange = (field, value) => {

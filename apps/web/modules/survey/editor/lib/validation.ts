@@ -10,6 +10,7 @@ import {
   TInputFieldConfig,
   TSurvey,
   TSurveyAddressQuestion,
+  TSurveyAffiliateOfferCard,
   TSurveyCTAQuestion,
   TSurveyConsentQuestion,
   TSurveyContactInfoQuestion,
@@ -205,7 +206,7 @@ export const isWelcomeCardValid = (card: TSurveyWelcomeCard, surveyLanguages: TS
 };
 
 export const isEndingCardValid = (
-  card: TSurveyEndScreenCard | TSurveyRedirectUrlCard,
+  card: TSurveyEndScreenCard | TSurveyRedirectUrlCard | TSurveyAffiliateOfferCard,
   surveyLanguages: TSurveyLanguage[]
 ) => {
   if (card.type === "endScreen") {
@@ -218,6 +219,27 @@ export const isEndingCardValid = (
       isContentValid(card.headline, surveyLanguages) &&
       isContentValid(card.subheader, surveyLanguages) &&
       isContentValid(card.buttonLabel, surveyLanguages)
+    );
+  } else if (card.type === "affiliateOffer") {
+    if (card.affiliateOfferUrl) {
+      const affiliateUrlResult = z.string().url().safeParse(card.affiliateOfferUrl);
+      if (!affiliateUrlResult.success) {
+        return false;
+      }
+    }
+
+    if (card.skipLink) {
+      const skipLinkResult = z.string().url().safeParse(card.skipLink);
+      if (!skipLinkResult.success) {
+        return false;
+      }
+    }
+    return (
+      isContentValid(card.headline, surveyLanguages) &&
+      isContentValid(card.subheader, surveyLanguages) &&
+      isContentValid(card.affiliateButtonLabel, surveyLanguages) &&
+      isContentValid(card.skipLinkLabel, surveyLanguages) &&
+      isContentValid(card.promotionalMessage, surveyLanguages)
     );
   } else {
     const parseResult = z.string().url().safeParse(card.url);

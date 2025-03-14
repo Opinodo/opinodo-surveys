@@ -460,7 +460,11 @@ export const FollowUpModal = ({
                                       getLocalizedValue(ending.headline, selectedLanguageCode) || "Ending"
                                     );
                                   }
-
+                                  if (ending.type === "affiliateOffer") {
+                                    return (
+                                      getLocalizedValue(ending.headline, selectedLanguageCode) || "Ending"
+                                    );
+                                  }
                                   return ending.label || ending.url || "Ending";
                                 };
 

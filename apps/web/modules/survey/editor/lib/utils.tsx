@@ -795,7 +795,9 @@ export const getActionTargetOptions = (
       label:
         ending.type === "endScreen"
           ? getLocalizedValue(ending.headline, "default") || t("environments.surveys.edit.end_screen_card")
-          : ending.label || t("environments.surveys.edit.redirect_thank_you_card"),
+          : ending.type === "redirectToUrl"
+            ? ending.label || t("environments.surveys.edit.redirect_thank_you_card")
+            : t("environments.surveys.edit.redirect_thank_you_card"),
       value: ending.id,
     };
   });
