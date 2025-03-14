@@ -1,9 +1,11 @@
 "use client";
 
 import { translateText } from "@/modules/survey/editor/actions";
+import { AffiliateOfferForm } from "@/modules/survey/editor/components/affiliate-offer-form";
 import { EditorCardMenu } from "@/modules/survey/editor/components/editor-card-menu";
 import { EndScreenForm } from "@/modules/survey/editor/components/end-screen-form";
 import { RedirectUrlForm } from "@/modules/survey/editor/components/redirect-url-form";
+// New import
 import { findEndingCardUsedInLogic, formatTextWithSlashes } from "@/modules/survey/editor/lib/utils";
 import { ConfirmationModal } from "@/modules/ui/components/confirmation-modal";
 import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
@@ -14,7 +16,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { createId } from "@paralleldrive/cuid2";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { useTranslate } from "@tolgee/react";
-import { GripIcon, Handshake, Undo2 } from "lucide-react";
+import { GripIcon, Handshake, Link2, Undo2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { cn } from "@formbricks/lib/cn";
@@ -22,6 +24,7 @@ import { recallToHeadline } from "@formbricks/lib/utils/recall";
 import { TOrganizationBillingPlan } from "@formbricks/types/organizations";
 import {
   TSurvey,
+  TSurveyAffiliateOfferCard,
   TSurveyEndScreenCard,
   TSurveyQuestionId,
   TSurveyRedirectUrlCard,
@@ -74,6 +77,10 @@ export const EditEndingCard = ({
       label: t("environments.surveys.edit.redirect_to_url"),
       disabled: isRedirectToUrlDisabled,
     },
+    {
+      value: "affiliateOffer",
+      label: t("environments.surveys.edit.affiliate_offer"), // You'll need to add this translation
+    },
   ];
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -89,6 +96,9 @@ export const EditEndingCard = ({
     if (endingCard.type === "endScreen" && !endingCard.buttonLink) {
       updateSurvey({ buttonLink: defaultRedirect });
     }
+    if (endingCard.type === "affiliateOffer" && !endingCard.affiliateOfferUrl) {
+      updateSurvey({ affiliateOfferUrl: defaultRedirect });
+    }
   }, [endingCard, defaultRedirect]);
 
   const setOpen = (e) => {
@@ -99,7 +109,9 @@ export const EditEndingCard = ({
     }
   };
 
-  const updateSurvey = (data: Partial<TSurveyEndScreenCard> | Partial<TSurveyRedirectUrlCard>) => {
+  const updateSurvey = (
+    data: Partial<TSurveyEndScreenCard> | Partial<TSurveyRedirectUrlCard> | Partial<TSurveyAffiliateOfferCard>
+  ) => {
     setLocalSurvey((prevSurvey) => {
       const updatedEndings = prevSurvey.endings.map((ending, idx) =>
         idx === endingCardIndex ? { ...ending, ...data } : ending
@@ -179,6 +191,22 @@ export const EditEndingCard = ({
       if (endingCard.buttonLabel) {
         textsToTranslate["buttonLabel"] = endingCard.buttonLabel["default"];
       }
+    } else if (endingCard.type === "affiliateOffer") {
+      if (endingCard.headline) {
+        textsToTranslate["headline"] = endingCard.headline["default"];
+      }
+      if (endingCard.subheader) {
+        textsToTranslate["subheader"] = endingCard.subheader["default"];
+      }
+      if (endingCard.affiliateButtonLabel) {
+        textsToTranslate["affiliateButtonLabel"] = endingCard.affiliateButtonLabel["default"];
+      }
+      if (endingCard.skipLinkLabel) {
+        textsToTranslate["skipLinkLabel"] = endingCard.skipLinkLabel["default"];
+      }
+      if (endingCard.promotionalMessage) {
+        textsToTranslate["promotionalMessage"] = endingCard.promotionalMessage["default"];
+      }
     }
     return textsToTranslate;
   };
@@ -193,6 +221,22 @@ export const EditEndingCard = ({
       }
       if (endingCard.buttonLabel) {
         endingCard.buttonLabel[languageCode] = translatedTexts["buttonLabel"];
+      }
+    } else if (endingCard.type === "affiliateOffer") {
+      if (endingCard.headline) {
+        endingCard.headline[languageCode] = translatedTexts["headline"];
+      }
+      if (endingCard.subheader) {
+        endingCard.subheader[languageCode] = translatedTexts["subheader"];
+      }
+      if (endingCard.affiliateButtonLabel) {
+        endingCard.affiliateButtonLabel[languageCode] = translatedTexts["affiliateButtonLabel"];
+      }
+      if (endingCard.skipLinkLabel) {
+        endingCard.skipLinkLabel[languageCode] = translatedTexts["skipLinkLabel"];
+      }
+      if (endingCard.promotionalMessage) {
+        endingCard.promotionalMessage[languageCode] = translatedTexts["promotionalMessage"];
       }
     }
   };
@@ -244,6 +288,8 @@ export const EditEndingCard = ({
         <div className="mt-3 flex w-full justify-center">
           {endingCard.type === "endScreen" ? (
             <Handshake className="h-4 w-4" />
+          ) : endingCard.type === "affiliateOffer" ? (
+            <Link2 className="h-4 w-4" />
           ) : (
             <Undo2 className="h-4 w-4 rotate-180" />
           )}
@@ -276,12 +322,25 @@ export const EditEndingCard = ({
                       : t("environments.surveys.edit.ending_card"))}
                   {endingCard.type === "redirectToUrl" &&
                     (endingCard.label || t("environments.surveys.edit.redirect_to_url"))}
+                  {endingCard.type === "affiliateOffer" &&
+                    (endingCard.headline &&
+                    recallToHeadline(endingCard.headline, localSurvey, true, selectedLanguageCode)[
+                      selectedLanguageCode
+                    ]
+                      ? formatTextWithSlashes(
+                          recallToHeadline(endingCard.headline, localSurvey, true, selectedLanguageCode)[
+                            selectedLanguageCode
+                          ]
+                        )
+                      : t("environments.surveys.edit.affiliate_offer"))}
                 </p>
                 {!open && (
                   <p className="mt-1 truncate text-xs text-slate-500">
                     {endingCard.type === "endScreen"
                       ? t("environments.surveys.edit.ending_card")
-                      : t("environments.surveys.edit.redirect_to_url")}
+                      : endingCard.type === "redirectToUrl"
+                        ? t("environments.surveys.edit.redirect_to_url")
+                        : t("environments.surveys.edit.affiliate_offer")}
                   </p>
                 )}
               </div>
@@ -317,6 +376,8 @@ export const EditEndingCard = ({
                 if (!selectedOption?.disabled) {
                   if (newType === "redirectToUrl") {
                     updateSurvey({ type: "redirectToUrl" });
+                  } else if (newType === "affiliateOffer") {
+                    updateSurvey({ type: "affiliateOffer" });
                   } else {
                     updateSurvey({ type: "endScreen" });
                   }
@@ -342,6 +403,15 @@ export const EditEndingCard = ({
               localSurvey={localSurvey}
               endingCard={endingCard}
               updateSurvey={updateSurvey}
+              defaultRedirect={defaultRedirect}
+            />
+          )}
+          {endingCard.type === "affiliateOffer" && (
+            <AffiliateOfferForm
+              isInvalid={isInvalid}
+              selectedLanguageCode={selectedLanguageCode}
+              updateSurvey={updateSurvey}
+              endingCard={endingCard}
               defaultRedirect={defaultRedirect}
             />
           )}

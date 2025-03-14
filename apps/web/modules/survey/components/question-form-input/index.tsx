@@ -18,6 +18,7 @@ import { recallToHeadline } from "@formbricks/lib/utils/recall";
 import {
   TI18nString,
   TSurvey,
+  TSurveyAffiliateOfferCard,
   TSurveyEndScreenCard,
   TSurveyQuestion,
   TSurveyQuestionChoice,
@@ -41,7 +42,9 @@ interface QuestionFormInputProps {
   localSurvey: TSurvey;
   questionIdx: number;
   updateQuestion?: (questionIdx: number, data: Partial<TSurveyQuestion>) => void;
-  updateSurvey?: (data: Partial<TSurveyEndScreenCard> | Partial<TSurveyRedirectUrlCard>) => void;
+  updateSurvey?: (
+    data: Partial<TSurveyEndScreenCard> | Partial<TSurveyRedirectUrlCard> | Partial<TSurveyAffiliateOfferCard>
+  ) => void;
   updateChoice?: (choiceIdx: number, data: Partial<TSurveyQuestionChoice>) => void;
   updateMatrixLabel?: (index: number, type: "row" | "column", data: Partial<TSurveyQuestion>) => void;
   isInvalid: boolean;

@@ -84,7 +84,26 @@ export const ZSurveyRedirectUrlCard = ZSurveyEndingBase.extend({
 
 export type TSurveyRedirectUrlCard = z.infer<typeof ZSurveyRedirectUrlCard>;
 
-export const ZSurveyEnding = z.union([ZSurveyEndScreenCard, ZSurveyRedirectUrlCard]);
+export const ZSurveyAffiliateOfferCard = ZSurveyEndingBase.extend({
+  type: z.literal("affiliateOffer"),
+  affiliateOfferUrl: getZSafeUrl("Invalid Affiliate Offer URL").optional(),
+  affiliateButtonLabel: ZI18nString.optional(),
+  skipLinkLabel: ZI18nString.optional(),
+  skipLink: getZSafeUrl("Invalid Skip Link URL").optional(),
+  promotionalMessage: ZI18nString.optional(),
+  headline: ZI18nString.optional(),
+  subheader: ZI18nString.optional(),
+  imageUrl: z.string().optional(),
+  videoUrl: z.string().optional(),
+});
+
+export type TSurveyAffiliateOfferCard = z.infer<typeof ZSurveyAffiliateOfferCard>;
+
+export const ZSurveyEnding = z.union([
+  ZSurveyEndScreenCard,
+  ZSurveyRedirectUrlCard,
+  ZSurveyAffiliateOfferCard,
+]);
 
 export type TSurveyEnding = z.infer<typeof ZSurveyEnding>;
 
@@ -1483,6 +1502,11 @@ const isInvalidOperatorsForQuestionType = (
       break;
     case TSurveyQuestionTypeEnum.ContactInfo:
       if (!["isSubmitted", "isSkipped"].includes(operator)) {
+        isInvalidOperator = true;
+      }
+      break;
+    case TSurveyQuestionTypeEnum.Ad:
+      if (!["isSkipped"].includes(operator)) {
         isInvalidOperator = true;
       }
       break;

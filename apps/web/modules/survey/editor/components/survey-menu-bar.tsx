@@ -20,6 +20,7 @@ import {
   TSurveyEditorTabs,
   TSurveyQuestion,
   ZSurvey,
+  ZSurveyAffiliateOfferCard,
   ZSurveyEndScreenCard,
   ZSurveyRedirectUrlCard,
 } from "@formbricks/types/surveys/types";
@@ -227,6 +228,8 @@ export const SurveyMenuBar = ({
       localSurvey.endings = localSurvey.endings.map((ending) => {
         if (ending.type === "redirectToUrl") {
           return ZSurveyRedirectUrlCard.parse(ending);
+        } else if (ending.type === "affiliateOffer") {
+          return ZSurveyAffiliateOfferCard.parse(ending);
         } else {
           return ZSurveyEndScreenCard.parse(ending);
         }

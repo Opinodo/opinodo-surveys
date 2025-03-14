@@ -9,11 +9,15 @@ import { replaceRecallInfo } from "@/lib/recall";
 import { useEffect } from "preact/hooks";
 import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
 import { type TResponseData, type TResponseVariables } from "@formbricks/types/responses";
-import { type TSurveyEndScreenCard, type TSurveyRedirectUrlCard } from "@formbricks/types/surveys/types";
+import {
+  TSurveyAffiliateOfferCard,
+  type TSurveyEndScreenCard,
+  type TSurveyRedirectUrlCard,
+} from "@formbricks/types/surveys/types";
 
 interface EndingCardProps {
   survey: TJsEnvironmentStateSurvey;
-  endingCard: TSurveyEndScreenCard | TSurveyRedirectUrlCard;
+  endingCard: TSurveyEndScreenCard | TSurveyRedirectUrlCard | TSurveyAffiliateOfferCard;
   isRedirectDisabled: boolean;
   isResponseSendingFinished: boolean;
   autoFocusEnabled: boolean;
@@ -39,7 +43,8 @@ export function EndingCard({
   onOpenExternalURL,
 }: EndingCardProps) {
   const media =
-    endingCard.type === "endScreen" && (endingCard.imageUrl ?? endingCard.videoUrl) ? (
+    (endingCard.type === "endScreen" || endingCard.type === "affiliateOffer") &&
+    (endingCard.imageUrl ?? endingCard.videoUrl) ? (
       <QuestionMedia imgUrl={endingCard.imageUrl} videoUrl={endingCard.videoUrl} />
     ) : null;
 
@@ -88,8 +93,12 @@ export function EndingCard({
   };
 
   const handleSubmit = () => {
-    if (!isRedirectDisabled && endingCard.type === "endScreen" && endingCard.buttonLink) {
-      processAndRedirect(endingCard.buttonLink);
+    if (!isRedirectDisabled) {
+      if (endingCard.type === "endScreen" && endingCard.buttonLink) {
+        processAndRedirect(endingCard.buttonLink);
+      } else if (endingCard.type === "affiliateOffer" && endingCard.affiliateOfferUrl) {
+        processAndRedirect(endingCard.affiliateOfferUrl);
+      }
     }
   };
 
@@ -119,17 +128,32 @@ export function EndingCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- we only want to run this effect when isCurrent changes
   }, [isCurrent]);
 
+  const renderPromotionalMessage = (message: string | undefined) => {
+    if (!message) return null;
+    const formattedText = message.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    return (
+      <div
+        className="fb-my-4 fb-mx-auto fb-max-w-md fb-rounded-md fb-bg-brand fb-text-on-brand fb-p-4"
+        dangerouslySetInnerHTML={{ __html: formattedText }}
+        style={{
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        }}
+      />
+    );
+  };
+
   return (
     <ScrollableContainer>
       <div className="fb-text-center">
         {isResponseSendingFinished ? (
           <>
-            {endingCard.type === "endScreen" && (media ?? checkmark)}
+            {(endingCard.type === "endScreen" || endingCard.type === "affiliateOffer") &&
+              (media ?? checkmark)}
             <div>
               <Headline
                 alignTextCenter
                 headline={
-                  endingCard.type === "endScreen"
+                  endingCard.type === "endScreen" || endingCard.type === "affiliateOffer"
                     ? replaceRecallInfo(
                         getLocalizedValue(endingCard.headline, languageCode),
                         responseData,
@@ -141,7 +165,7 @@ export function EndingCard({
               />
               <Subheader
                 subheader={
-                  endingCard.type === "endScreen"
+                  endingCard.type === "endScreen" || endingCard.type === "affiliateOffer"
                     ? replaceRecallInfo(
                         getLocalizedValue(endingCard.subheader, languageCode),
                         responseData,
@@ -151,6 +175,19 @@ export function EndingCard({
                 }
                 questionId="EndingCard"
               />
+
+              {/* Promotional Message for Affiliate Offer */}
+              {endingCard.type === "affiliateOffer" &&
+                endingCard.promotionalMessage &&
+                renderPromotionalMessage(
+                  replaceRecallInfo(
+                    getLocalizedValue(endingCard.promotionalMessage, languageCode),
+                    responseData,
+                    variablesData
+                  )
+                )}
+
+              {/* Button for End Screen */}
               {endingCard.type === "endScreen" && endingCard.buttonLabel ? (
                 <div className="fb-mt-6 fb-flex fb-w-full fb-flex-col fb-items-center fb-justify-center fb-space-y-4">
                   <SubmitButton
@@ -163,6 +200,34 @@ export function EndingCard({
                     focus={isCurrent ? autoFocusEnabled : false}
                     onClick={handleSubmit}
                   />
+                </div>
+              ) : null}
+
+              {/* Buttons for Affiliate Offer */}
+              {endingCard.type === "affiliateOffer" ? (
+                <div className="fb-mt-6 fb-flex fb-w-full fb-flex-col fb-items-center fb-justify-center fb-space-y-4">
+                  {/* Primary CTA - Affiliate Offer Button */}
+                  <SubmitButton
+                    buttonLabel={replaceRecallInfo(
+                      getLocalizedValue(endingCard.affiliateButtonLabel, languageCode) || "Get Offer",
+                      responseData,
+                      variablesData
+                    )}
+                    isLastQuestion={false}
+                    focus={isCurrent ? autoFocusEnabled : false}
+                    onClick={handleSubmit}
+                  />
+
+                  {/* Secondary Text Link - Skip */}
+                  <button
+                    className="fb-text-brand fb-mt-2 fb-cursor-pointer fb-text-sm fb-underline"
+                    onClick={handleSubmit}>
+                    {replaceRecallInfo(
+                      getLocalizedValue(endingCard.skipLinkLabel, languageCode) || "No thanks, continue",
+                      responseData,
+                      variablesData
+                    )}
+                  </button>
                 </div>
               ) : null}
             </div>

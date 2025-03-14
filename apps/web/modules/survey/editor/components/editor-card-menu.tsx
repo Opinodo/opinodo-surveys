@@ -25,6 +25,7 @@ import { ArrowDownIcon, ArrowUpIcon, CopyIcon, EllipsisIcon, LanguagesIcon, Tras
 import { useState } from "react";
 import {
   TSurvey,
+  TSurveyAffiliateOfferCard,
   TSurveyEndScreenCard,
   TSurveyQuestion,
   TSurveyQuestionTypeEnum,
@@ -39,7 +40,7 @@ interface EditorCardMenuProps {
   deleteCard: (cardIdx: number) => void;
   translateCard: (cardIdx: number) => void;
   moveCard: (cardIdx: number, up: boolean) => void;
-  card: TSurveyQuestion | TSurveyEndScreenCard | TSurveyRedirectUrlCard;
+  card: TSurveyQuestion | TSurveyEndScreenCard | TSurveyRedirectUrlCard | TSurveyAffiliateOfferCard;
   updateCard: (cardIdx: number, updatedAttributes: any) => void;
   addCard: (question: any, index?: number) => void;
   cardType: "question" | "ending";
@@ -66,7 +67,7 @@ export const EditorCardMenu = ({
   const QUESTIONS_ICON_MAP = getQuestionIconMap(t);
   const [logicWarningModal, setLogicWarningModal] = useState(false);
   const [changeToType, setChangeToType] = useState(() => {
-    if (card.type !== "endScreen" && card.type !== "redirectToUrl") {
+    if (card.type !== "endScreen" && card.type !== "redirectToUrl" && card.type !== "affiliateOffer") {
       return card.type;
     }
 
