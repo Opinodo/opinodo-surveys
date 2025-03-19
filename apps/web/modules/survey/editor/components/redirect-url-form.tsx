@@ -4,7 +4,7 @@ import { RecallWrapper } from "@/modules/survey/components/question-form-input/c
 import { Input } from "@/modules/ui/components/input";
 import { Label } from "@/modules/ui/components/label";
 import { useTranslate } from "@tolgee/react";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useRef } from "react";
 import { headlineToRecall, recallToHeadline } from "@formbricks/lib/utils/recall";
 import { TSurvey, TSurveyRedirectUrlCard } from "@formbricks/types/surveys/types";
