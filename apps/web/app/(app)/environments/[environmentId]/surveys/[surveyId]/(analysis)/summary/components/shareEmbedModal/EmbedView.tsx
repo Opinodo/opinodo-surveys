@@ -76,7 +76,7 @@ export const EmbedView = ({
         <div
           className={`col-span-4 h-full overflow-y-auto bg-slate-50 px-4 py-6 ${survey.type === "link" ? "lg:col-span-3" : ""} lg:p-6`}>
           {activeId === "email" ? (
-            <EmailTab surveyId={survey.id} email={email} />
+            <EmailTab surveyId={survey.id} email={email} survey={survey} locale={locale} />
           ) : activeId === "webpage" ? (
             <WebsiteTab surveyUrl={surveyUrl} environmentId={environmentId} />
           ) : activeId === "link" ? (

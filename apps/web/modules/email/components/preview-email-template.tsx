@@ -50,14 +50,24 @@ export async function PreviewEmailTemplate({
   survey,
   surveyUrl,
   styling,
+  locale,
   t,
 }: PreviewEmailTemplateProps): Promise<React.JSX.Element> {
-  const url = `${surveyUrl}?preview=true`;
-  const urlWithPrefilling = `${surveyUrl}?preview=true&skipPrefilled=true&`;
-  const defaultLanguageCode = "default";
+  // For default survey language, we should use "default" as language code,
+  // For non-default languages, we use the actual language code
+  const defaultLangCode = "default";
+  const isDefaultLanguage = survey.languages?.some((lang) => lang.default && lang.language.code === locale);
+
+  // Only add lang parameter for non-default languages
+  const langParam = !isDefaultLanguage && locale !== "default" ? `&lang=${locale}` : "";
+  const url = `${surveyUrl}?preview=true${langParam}`;
+  const urlWithPrefilling = `${surveyUrl}?preview=true&skipPrefilled=true${langParam}&`;
+
+  // Use "default" for the default language or if locale is "default"
+  const languageCode = isDefaultLanguage || locale === "default" ? defaultLangCode : locale;
   const firstQuestion = survey.questions[0];
-  const headline = parseRecallInfo(getLocalizedValue(firstQuestion.headline, defaultLanguageCode));
-  const subheader = parseRecallInfo(getLocalizedValue(firstQuestion.subheader, defaultLanguageCode));
+  const headline = parseRecallInfo(getLocalizedValue(firstQuestion.headline, languageCode));
+  const subheader = parseRecallInfo(getLocalizedValue(firstQuestion.subheader, languageCode));
   const brandColor = styling.brandColor?.light ?? COLOR_DEFAULTS.brandColor;
 
   switch (firstQuestion.type) {
@@ -77,14 +87,14 @@ export async function PreviewEmailTemplate({
             <div
               className="m-0 p-0"
               dangerouslySetInnerHTML={{
-                __html: getLocalizedValue(firstQuestion.html, defaultLanguageCode) || "",
+                __html: getLocalizedValue(firstQuestion.html, languageCode) || "",
               }}
             />
           </Container>
 
           <Container className="border-input-border-color bg-input-color rounded-custom m-0 mt-4 block w-full max-w-none border border-solid p-4 font-medium text-slate-800">
             <Text className="text-question-color m-0 inline-block">
-              {getLocalizedValue(firstQuestion.label, defaultLanguageCode)}
+              {getLocalizedValue(firstQuestion.label, languageCode)}
             </Text>
           </Container>
           <Container className="mx-0 mt-4 flex max-w-none justify-end">
@@ -144,12 +154,12 @@ export async function PreviewEmailTemplate({
                 <Row>
                   <Column>
                     <Text className="m-0 inline-block w-max p-0">
-                      {getLocalizedValue(firstQuestion.lowerLabel, defaultLanguageCode)}
+                      {getLocalizedValue(firstQuestion.lowerLabel, languageCode)}
                     </Text>
                   </Column>
                   <Column className="text-right">
                     <Text className="m-0 inline-block w-max p-0 text-right">
-                      {getLocalizedValue(firstQuestion.upperLabel, defaultLanguageCode)}
+                      {getLocalizedValue(firstQuestion.upperLabel, languageCode)}
                     </Text>
                   </Column>
                 </Row>
@@ -163,7 +173,7 @@ export async function PreviewEmailTemplate({
       return (
         <EmailTemplateWrapper styling={styling} surveyUrl={url}>
           <Text className="text-question-color m-0 block text-base font-semibold leading-6">
-            {getLocalizedValue(firstQuestion.headline, defaultLanguageCode)}
+            {getLocalizedValue(firstQuestion.headline, languageCode)}
           </Text>
 
           <Container className="mx-0 mt-4 max-w-none">
@@ -173,7 +183,7 @@ export async function PreviewEmailTemplate({
                 isLight(brandColor) ? "text-black" : "text-white"
               )}
               href={`${urlWithPrefilling}${firstQuestion.id}=clicked`}>
-              {getLocalizedValue(firstQuestion.buttonLabel, defaultLanguageCode)}
+              {getLocalizedValue(firstQuestion.buttonLabel, languageCode)}
             </EmailButton>
           </Container>
           <EmailFooter />
@@ -187,7 +197,7 @@ export async function PreviewEmailTemplate({
             <div
               className="m-0 p-0"
               dangerouslySetInnerHTML={{
-                __html: getLocalizedValue(firstQuestion.html, defaultLanguageCode) || "",
+                __html: getLocalizedValue(firstQuestion.html, languageCode) || "",
               }}
             />
           </Container>
@@ -197,7 +207,7 @@ export async function PreviewEmailTemplate({
               <EmailButton
                 className="rounded-custom inline-flex cursor-pointer appearance-none px-6 py-3 text-sm font-medium text-black"
                 href={`${urlWithPrefilling}${firstQuestion.id}=dismissed`}>
-                {getLocalizedValue(firstQuestion.dismissButtonLabel, defaultLanguageCode) || "Skip"}
+                {getLocalizedValue(firstQuestion.dismissButtonLabel, languageCode) || "Skip"}
               </EmailButton>
             )}
             <EmailButton
@@ -206,7 +216,7 @@ export async function PreviewEmailTemplate({
                 isLight(brandColor) ? "text-black" : "text-white"
               )}
               href={`${urlWithPrefilling}${firstQuestion.id}=clicked`}>
-              {getLocalizedValue(firstQuestion.buttonLabel, defaultLanguageCode)}
+              {getLocalizedValue(firstQuestion.buttonLabel, languageCode)}
             </EmailButton>
           </Container>
           <EmailFooter />
@@ -263,12 +273,12 @@ export async function PreviewEmailTemplate({
                 <Row>
                   <Column>
                     <Text className="m-0 inline-block p-0">
-                      {getLocalizedValue(firstQuestion.lowerLabel, defaultLanguageCode)}
+                      {getLocalizedValue(firstQuestion.lowerLabel, languageCode)}
                     </Text>
                   </Column>
                   <Column className="text-right">
                     <Text className="m-0 inline-block p-0 text-right">
-                      {getLocalizedValue(firstQuestion.upperLabel, defaultLanguageCode)}
+                      {getLocalizedValue(firstQuestion.upperLabel, languageCode)}
                     </Text>
                   </Column>
                 </Row>
@@ -287,7 +297,7 @@ export async function PreviewEmailTemplate({
               <Section
                 className="border-input-border-color bg-input-color text-question-color rounded-custom mt-2 block w-full border border-solid p-4"
                 key={choice.id}>
-                {getLocalizedValue(choice.label, defaultLanguageCode)}
+                {getLocalizedValue(choice.label, languageCode)}
               </Section>
             ))}
           </Container>
@@ -303,7 +313,7 @@ export async function PreviewEmailTemplate({
               <Section
                 className="border-input-border-color bg-input-color text-question-color rounded-custom mt-2 block w-full border border-solid p-4"
                 key={choice.id}>
-                {getLocalizedValue(choice.label, defaultLanguageCode)}
+                {getLocalizedValue(choice.label, languageCode)}
               </Section>
             ))}
           </Container>
@@ -318,9 +328,9 @@ export async function PreviewEmailTemplate({
             {firstQuestion.choices.map((choice) => (
               <Link
                 className="border-input-border-color bg-input-color text-question-color rounded-custom mt-2 block border border-solid p-4 hover:bg-slate-100"
-                href={`${urlWithPrefilling}${firstQuestion.id}=${getLocalizedValue(choice.label, defaultLanguageCode)}`}
+                href={`${urlWithPrefilling}${firstQuestion.id}=${getLocalizedValue(choice.label, languageCode)}`}
                 key={choice.id}>
-                {getLocalizedValue(choice.label, defaultLanguageCode)}
+                {getLocalizedValue(choice.label, languageCode)}
               </Link>
             ))}
           </Container>

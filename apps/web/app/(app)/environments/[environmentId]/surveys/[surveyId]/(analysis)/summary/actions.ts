@@ -14,6 +14,7 @@ import { ResourceNotFoundError } from "@formbricks/types/errors";
 
 const ZSendEmbedSurveyPreviewEmailAction = z.object({
   surveyId: ZId,
+  language: z.string().optional(),
 });
 
 export const sendEmbedSurveyPreviewEmailAction = authenticatedActionClient
@@ -43,7 +44,10 @@ export const sendEmbedSurveyPreviewEmailAction = authenticatedActionClient
       throw new ResourceNotFoundError("Survey", parsedInput.surveyId);
     }
 
-    const rawEmailHtml = await getEmailTemplateHtml(parsedInput.surveyId, ctx.user.locale);
+    const rawEmailHtml = await getEmailTemplateHtml(
+      parsedInput.surveyId,
+      parsedInput.language || ctx.user.locale
+    );
     const emailHtml = rawEmailHtml
       .replaceAll("?preview=true&amp;", "?")
       .replaceAll("?preview=true&;", "?")
@@ -159,6 +163,7 @@ export const deleteResultShareUrlAction = authenticatedActionClient
 
 const ZGetEmailHtmlAction = z.object({
   surveyId: ZId,
+  language: z.string().optional(),
 });
 
 export const getEmailHtmlAction = authenticatedActionClient
@@ -180,5 +185,5 @@ export const getEmailHtmlAction = authenticatedActionClient
       ],
     });
 
-    return await getEmailTemplateHtml(parsedInput.surveyId, ctx.user.locale);
+    return await getEmailTemplateHtml(parsedInput.surveyId, parsedInput.language || ctx.user.locale);
   });

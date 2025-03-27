@@ -1,6 +1,7 @@
 "use client";
 
 import { getFormattedErrorMessage } from "@/lib/utils/helper";
+import { LanguageDropdown } from "@/modules/analysis/components/ShareSurveyLink/components/LanguageDropdown";
 import { Button } from "@/modules/ui/components/button";
 import { CodeBlock } from "@/modules/ui/components/code-block";
 import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
@@ -9,16 +10,21 @@ import { Code2Icon, CopyIcon, MailIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { AuthenticationError } from "@formbricks/types/errors";
+import { TSurvey } from "@formbricks/types/surveys/types";
+import { TUserLocale } from "@formbricks/types/user";
 import { getEmailHtmlAction, sendEmbedSurveyPreviewEmailAction } from "../../actions";
 
 interface EmailTabProps {
   surveyId: string;
   email: string;
+  survey?: TSurvey;
+  locale?: TUserLocale;
 }
 
-export const EmailTab = ({ surveyId, email }: EmailTabProps) => {
+export const EmailTab = ({ surveyId, email, survey, locale = "en-US" }: EmailTabProps) => {
   const [showEmbed, setShowEmbed] = useState(false);
   const [emailHtmlPreview, setEmailHtmlPreview] = useState<string>("");
+  const [language, setLanguage] = useState("default");
   const { t } = useTranslate();
   const emailHtml = useMemo(() => {
     if (!emailHtmlPreview) return "";
@@ -30,16 +36,22 @@ export const EmailTab = ({ surveyId, email }: EmailTabProps) => {
 
   useEffect(() => {
     const getData = async () => {
-      const emailHtml = await getEmailHtmlAction({ surveyId });
+      const emailHtml = await getEmailHtmlAction({
+        surveyId,
+        language: language !== "default" ? language : undefined,
+      });
       setEmailHtmlPreview(emailHtml?.data || "");
     };
 
     getData();
-  }, [surveyId]);
+  }, [surveyId, language]);
 
   const sendPreviewEmail = async () => {
     try {
-      const val = await sendEmbedSurveyPreviewEmailAction({ surveyId });
+      const val = await sendEmbedSurveyPreviewEmailAction({
+        surveyId,
+        language: language !== "default" ? language : undefined,
+      });
       if (val?.data) {
         toast.success(t("environments.surveys.summary.email_sent"));
       } else {
@@ -58,6 +70,7 @@ export const EmailTab = ({ surveyId, email }: EmailTabProps) => {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-end gap-4">
+        {survey && locale && <LanguageDropdown survey={survey} setLanguage={setLanguage} locale={locale} />}
         {showEmbed ? (
           <Button
             variant="secondary"
