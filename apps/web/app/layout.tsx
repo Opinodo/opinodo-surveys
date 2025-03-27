@@ -1,8 +1,8 @@
-import { GoogleTagManager } from "@next/third-parties/google";
 import { PHProvider } from "@/modules/ui/components/post-hog-client";
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { getLocale } from "@/tolgee/language";
 import { getTolgee } from "@/tolgee/server";
+import { GoogleTagManager } from "@next/third-parties/google";
 import { TolgeeStaticData } from "@tolgee/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Metadata } from "next";
@@ -26,12 +26,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <html lang={locale} translate="no">
-      <head>
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1574672111746393"
-          crossOrigin="anonymous"></script>
-      </head>
+      <head></head>
       {process.env.VERCEL === "1" && <SpeedInsights sampleRate={0.1} />}
       <GoogleTagManager gtmId={"GTM-PJ6M9K9P"} />
       <body className="flex h-dvh flex-col transition-all ease-in-out">
