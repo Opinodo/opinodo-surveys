@@ -137,6 +137,7 @@ export function EndingCard({
         dangerouslySetInnerHTML={{ __html: formattedText }}
         style={{
           boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+          opacity: "0.5",
         }}
       />
     );
