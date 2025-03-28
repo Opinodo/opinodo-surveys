@@ -53,25 +53,78 @@ RUN mkdir -p prisma/migrations
 COPY packages/database/migration/ ./migration/
 COPY packages/database/src ./src/
 
-# Install global tools needed for running the migrations
-RUN npm install -g tsx typescript pino pino-pretty
+# Set up logger package
+RUN mkdir -p /app/packages/logger/dist
 
-# Copy the required packages
-COPY packages/config-typescript /app/packages/config-typescript
-COPY packages/logger /app/packages/logger
+# Create minimal logger implementation - ESM version
+RUN echo 'export * from "./logger.js";' > /app/packages/logger/dist/index.js && \
+    echo 'const createLogFn = (level) => (msg, context) => { \
+  const timestamp = new Date().toISOString(); \
+  const contextStr = context ? ` ${JSON.stringify(context)}` : ""; \
+  console.log(`[${timestamp}] ${level.toUpperCase()}: ${msg}${contextStr}`); \
+}; \
+export const logger = { \
+  debug: createLogFn("debug"), \
+  info: createLogFn("info"), \
+  warn: createLogFn("warn"), \
+  error: createLogFn("error"), \
+  fatal: createLogFn("fatal"), \
+  withContext: () => logger \
+};' > /app/packages/logger/dist/logger.js
 
-# Create the workspace link for the typescript config
-WORKDIR /app/packages/logger/node_modules/@formbricks
-RUN mkdir -p . && ln -s /app/packages/config-typescript config-typescript
+# Create CommonJS version
+RUN echo 'module.exports = require("./logger.cjs");' > /app/packages/logger/dist/index.cjs && \
+    echo 'const createLogFn = (level) => (msg, context) => { \
+  const timestamp = new Date().toISOString(); \
+  const contextStr = context ? ` ${JSON.stringify(context)}` : ""; \
+  console.log(`[${timestamp}] ${level.toUpperCase()}: ${msg}${contextStr}`); \
+}; \
+const logger = { \
+  debug: createLogFn("debug"), \
+  info: createLogFn("info"), \
+  warn: createLogFn("warn"), \
+  error: createLogFn("error"), \
+  fatal: createLogFn("fatal"), \
+  withContext: () => logger \
+}; \
+module.exports = { logger };' > /app/packages/logger/dist/logger.cjs
 
-# Build the logger package
-WORKDIR /app/packages/logger
-RUN npm install && npm run build
+# Create TypeScript declaration file
+RUN echo 'export * from "./logger.d.ts";' > /app/packages/logger/dist/index.d.ts && \
+    echo 'export interface Logger { \
+  debug(msg: string, context?: unknown): void; \
+  info(msg: string, context?: unknown): void; \
+  warn(msg: string, context?: unknown): void; \
+  error(msg: string, context?: unknown): void; \
+  fatal(msg: string, context?: unknown): void; \
+  withContext(context: Record<string, unknown>): Logger; \
+} \
+\
+export declare const logger: Logger;' > /app/packages/logger/dist/logger.d.ts
 
-# Create a symlink to the logger package
-WORKDIR /app/packages/database
-RUN mkdir -p node_modules/@formbricks && \
-    ln -s /app/packages/logger node_modules/@formbricks/logger
+# Create a simplified package.json for the logger
+RUN echo '{ \
+  "name": "@formbricks/logger", \
+  "private": true, \
+  "type": "module", \
+  "version": "0.1.0", \
+  "description": "Logger for Formbricks", \
+  "main": "./dist/index.cjs", \
+  "module": "./dist/index.js", \
+  "types": "./dist/index.d.ts", \
+  "exports": { \
+    ".": { \
+      "import": "./dist/index.js", \
+      "require": "./dist/index.cjs", \
+      "default": "./dist/index.js" \
+    } \
+  } \
+}' > /app/packages/logger/package.json
+
+# Create a node_modules symlink for the logger package
+RUN cd /app/packages/database/node_modules && \
+    mkdir -p @formbricks && \
+    ln -s /app/packages/logger /app/packages/database/node_modules/@formbricks/logger
 
 # Copy and configure scripts
 COPY apps/migrations/health-check.sh /app/health-check.sh
