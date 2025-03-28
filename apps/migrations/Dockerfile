@@ -51,12 +51,13 @@ RUN mkdir -p prisma/migrations
 COPY packages/database/migration/ ./migration/
 COPY packages/database/src ./src/
 
-# Copy logger package
-COPY packages/logger/dist /app/packages/logger/dist
-# Create necessary directories for logger
-RUN mkdir -p ./node_modules/@formbricks/
-# Copy logger to node_modules
-RUN cp -r /app/packages/logger ./node_modules/@formbricks/
+# Create minimal logger implementation
+RUN mkdir -p ./node_modules/@formbricks/logger/dist
+RUN echo 'export const logger = { fatal: console.error, error: console.error, warn: console.warn, info: console.info, debug: console.debug };' > ./node_modules/@formbricks/logger/dist/index.js
+RUN echo 'export { logger };' > ./node_modules/@formbricks/logger/dist/index.cjs
+RUN echo 'export declare const logger: { fatal: (message: any, ...args: any[]) => void; error: (message: any, ...args: any[]) => void; warn: (message: any, ...args: any[]) => void; info: (message: any, ...args: any[]) => void; debug: (message: any, ...args: any[]) => void; };' > ./node_modules/@formbricks/logger/dist/index.d.ts
+# Create package.json for logger
+RUN echo '{"name":"@formbricks/logger","version":"0.1.0","main":"./dist/index.js","types":"./dist/index.d.ts","exports":{"types":"./dist/index.d.ts","import":"./dist/index.js","require":"./dist/index.cjs"}}' > ./node_modules/@formbricks/logger/package.json
 
 # Copy and configure scripts
 COPY apps/migrations/health-check.sh /app/health-check.sh
