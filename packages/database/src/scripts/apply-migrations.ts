@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "@formbricks/logger";
 import { applyMigrations } from "./migration-runner";
 
 applyMigrations().catch((error: unknown) => {

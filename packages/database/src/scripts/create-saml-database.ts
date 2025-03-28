@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { logger } from "./logger";
+import { logger } from "@formbricks/logger";
 
 const createSamlDatabase = async (): Promise<void> => {
   const samlDatabaseUrl = process.env.SAML_DATABASE_URL;
