@@ -109,7 +109,30 @@ export const POST = async (request: Request, context: Context): Promise<Response
     if (error instanceof InvalidInputError) {
       return responses.badRequestResponse(error.message);
     } else {
-      logger.error({ error, url: request.url }, "Error creating response");
+      const errorName = error instanceof Error ? error.name : "Unknown";
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      const errorContext = {
+        error: error instanceof Error ? { name: errorName, message: errorMessage } : String(error),
+        url: request.url,
+        responseData: {
+          surveyId: responseInputData.surveyId,
+          environmentId,
+          contactId: responseInputData.contactId || null,
+          displayId: responseInputData.displayId || null,
+          finished: responseInputData.finished || false,
+          singleUseId: responseInputData.singleUseId || null,
+        },
+        errorDetails: {
+          name: errorName,
+          message: errorMessage,
+          stack: errorStack,
+        },
+      };
+
+      logger.error(errorContext, "Error creating response");
+
       return responses.internalServerErrorResponse(error.message);
     }
   }

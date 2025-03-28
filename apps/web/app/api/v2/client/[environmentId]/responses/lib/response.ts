@@ -138,9 +138,52 @@ export const createResponse = async (responseInput: TResponseInputV2): Promise<T
     return response;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      logger.error(
+        {
+          error: {
+            name: error.name,
+            message: error.message,
+          },
+          prismaError: {
+            code: error.code,
+            meta: error.meta as Record<string, unknown>,
+            clientVersion: error.clientVersion,
+          },
+          responseInput: {
+            surveyId,
+            environmentId,
+            contactId: contactId || null,
+            displayId: displayId || null,
+            finished: finished || false,
+            singleUseId: singleUseId || null,
+          },
+        },
+        `Database error creating response: ${error.code}`
+      );
       throw new DatabaseError(error.message);
     }
 
+    logger.error(
+      {
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              }
+            : String(error),
+        responseInput: {
+          surveyId,
+          environmentId,
+          contactId: contactId || null,
+          displayId: displayId || null,
+          finished: finished || false,
+          singleUseId: singleUseId || null,
+        },
+      },
+      "Unexpected error creating response"
+    );
     throw error;
   }
 };
