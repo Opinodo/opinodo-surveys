@@ -93,11 +93,23 @@ export function EndingCard({
   };
 
   const handleSubmit = () => {
+    if (!isRedirectDisabled && endingCard.type === "endScreen" && endingCard.buttonLink) {
+      processAndRedirect(endingCard.buttonLink);
+    }
+  };
+
+  const handleAffiliateSubmit = () => {
     if (!isRedirectDisabled) {
-      if (endingCard.type === "endScreen" && endingCard.buttonLink) {
-        processAndRedirect(endingCard.buttonLink);
-      } else if (endingCard.type === "affiliateOffer" && endingCard.affiliateOfferUrl) {
+      if (endingCard.type === "affiliateOffer" && endingCard.affiliateOfferUrl) {
         processAndRedirect(endingCard.affiliateOfferUrl);
+      }
+    }
+  };
+
+  const handleSkipSubmit = () => {
+    if (!isRedirectDisabled) {
+      if (endingCard.type === "affiliateOffer" && endingCard.skipLink) {
+        processAndRedirect(endingCard.skipLink);
       }
     }
   };
@@ -216,13 +228,13 @@ export function EndingCard({
                     )}
                     isLastQuestion={false}
                     focus={isCurrent ? autoFocusEnabled : false}
-                    onClick={handleSubmit}
+                    onClick={handleAffiliateSubmit}
                   />
 
                   {/* Secondary Text Link - Skip */}
                   <button
                     className="fb-text-brand fb-mt-2 fb-cursor-pointer fb-text-sm fb-underline"
-                    onClick={handleSubmit}>
+                    onClick={handleSkipSubmit}>
                     {replaceRecallInfo(
                       getLocalizedValue(endingCard.skipLinkLabel, languageCode) || "No thanks, continue",
                       responseData,
