@@ -56,7 +56,7 @@ COPY packages/database/src ./src/
 # Set up logger package
 RUN mkdir -p /app/packages/logger/dist
 
-# Create minimal logger implementation
+# Create minimal logger implementation - ESM version
 RUN echo 'export * from "./logger.js";' > /app/packages/logger/dist/index.js && \
     echo 'const createLogFn = (level) => (msg, context) => { \
   const timestamp = new Date().toISOString(); \
@@ -72,6 +72,36 @@ export const logger = { \
   withContext: () => logger \
 };' > /app/packages/logger/dist/logger.js
 
+# Create CommonJS version
+RUN echo 'module.exports = require("./logger.cjs");' > /app/packages/logger/dist/index.cjs && \
+    echo 'const createLogFn = (level) => (msg, context) => { \
+  const timestamp = new Date().toISOString(); \
+  const contextStr = context ? ` ${JSON.stringify(context)}` : ""; \
+  console.log(`[${timestamp}] ${level.toUpperCase()}: ${msg}${contextStr}`); \
+}; \
+const logger = { \
+  debug: createLogFn("debug"), \
+  info: createLogFn("info"), \
+  warn: createLogFn("warn"), \
+  error: createLogFn("error"), \
+  fatal: createLogFn("fatal"), \
+  withContext: () => logger \
+}; \
+module.exports = { logger };' > /app/packages/logger/dist/logger.cjs
+
+# Create TypeScript declaration file
+RUN echo 'export * from "./logger.d.ts";' > /app/packages/logger/dist/index.d.ts && \
+    echo 'export interface Logger { \
+  debug(msg: string, context?: unknown): void; \
+  info(msg: string, context?: unknown): void; \
+  warn(msg: string, context?: unknown): void; \
+  error(msg: string, context?: unknown): void; \
+  fatal(msg: string, context?: unknown): void; \
+  withContext(context: Record<string, unknown>): Logger; \
+} \
+\
+export declare const logger: Logger;' > /app/packages/logger/dist/logger.d.ts
+
 # Create a simplified package.json for the logger
 RUN echo '{ \
   "name": "@formbricks/logger", \
@@ -79,9 +109,15 @@ RUN echo '{ \
   "type": "module", \
   "version": "0.1.0", \
   "description": "Logger for Formbricks", \
-  "main": "./dist/index.js", \
+  "main": "./dist/index.cjs", \
+  "module": "./dist/index.js", \
+  "types": "./dist/index.d.ts", \
   "exports": { \
-    "import": "./dist/index.js" \
+    ".": { \
+      "import": "./dist/index.js", \
+      "require": "./dist/index.cjs", \
+      "default": "./dist/index.js" \
+    } \
   } \
 }' > /app/packages/logger/package.json
 
