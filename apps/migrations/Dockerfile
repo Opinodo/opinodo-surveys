@@ -19,35 +19,13 @@ WORKDIR /app/packages/database
 COPY apps/migrations/migration-package.json ./package.json
 COPY packages/database/schema.prisma ./
 
-# Set up TypeScript config
-WORKDIR /app/packages/config-typescript
-COPY packages/config-typescript/package.json ./
-COPY packages/config-typescript/*.json ./
-
-# Set up logger package
-WORKDIR /app/packages/logger
-COPY packages/logger/package.json ./
-COPY packages/logger/src ./src
-COPY packages/logger/types ./types
-COPY packages/logger/tsconfig.json ./
-COPY packages/logger/vite.config.ts ./
-
-# Create symlink for TypeScript config
-RUN mkdir -p node_modules/@formbricks
-RUN ln -s /app/packages/config-typescript node_modules/@formbricks/config-typescript
-
-# Build the logger package
-RUN npm install
-RUN npm run build
-
-# Return to database directory
-WORKDIR /app/packages/database
+# We're using a simplified approach by creating a minimal logger implementation directly in the runtime stage
 
 # Install dependencies
 RUN npm install && \
     npm install prisma-json-types-generator && \
     # Install dependencies required by migrations
-    npm install @paralleldrive/cuid2 zod lodash date-fns nanoid pino pino-pretty
+    npm install @paralleldrive/cuid2 zod lodash date-fns nanoid
 
 # Generate Prisma client code
 RUN npx prisma generate
@@ -77,8 +55,35 @@ COPY packages/database/src ./src/
 
 # Set up logger package
 RUN mkdir -p /app/packages/logger/dist
-COPY packages/logger/dist /app/packages/logger/dist
-COPY packages/logger/package.json /app/packages/logger/
+
+# Create minimal logger implementation
+RUN echo 'export * from "./logger.js";' > /app/packages/logger/dist/index.js && \
+    echo 'const createLogFn = (level) => (msg, context) => { \
+  const timestamp = new Date().toISOString(); \
+  const contextStr = context ? ` ${JSON.stringify(context)}` : ""; \
+  console.log(`[${timestamp}] ${level.toUpperCase()}: ${msg}${contextStr}`); \
+}; \
+export const logger = { \
+  debug: createLogFn("debug"), \
+  info: createLogFn("info"), \
+  warn: createLogFn("warn"), \
+  error: createLogFn("error"), \
+  fatal: createLogFn("fatal"), \
+  withContext: () => logger \
+};' > /app/packages/logger/dist/logger.js
+
+# Create a simplified package.json for the logger
+RUN echo '{ \
+  "name": "@formbricks/logger", \
+  "private": true, \
+  "type": "module", \
+  "version": "0.1.0", \
+  "description": "Logger for Formbricks", \
+  "main": "./dist/index.js", \
+  "exports": { \
+    "import": "./dist/index.js" \
+  } \
+}' > /app/packages/logger/package.json
 
 # Create a node_modules symlink for the logger package
 RUN cd /app/packages/database/node_modules && \
