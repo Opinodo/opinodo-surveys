@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { type Prisma, PrismaClient } from "@prisma/client";
-import { logger } from "@formbricks/logger";
+import { logger } from "./logger";
 
 const execAsync = promisify(exec);
 

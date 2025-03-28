@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import { promisify } from "node:util";
-import { logger } from "@formbricks/logger";
+import { logger } from "./logger";
 import { applyMigrations } from "./migration-runner";
 
 const execAsync = promisify(exec);
