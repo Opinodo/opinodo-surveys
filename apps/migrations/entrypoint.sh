@@ -98,6 +98,50 @@ else
 fi
 
 #===================================
+# LOGGER FALLBACK
+#===================================
+
+# Create a fallback logger in case the build process failed
+if [ ! -f "/app/packages/logger/dist/index.js" ]; then
+  echo "Creating fallback logger module..."
+  mkdir -p /app/packages/logger/dist
+  cat > /app/packages/logger/dist/index.js << 'EOF'
+export * from "./logger.js";
+EOF
+
+  cat > /app/packages/logger/dist/logger.js << 'EOF'
+const createLogFn = (level) => (msg, context) => {
+  const timestamp = new Date().toISOString();
+  const contextStr = context ? ` ${JSON.stringify(context)}` : '';
+  console.log(`[${timestamp}] ${level.toUpperCase()}: ${msg}${contextStr}`);
+};
+
+export const logger = {
+  debug: createLogFn('debug'),
+  info: createLogFn('info'),
+  warn: createLogFn('warn'),
+  error: createLogFn('error'),
+  fatal: createLogFn('fatal'),
+  withContext: () => logger
+};
+EOF
+
+  # Create package.json for the fallback logger
+  cat > /app/packages/logger/package.json << 'EOF'
+{
+  "name": "@formbricks/logger",
+  "type": "module",
+  "version": "0.1.0",
+  "main": "./dist/index.js"
+}
+EOF
+
+  # Ensure the symlink is properly set up
+  mkdir -p /app/packages/database/node_modules/@formbricks
+  ln -sf /app/packages/logger /app/packages/database/node_modules/@formbricks/logger || true
+fi
+
+#===================================
 # DATA MIGRATIONS
 #===================================
 
