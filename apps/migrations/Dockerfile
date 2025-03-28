@@ -51,6 +51,13 @@ RUN mkdir -p prisma/migrations
 COPY packages/database/migration/ ./migration/
 COPY packages/database/src ./src/
 
+# Copy logger package
+COPY packages/logger/dist /app/packages/logger/dist
+# Create necessary directories for logger
+RUN mkdir -p ./node_modules/@formbricks/
+# Copy logger to node_modules
+RUN cp -r /app/packages/logger ./node_modules/@formbricks/
+
 # Copy and configure scripts
 COPY apps/migrations/health-check.sh /app/health-check.sh
 COPY apps/migrations/entrypoint.sh /app/entrypoint.sh
