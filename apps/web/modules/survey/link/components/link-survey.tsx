@@ -11,18 +11,18 @@ import { useEffect, useMemo, useState } from "react";
 import { TResponseData, TResponseHiddenFieldValue } from "@formbricks/types/responses";
 import { TSurvey } from "@formbricks/types/surveys/types";
 
-// export const preserveUrlParameters = (url: URL, paramsToPreserve: string[] = ["utm_source"]): URL => {
-//   const newUrl = new URL(url.toString());
-//
-//   paramsToPreserve.forEach((param) => {
-//     const value = url.searchParams.get(param);
-//     if (value) {
-//       newUrl.searchParams.set(param, value);
-//     }
-//   });
-//
-//   return newUrl;
-// };
+export const preserveUrlParameters = (url: URL, paramsToPreserve: string[] = ["utm_source"]): URL => {
+  const newUrl = new URL(url.toString());
+
+  paramsToPreserve.forEach((param) => {
+    const value = url.searchParams.get(param);
+    if (value) {
+      newUrl.searchParams.set(param, value);
+    }
+  });
+
+  return newUrl;
+};
 
 let setQuestionId = (_: string) => {};
 let setResponseData = (_: TResponseData) => {};
@@ -85,9 +85,9 @@ export const LinkSurvey = ({
       const url = new URL(window.location.href);
       url.searchParams.delete("startAt");
       // Use the utility function to preserve marketing parameters
-      // const preservedUrl = preserveUrlParameters(url, ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"]);
-      // window.history.replaceState({}, "", preservedUrl.toString());
-      window.history.replaceState({}, "", url.toString());
+      const preservedUrl = preserveUrlParameters(url, ["utm_source", "utm_medium", "utm_campaign"]);
+      window.history.replaceState({}, "", preservedUrl.toString());
+      // window.history.replaceState({}, "", url.toString());
     }
 
     return isValid;
