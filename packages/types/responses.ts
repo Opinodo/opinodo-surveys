@@ -337,6 +337,9 @@ export const ZResponseUpdate = z.object({
       url: z.string().optional(),
       source: z.string().optional(),
       action: z.string().optional(),
+      utm_source: z.string().optional(),
+      utm_medium: z.string().optional(),
+      utm_campaign: z.string().optional(),
     })
     .optional(),
   hiddenFields: ZResponseHiddenFieldValue.optional(),
