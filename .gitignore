@@ -80,5 +80,4 @@ infra/terraform/.terraform/
 # IntelliJ IDEA
 /.idea/
 /*.iml
-
-.qodo
+packages/ios/FormbricksSDK/FormbricksSDK.xcodeproj/project.xcworkspace/xcuserdata

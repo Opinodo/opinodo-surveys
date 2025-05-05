@@ -1,8 +1,8 @@
 import { authenticateRequest } from "@/app/api/v1/auth";
 import { responses } from "@/app/lib/api/response";
 import { generateSurveySingleUseId } from "@/app/lib/singleUseSurveys";
-import { WEBAPP_URL } from "@formbricks/lib/constants";
-import { getActiveLinkSurveys } from "@formbricks/lib/survey/service";
+import { WEBAPP_URL } from "@/lib/constants";
+import { getActiveLinkSurveys } from "@/lib/survey/service";
 import { DatabaseError } from "@formbricks/types/errors";
 import { TSurvey, TSurveyLogic, TSurveyLogicAction, TSurveyQuestion } from "@formbricks/types/surveys/types";
 
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     const tagsParam = searchParams.get("tags");
     const tags = tagsParam ? tagsParam.split(",") : [];
 
-    const surveys = await getActiveLinkSurveys(authentication.environmentId!, tags);
+    const surveys = await getActiveLinkSurveys(authentication.environmentPermissions[0].environmentId, tags);
 
     if (!searchParams.has("country")) {
       return responses.validationResponse({ country: "required" });

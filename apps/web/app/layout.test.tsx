@@ -3,12 +3,12 @@ import { getTolgee } from "@/tolgee/server";
 import { cleanup, render, screen } from "@testing-library/react";
 import { TolgeeInstance } from "@tolgee/react";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import RootLayout from "./layout";
 
 // Mock dependencies for the layout
 
-vi.mock("@formbricks/lib/constants", () => ({
+vi.mock("@/lib/constants", () => ({
   IS_FORMBRICKS_CLOUD: false,
   POSTHOG_API_KEY: "mock-posthog-api-key",
   POSTHOG_HOST: "mock-posthog-host",
@@ -29,6 +29,7 @@ vi.mock("@formbricks/lib/constants", () => ({
   OIDC_SIGNING_ALGORITHM: "test-oidc-signing-algorithm",
   WEBAPP_URL: "test-webapp-url",
   IS_PRODUCTION: false,
+  SENTRY_DSN: "mock-sentry-dsn",
 }));
 
 vi.mock("@/tolgee/language", () => ({
@@ -37,10 +38,6 @@ vi.mock("@/tolgee/language", () => ({
 
 vi.mock("@/tolgee/server", () => ({
   getTolgee: vi.fn(),
-}));
-
-vi.mock("@vercel/speed-insights/next", () => ({
-  SpeedInsights: () => <div data-testid="speed-insights">SpeedInsights</div>,
 }));
 
 vi.mock("@/modules/ui/components/post-hog-client", () => ({
@@ -69,13 +66,22 @@ vi.mock("@/tolgee/client", () => ({
   ),
 }));
 
+vi.mock("@/app/sentry/SentryProvider", () => ({
+  SentryProvider: ({ children, sentryDsn }: { children: React.ReactNode; sentryDsn?: string }) => (
+    <div data-testid="sentry-provider">
+      SentryProvider: {sentryDsn}
+      {children}
+    </div>
+  ),
+}));
+
 describe("RootLayout", () => {
   beforeEach(() => {
     cleanup();
     process.env.VERCEL = "1";
   });
 
-  it("renders the layout with the correct structure and providers", async () => {
+  test("renders the layout with the correct structure and providers", async () => {
     const fakeLocale = "en-US";
     // Mock getLocale to resolve to a fake locale
     vi.mocked(getLocale).mockResolvedValue(fakeLocale);
@@ -91,12 +97,8 @@ describe("RootLayout", () => {
     const element = await RootLayout({ children });
     render(element);
 
-    // log env vercel
-    console.log("vercel", process.env.VERCEL);
-
-    expect(screen.getByTestId("speed-insights")).toBeInTheDocument();
-    expect(screen.getByTestId("ph-provider")).toBeInTheDocument();
     expect(screen.getByTestId("tolgee-next-provider")).toBeInTheDocument();
+    expect(screen.getByTestId("sentry-provider")).toBeInTheDocument();
     expect(screen.getByTestId("child")).toHaveTextContent("Child Content");
   });
 });

@@ -39,14 +39,34 @@ struct SurveyWebView: UIViewRepresentable {
         return Coordinator()
     }
     
+    /// Called automatically by SwiftUI when the view is torn down.
+   static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
+       let userContentController = uiView.configuration.userContentController
+       userContentController.removeScriptMessageHandler(forName: "logging")
+       userContentController.removeScriptMessageHandler(forName: "jsMessage")
+
+       uiView.navigationDelegate = nil
+       uiView.uiDelegate = nil
+       Formbricks.logger?.debug("SurveyWebView: Dismantled")
+   }
     
     /// Clean up cookies and website data.
     func clean() {
         HTTPCookieStorage.shared.removeCookies(since: Date.distantPast)
         WKWebsiteDataStore.default().fetchDataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes()) { records in
-            records.forEach { record in
-                WKWebsiteDataStore.default().removeData(ofTypes: record.dataTypes, for: [record], completionHandler: {})
-            }
+            self.remove(records)
+        }
+    }
+    
+    private func remove(_ records: [WKWebsiteDataRecord]) {
+        records.forEach { record in
+            WKWebsiteDataStore.default().removeData(ofTypes: record.dataTypes, for: [record], completionHandler: {
+                /*
+                 This completion handler is intentionally empty since we only need to
+                 ensure the data is removed. No additional actions are required after
+                 the website data has been cleared.
+                */
+            })
         }
     }
 }
@@ -56,7 +76,13 @@ extension SurveyWebView {
         // webView function handles Javascipt alert
         func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo,  completionHandler: @escaping () -> Void) {
             let alertController = UIAlertController(title: "", message: message, preferredStyle: .alert)
-           alertController.addAction(UIAlertAction(title: "OK", style: .default) { _ in })
+           alertController.addAction(UIAlertAction(title: "OK", style: .default) { _ in 
+               /* 
+                This closure is intentionally empty since we only need a simple OK button
+                to dismiss the alert. The alert dismissal is handled automatically by the
+                system when the button is tapped.
+               */
+           })
             UIApplication.safeKeyWindow?.rootViewController?.presentedViewController?.present(alertController, animated: true)
             completionHandler()
         }
@@ -82,26 +108,24 @@ final class JsMessageHandler: NSObject, WKScriptMessageHandler {
     }
    
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        Formbricks.logger.debug(message.body)
+        Formbricks.logger?.debug(message.body)
         
         if let body = message.body as? String, let data = body.data(using: .utf8), let obj = try? JSONDecoder().decode(JsMessageData.self, from: data) {
             
             switch obj.event {
                 /// Happens when the user submits an answer.
             case .onResponseCreated:
-                SurveyManager.shared.postResponse(surveyId: surveyId)
+                Formbricks.surveyManager?.postResponse(surveyId: surveyId)
 
                 /// Happens when a survey is shown.
             case .onDisplayCreated:
-                SurveyManager.shared.onNewDisplay(surveyId: surveyId)
+                Formbricks.delegate?.onSurveyStarted()
+                Formbricks.surveyManager?.onNewDisplay(surveyId: surveyId)
             
             /// Happens when the user closes the survey view with the close button.
             case .onClose:
-                SurveyManager.shared.dismissSurveyWebView()
-                
-            /// Happens when the survey view is finished  by the user submitting the last question.
-            case .onFinished:
-                SurveyManager.shared.delayedDismiss()
+                Formbricks.delegate?.onSurveyClosed()
+                Formbricks.surveyManager?.dismissSurveyWebView()
             
             /// Happens when the survey wants to open an external link in the default browser.
             case .onOpenExternalURL:
@@ -111,11 +135,13 @@ final class JsMessageHandler: NSObject, WKScriptMessageHandler {
                 
             /// Happens when the survey library fails to load.
             case .onSurveyLibraryLoadError:
-                SurveyManager.shared.dismissSurveyWebView()
+                Formbricks.surveyManager?.dismissSurveyWebView()
             }
             
         } else {
-            Formbricks.logger.error("\(FormbricksSDKError(type: .invalidJavascriptMessage).message): \(message.body)")
+            let error = FormbricksSDKError(type: .invalidJavascriptMessage)
+            Formbricks.delegate?.onError(error)
+            Formbricks.logger?.error("\(error.message): \(message.body)")
         }
     }
 }
@@ -124,7 +150,7 @@ final class JsMessageHandler: NSObject, WKScriptMessageHandler {
 /// Handle and send console.log messages from the Javascript to the local logger.
 final class LoggingMessageHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        Formbricks.logger.debug(message.body)
+        Formbricks.logger?.debug(message.body)
     }
 }
 

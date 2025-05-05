@@ -1,17 +1,14 @@
-import { getUserByEmail, updateUser } from "@/modules/auth/lib/user";
+import { EMAIL_VERIFICATION_DISABLED, ENCRYPTION_KEY, ENTERPRISE_LICENSE_KEY } from "@/lib/constants";
+import { symmetricDecrypt, symmetricEncrypt } from "@/lib/crypto";
+import { verifyToken } from "@/lib/jwt";
+import { getUserByEmail, updateUser, updateUserLastLoginAt } from "@/modules/auth/lib/user";
 import { verifyPassword } from "@/modules/auth/lib/utils";
 import { getSSOProviders } from "@/modules/ee/sso/lib/providers";
-import { handleSSOCallback } from "@/modules/ee/sso/lib/sso-handlers";
+import { handleSsoCallback } from "@/modules/ee/sso/lib/sso-handlers";
 import type { Account, NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { cookies } from "next/headers";
 import { prisma } from "@formbricks/database";
-import {
-  EMAIL_VERIFICATION_DISABLED,
-  ENCRYPTION_KEY,
-  ENTERPRISE_LICENSE_KEY,
-} from "@formbricks/lib/constants";
-import { symmetricDecrypt, symmetricEncrypt } from "@formbricks/lib/crypto";
-import { verifyToken } from "@formbricks/lib/jwt";
 import { logger } from "@formbricks/logger";
 import { TUser } from "@formbricks/types/user";
 import { createBrevoCustomer } from "./brevo";
@@ -60,6 +57,9 @@ export const authOptions: NextAuthOptions = {
         }
         if (!user.password) {
           throw new Error("User has no password stored");
+        }
+        if (user.isActive === false) {
+          throw new Error("Your account is currently inactive. Please contact the organization admin.");
         }
 
         const isValid = await verifyPassword(credentials.password, user.password);
@@ -162,6 +162,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email already verified");
         }
 
+        if (user.isActive === false) {
+          throw new Error("Your account is currently inactive. Please contact the organization admin.");
+        }
+
         user = await updateUser(user.id, { emailVerified: new Date() });
 
         // send new user to brevo after email verification
@@ -173,6 +177,9 @@ export const authOptions: NextAuthOptions = {
     // Conditionally add enterprise SSO providers
     ...(ENTERPRISE_LICENSE_KEY ? getSSOProviders() : []),
   ],
+  session: {
+    maxAge: 3600,
+  },
   callbacks: {
     async jwt({ token }) {
       const existingUser = await getUserByEmail(token?.email!);
@@ -184,6 +191,7 @@ export const authOptions: NextAuthOptions = {
       return {
         ...token,
         profile: { id: existingUser.id },
+        isActive: existingUser.isActive,
       };
     },
     async session({ session, token }) {
@@ -191,20 +199,32 @@ export const authOptions: NextAuthOptions = {
       session.user.id = token?.id;
       // @ts-expect-error
       session.user = token.profile;
+      // @ts-expect-error
+      session.user.isActive = token.isActive;
 
       return session;
     },
     async signIn({ user, account }: { user: TUser; account: Account }) {
+      const cookieStore = await cookies();
+
+      const callbackUrl = cookieStore.get("next-auth.callback-url")?.value || "";
+
       if (account?.provider === "credentials" || account?.provider === "token") {
         // check if user's email is verified or not
         if (!user.emailVerified && !EMAIL_VERIFICATION_DISABLED) {
           throw new Error("Email Verification is Pending");
         }
+        await updateUserLastLoginAt(user.email);
         return true;
       }
       if (ENTERPRISE_LICENSE_KEY) {
-        return handleSSOCallback({ user, account });
+        const result = await handleSsoCallback({ user, account, callbackUrl });
+        if (result) {
+          await updateUserLastLoginAt(user.email);
+        }
+        return result;
       }
+      await updateUserLastLoginAt(user.email);
       return true;
     },
   },

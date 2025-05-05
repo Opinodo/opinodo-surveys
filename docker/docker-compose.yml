@@ -75,6 +75,18 @@ x-environment: &environment
     # Set the below to 0 to disable cron jobs
     # DOCKER_CRON_ENABLED: 1
 
+    # Set the below to your Survey Domain(default is WEBAPP_URL)
+    # SURVEY_URL:
+
+    # Configure Formbricks usage within Formbricks.
+    # FORMBRICKS_API_HOST:
+    # FORMBRICKS_ENVIRONMENT_ID:
+
+    # The SENTRY_DSN is used for error tracking and performance monitoring with Sentry.
+    # SENTRY_DSN:
+    # It's used for authentication when uploading source maps to Sentry, to make errors more readable.
+    # SENTRY_AUTH_TOKEN:
+
     ################################################### OPTIONAL (STORAGE) ###################################################
 
     # Set the below to set a custom Upload Directory
@@ -95,8 +107,12 @@ x-environment: &environment
     ############################################# OPTIONAL (OAUTH CONFIGURATION) #############################################
 
     # Set the below from Cloudflare Turnstile if you want to enable turnstile in signups
-    # NEXT_PUBLIC_TURNSTILE_SITE_KEY:
+    # TURNSTILE_SITE_KEY:
     # TURNSTILE_SECRET_KEY:
+
+    # Set the below keys to enable recaptcha V3 for survey responses bot protection(only available in the Enterprise Edition)
+    # RECAPTCHA_SITE_KEY=
+    # RECAPTCHA_SECRET_KEY=
 
     # Set the below from GitHub if you want to enable GitHub OAuth
     # GITHUB_ID:
@@ -175,6 +191,9 @@ x-environment: &environment
     # (Role Management is an Enterprise feature)
     # DEFAULT_ORGANIZATION_ID:
     # DEFAULT_ORGANIZATION_ROLE: owner
+
+    # Set the below to 1 to disable the user management UI
+    # DISABLE_USER_MANAGEMENT: 0
 
 services:
   postgres:

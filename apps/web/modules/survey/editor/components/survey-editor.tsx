@@ -1,19 +1,21 @@
 "use client";
 
+import { extractLanguageCodes, getEnabledLanguages } from "@/lib/i18n/utils";
+import { structuredClone } from "@/lib/pollyfills/structuredClone";
+import { useDocumentVisibility } from "@/lib/useDocumentVisibility";
 import { TTeamPermission } from "@/modules/ee/teams/project-teams/types/team";
+import { EditPublicSurveyAlertDialog } from "@/modules/survey/components/edit-public-survey-alert-dialog";
 import { LoadingSkeleton } from "@/modules/survey/editor/components/loading-skeleton";
 import { QuestionsView } from "@/modules/survey/editor/components/questions-view";
 import { SettingsView } from "@/modules/survey/editor/components/settings-view";
 import { StylingView } from "@/modules/survey/editor/components/styling-view";
 import { SurveyEditorTabs } from "@/modules/survey/editor/components/survey-editor-tabs";
 import { SurveyMenuBar } from "@/modules/survey/editor/components/survey-menu-bar";
+import { TFollowUpEmailToUser } from "@/modules/survey/editor/types/survey-follow-up";
 import { FollowUpsView } from "@/modules/survey/follow-ups/components/follow-ups-view";
 import { PreviewSurvey } from "@/modules/ui/components/preview-survey";
 import { ActionClass, Environment, Language, OrganizationRole, Project } from "@prisma/client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { extractLanguageCodes, getEnabledLanguages } from "@formbricks/lib/i18n/utils";
-import { structuredClone } from "@formbricks/lib/pollyfills/structuredClone";
-import { useDocumentVisibility } from "@formbricks/lib/useDocumentVisibility";
 import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import { TOrganizationBillingPlan } from "@formbricks/types/organizations";
 import { TSegment } from "@formbricks/types/segment";
@@ -34,6 +36,7 @@ interface SurveyEditorProps {
   colors: string[];
   isUserTargetingAllowed?: boolean;
   isMultiLanguageAllowed?: boolean;
+  isSpamProtectionAllowed?: boolean;
   isFormbricksCloud: boolean;
   isUnsplashConfigured: boolean;
   plan: TOrganizationBillingPlan;
@@ -44,6 +47,7 @@ interface SurveyEditorProps {
   projectLanguages: Language[];
   isSurveyFollowUpsAllowed: boolean;
   userEmail: string;
+  teamMemberDetails: TFollowUpEmailToUser[];
   environmentTags: TTag[];
 }
 
@@ -61,6 +65,7 @@ export const SurveyEditor = ({
   colors,
   isMultiLanguageAllowed,
   isUserTargetingAllowed = false,
+  isSpamProtectionAllowed = false,
   isFormbricksCloud,
   isUnsplashConfigured,
   plan,
@@ -70,6 +75,7 @@ export const SurveyEditor = ({
   mailFrom,
   isSurveyFollowUpsAllowed = false,
   userEmail,
+  teamMemberDetails,
 }: SurveyEditorProps) => {
   const [activeView, setActiveView] = useState<TSurveyEditorTabs>("questions");
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
@@ -88,6 +94,8 @@ export const SurveyEditor = ({
       setLocalProject(refetchProjectResponse.data);
     }
   }, [localProject.id]);
+
+  const [isCautionDialogOpen, setIsCautionDialogOpen] = useState(false);
 
   useDocumentVisibility(fetchLatestProject);
 
@@ -160,6 +168,7 @@ export const SurveyEditor = ({
         setSelectedLanguageCode={setSelectedLanguageCode}
         isCxMode={isCxMode}
         locale={locale}
+        setIsCautionDialogOpen={setIsCautionDialogOpen}
       />
       <div className="relative z-0 flex flex-1 overflow-hidden">
         <main
@@ -190,6 +199,8 @@ export const SurveyEditor = ({
               plan={plan}
               isCxMode={isCxMode}
               locale={locale}
+              responseCount={responseCount}
+              setIsCautionDialogOpen={setIsCautionDialogOpen}
             />
           )}
 
@@ -221,6 +232,7 @@ export const SurveyEditor = ({
               responseCount={responseCount}
               membershipRole={membershipRole}
               isUserTargetingAllowed={isUserTargetingAllowed}
+              isSpamProtectionAllowed={isSpamProtectionAllowed}
               project={localProject}
               projectPermission={projectPermission}
               isFormbricksCloud={isFormbricksCloud}
@@ -235,6 +247,7 @@ export const SurveyEditor = ({
               mailFrom={mailFrom}
               isSurveyFollowUpsAllowed={isSurveyFollowUpsAllowed}
               userEmail={userEmail}
+              teamMemberDetails={teamMemberDetails}
               locale={locale}
             />
           )}
@@ -248,9 +261,11 @@ export const SurveyEditor = ({
             environment={environment}
             previewType={localSurvey.type === "app" ? "modal" : "fullwidth"}
             languageCode={selectedLanguageCode}
+            isSpamProtectionAllowed={isSpamProtectionAllowed}
           />
         </aside>
       </div>
+      <EditPublicSurveyAlertDialog open={isCautionDialogOpen} setOpen={setIsCautionDialogOpen} />
     </div>
   );
 };

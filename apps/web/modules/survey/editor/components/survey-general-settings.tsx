@@ -1,4 +1,5 @@
 import { getAllCountries } from "@/app/(app)/environments/[environmentId]/actions";
+import { cn } from "@/lib/cn";
 import { getTagsForSurveyAction } from "@/modules/survey/list/actions";
 import { SurveyTagsWrapper } from "@/modules/survey/list/components/survey-tags-wrapper";
 import { Input } from "@/modules/ui/components/input";
@@ -9,7 +10,6 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 import { CheckIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import Select from "react-select";
-import { cn } from "@formbricks/lib/cn";
 import { TSurvey } from "@formbricks/types/surveys/types";
 import { TTag } from "@formbricks/types/tags";
 
@@ -22,12 +22,12 @@ interface SurveyGeneralSettingsProps {
 }
 
 export function SurveyGeneralSettings({
-                                        localSurvey,
-                                        setLocalSurvey,
-                                        project,
-                                        environmentTags,
-                                        environmentId,
-                                      }: SurveyGeneralSettingsProps) {
+  localSurvey,
+  setLocalSurvey,
+  project,
+  environmentTags,
+  environmentId,
+}: SurveyGeneralSettingsProps) {
   const [open, setOpen] = useState(true);
   const [customReward, setCustomReward] = useState(localSurvey.reward);
   const [usingCustomReward, setUsingCustomReward] = useState(
@@ -151,7 +151,7 @@ export function SurveyGeneralSettings({
       )}>
       <Collapsible.CollapsibleTrigger asChild className="h-full w-full cursor-pointer">
         <div className="inline-flex px-4 py-4">
-          <div className="flex items-center pl-2 pr-5">
+          <div className="flex items-center pr-5 pl-2">
             <CheckIcon
               strokeWidth={3}
               className="h-7 w-7 rounded-full border border-green-300 bg-green-100 p-1.5 text-green-600"
@@ -183,7 +183,7 @@ export function SurveyGeneralSettings({
               </Label>
             </div>
             {usingCustomReward && (
-              <div className="ml-2 mt-2">
+              <div className="mt-2 ml-2">
                 <Label htmlFor="customRewardInput" className="cursor-pointer">
                   Custom Reward:
                 </Label>
@@ -194,7 +194,7 @@ export function SurveyGeneralSettings({
                   step="0.1"
                   onChange={updateSurveyReward}
                   value={customReward}
-                  className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
+                  className="mr-2 ml-2 inline w-20 bg-white text-center text-sm"
                 />
                 <Label htmlFor="dollarSymbol" className="cursor-pointer">
                   $
@@ -209,7 +209,7 @@ export function SurveyGeneralSettings({
               <Label htmlFor="priorityInput" className="block text-sm font-semibold text-slate-700">
                 Survey Priority:
               </Label>
-              <p className="text-xs font-normal text-slate-500 mb-2">
+              <p className="mb-2 text-xs font-normal text-slate-500">
                 Set the priority of this survey. Higher values mean higher priority.
               </p>
               <Input
@@ -270,7 +270,7 @@ export function SurveyGeneralSettings({
               </Label>
             </div>
             {timerEnabled && (
-              <div className="ml-2 mt-2">
+              <div className="mt-2 ml-2">
                 <Label htmlFor="timerDurationInput" className="cursor-pointer">
                   Timer Duration (seconds):
                 </Label>
@@ -282,7 +282,7 @@ export function SurveyGeneralSettings({
                   min="1"
                   onChange={updateTimerDuration}
                   value={timerDuration}
-                  className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
+                  className="mr-2 ml-2 inline w-20 bg-white text-center text-sm"
                 />
               </div>
             )}

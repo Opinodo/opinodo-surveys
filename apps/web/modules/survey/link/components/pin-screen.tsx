@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/cn";
 import { getFormattedErrorMessage } from "@/lib/utils/helper";
 import { validateSurveyPinAction } from "@/modules/survey/link/actions";
 import { LinkSurvey } from "@/modules/survey/link/components/link-survey";
@@ -7,7 +8,6 @@ import { OTPInput } from "@/modules/ui/components/otp-input";
 import { Project, Response } from "@prisma/client";
 import { useTranslate } from "@tolgee/react";
 import { useCallback, useEffect, useState } from "react";
-import { cn } from "@formbricks/lib/cn";
 import { TSurvey } from "@formbricks/types/surveys/types";
 
 interface PinScreenProps {
@@ -16,6 +16,7 @@ interface PinScreenProps {
   emailVerificationStatus?: string;
   singleUseId?: string;
   singleUseResponse?: Pick<Response, "id" | "finished">;
+  surveyDomain: string;
   webAppUrl: string;
   IMPRINT_URL?: string;
   PRIVACY_URL?: string;
@@ -26,12 +27,15 @@ interface PinScreenProps {
   locale: string;
   isPreview: boolean;
   contactId?: string;
+  recaptchaSiteKey?: string;
+  isSpamProtectionEnabled?: boolean;
 }
 
 export const PinScreen = (props: PinScreenProps) => {
   const {
     surveyId,
     project,
+    surveyDomain,
     webAppUrl,
     emailVerificationStatus,
     singleUseId,
@@ -45,6 +49,8 @@ export const PinScreen = (props: PinScreenProps) => {
     locale,
     isPreview,
     contactId,
+    recaptchaSiteKey,
+    isSpamProtectionEnabled = false,
   } = props;
 
   const [localPinEntry, setLocalPinEntry] = useState<string>("");
@@ -118,6 +124,7 @@ export const PinScreen = (props: PinScreenProps) => {
       emailVerificationStatus={emailVerificationStatus}
       singleUseId={singleUseId}
       singleUseResponse={singleUseResponse}
+      surveyDomain={surveyDomain}
       webAppUrl={webAppUrl}
       verifiedEmail={verifiedEmail}
       languageCode={languageCode}
@@ -128,6 +135,8 @@ export const PinScreen = (props: PinScreenProps) => {
       locale={locale}
       isPreview={isPreview}
       contactId={contactId}
+      recaptchaSiteKey={recaptchaSiteKey}
+      isSpamProtectionEnabled={isSpamProtectionEnabled}
     />
   );
 };

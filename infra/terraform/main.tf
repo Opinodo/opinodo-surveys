@@ -2,13 +2,31 @@ locals {
   project     = "formbricks"
   environment = "prod"
   name        = "${local.project}-${local.environment}"
-  vpc_cidr    = "10.0.0.0/16"
-  azs         = slice(data.aws_availability_zones.available.names, 0, 3)
+  envs = {
+    prod  = "${local.project}-prod"
+    stage = "${local.project}-stage"
+  }
+  vpc_cidr = "10.0.0.0/16"
+  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
   tags = {
     Project     = local.project
     Environment = local.environment
     MangedBy    = "Terraform"
     Blueprint   = local.name
+  }
+  tags_map = {
+    prod = {
+      Project     = local.project
+      Environment = "prod"
+      MangedBy    = "Terraform"
+      Blueprint   = "${local.project}-prod"
+    }
+    stage = {
+      Project     = local.project
+      Environment = "stage"
+      MangedBy    = "Terraform"
+      Blueprint   = "${local.project}-stage"
+    }
   }
   domain                 = "k8s.formbricks.com"
   karpetner_helm_version = "1.3.1"
@@ -119,7 +137,8 @@ module "eks" {
   cluster_version = "1.32"
 
   enable_cluster_creator_admin_permissions = false
-  cluster_endpoint_public_access           = true
+  cluster_endpoint_public_access           = false
+  cloudwatch_log_group_retention_in_days   = 365
 
   cluster_addons = {
     coredns = {
@@ -138,6 +157,17 @@ module "eks" {
     }
     vpc-cni = {
       most_recent = true
+    }
+  }
+
+  cluster_security_group_additional_rules = {
+    ingress_from_vpc_cidr = {
+      description = "Allow all traffic from the VPC CIDR"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      type        = "ingress"
+      cidr_blocks = [local.vpc_cidr]
     }
   }
 
@@ -179,6 +209,12 @@ module "eks" {
   vpc_id                   = module.vpc.vpc_id
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.intra_subnets
+
+  eks_managed_node_group_defaults = {
+    iam_role_additional_policies = {
+      AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    }
+  }
 
   eks_managed_node_groups = {
     system = {
@@ -352,10 +388,10 @@ resource "kubernetes_manifest" "node_pool" {
         }
       }
       limits = {
-        cpu = 100
+        cpu = 1000
       }
       disruption = {
-        consolidationPolicy = "WhenEmpty"
+        consolidationPolicy = "WhenEmptyOrUnderutilized"
         consolidateAfter    = "30s"
       }
     }
@@ -412,23 +448,45 @@ module "eks_blueprints_addons" {
 }
 
 ### Formbricks App
-module "s3-bucket" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "4.6.0"
 
-  bucket_prefix            = "formbricks-"
+moved {
+  from = module.formbricks_s3_bucket
+  to   = module.formbricks_s3_bucket["prod"]
+}
+
+module "formbricks_s3_bucket" {
+  for_each = local.envs
+  source   = "terraform-aws-modules/s3-bucket/aws"
+  version  = "4.6.0"
+
+  bucket                   = each.key == "prod" ? "formbricks-cloud-eks" : "formbricks-cloud-eks-${each.key}"
   force_destroy            = true
   control_object_ownership = true
   object_ownership         = "BucketOwnerPreferred"
-
+  versioning = {
+    enabled = true
+  }
+  cors_rule = [
+    {
+      allowed_methods = ["POST"]
+      allowed_origins = ["https://*"]
+      allowed_headers = ["*"]
+      expose_headers  = []
+    }
+  ]
 }
 
+moved {
+  from = module.formbricks_app_iam_policy
+  to   = module.formbricks_app_iam_policy["prod"]
+}
 
-module "iam_policy" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
-  version = "5.53.0"
+module "formbricks_app_iam_policy" {
+  for_each = local.envs
+  source   = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version  = "5.53.0"
 
-  name_prefix = "formbricks-"
+  name_prefix = each.key == "prod" ? "formbricks-" : "formbricks-${each.key}-"
   path        = "/"
   description = "Policy for fombricks app"
 
@@ -441,176 +499,35 @@ module "iam_policy" {
           "s3:*",
         ]
         Resource = [
-          module.s3-bucket.s3_bucket_arn,
-          "${module.s3-bucket.s3_bucket_arn}/*",
-          "arn:aws:s3:::formbricks-cloud-uploads",
-          "arn:aws:s3:::formbricks-cloud-uploads/*"
+          module.formbricks_s3_bucket[each.key].s3_bucket_arn,
+          "${module.formbricks_s3_bucket[each.key].s3_bucket_arn}/*"
         ]
       }
     ]
   })
 }
 
-module "formkey-aws-access" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.53.0"
+moved {
+  from = module.formbricks_app_iam_role
+  to   = module.formbricks_app_iam_role["prod"]
+}
 
-  role_name_prefix = "formbricks-"
+module "formbricks_app_iam_role" {
+  for_each = local.envs
+  source   = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version  = "5.53.0"
+
+  role_name_prefix = each.key == "prod" ? "formbricks-" : "formbricks-${each.key}-"
 
   role_policy_arns = {
-    "formbricks" = module.iam_policy.arn
+    "formbricks" = module.formbricks_app_iam_policy[each.key].arn
   }
   assume_role_condition_test = "StringLike"
 
   oidc_providers = {
     eks = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["formbricks:*"]
+      namespace_service_accounts = each.key == "prod" ? ["formbricks:*"] : ["formbricks-${each.key}:*"]
     }
   }
 }
-
-
-resource "helm_release" "formbricks" {
-  name        = "formbricks"
-  namespace   = "formbricks"
-  repository  = "oci://ghcr.io/formbricks/helm-charts"
-  chart       = "formbricks"
-  version     = "3.5.1"
-  max_history = 5
-
-  values = [
-    <<-EOT
-  postgresql:
-    enabled: false
-  redis:
-    enabled: false
-  ingress:
-    enabled: true
-    ingressClassName: alb
-    hosts:
-      - host: "app.${local.domain}"
-        paths:
-          - path: /
-            pathType: "Prefix"
-            serviceName: "formbricks"
-    annotations:
-      alb.ingress.kubernetes.io/scheme: internet-facing
-      alb.ingress.kubernetes.io/target-type: ip
-      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
-      alb.ingress.kubernetes.io/ssl-redirect: "443"
-      alb.ingress.kubernetes.io/certificate-arn: ${data.aws_acm_certificate.formbricks.arn}
-      alb.ingress.kubernetes.io/healthcheck-path: "/health"
-      alb.ingress.kubernetes.io/group.name: formbricks
-      alb.ingress.kubernetes.io/ssl-policy: "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  secret:
-    enabled: false
-  rbac:
-    enabled: true
-    serviceAccount:
-      enabled: true
-      name: formbricks
-      annotations:
-        eks.amazonaws.com/role-arn: ${module.formkey-aws-access.iam_role_arn}
-  serviceMonitor:
-    enabled: true
-  deployment:
-    reloadOnChange: true
-    nodeSelector:
-      karpenter.sh/capacity-type: "on-demand"
-    env:
-      S3_BUCKET_NAME:
-        value: "formbricks-cloud-uploads"
-      RATE_LIMITING_DISABLED:
-        value: "1"
-    envFrom:
-      app-env:
-        type: secret
-        nameSuffix: app-env
-  externalSecret:
-    enabled: true  # Enable/disable ExternalSecrets
-    secretStore:
-      name: aws-secrets-manager
-      kind: ClusterSecretStore
-    refreshInterval: "1m"
-    files:
-      app-env:
-        dataFrom:
-          key: "prod/formbricks/environment"
-      app-secrets:
-        dataFrom:
-          key: "prod/formbricks/secrets"
-  cronJob:
-    enabled: true
-    jobs:
-      survey-status:
-        schedule: "0 0 * * *"
-        successfulJobsHistoryLimit: 0
-        env:
-          CRON_SECRET:
-            valueFrom:
-              secretKeyRef:
-                name: "formbricks-app-env"
-                key: "CRON_SECRET"
-          WEBAPP_URL:
-            valueFrom:
-              secretKeyRef:
-                name: "formbricks-app-env"
-                key: "WEBAPP_URL"
-        image:
-          repository: curlimages/curl
-          tag: latest
-          imagePullPolicy: IfNotPresent
-        args:
-          - "/bin/sh"
-          - "-c"
-          - 'curl -X POST -H "content-type: application/json" -H "x-api-key: $CRON_SECRET" "$WEBAPP_URL/api/cron/survey-status"'
-      weekely-summary:
-        schedule: "0 8 * * 1"
-        successfulJobsHistoryLimit: 0
-        env:
-          CRON_SECRET:
-            valueFrom:
-              secretKeyRef:
-                name: "formbricks-app-env"
-                key: "CRON_SECRET"
-          WEBAPP_URL:
-            valueFrom:
-              secretKeyRef:
-                name: "formbricks-app-env"
-                key: "WEBAPP_URL"
-        image:
-          repository: curlimages/curl
-          tag: latest
-          imagePullPolicy: IfNotPresent
-        args:
-          - "/bin/sh"
-          - "-c"
-          - 'curl -X POST -H "content-type: application/json" -H "x-api-key: $CRON_SECRET" "$WEBAPP_URL/api/cron/weekly-summary"'
-      ping:
-        schedule: "0 9 * * *"
-        successfulJobsHistoryLimit: 0
-        env:
-          CRON_SECRET:
-            valueFrom:
-              secretKeyRef:
-                name: "formbricks-app-env"
-                key: "CRON_SECRET"
-          WEBAPP_URL:
-            valueFrom:
-              secretKeyRef:
-                name: "formbricks-app-env"
-                key: "WEBAPP_URL"
-        image:
-          repository: curlimages/curl
-          tag: latest
-          imagePullPolicy: IfNotPresent
-        args:
-          - "/bin/sh"
-          - "-c"
-          - 'curl -X POST -H "content-type: application/json" -H "x-api-key: $CRON_SECRET" "$WEBAPP_URL/api/cron/ping"'
-  EOT
-  ]
-}
-
-# secrets password/keys

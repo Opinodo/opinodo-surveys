@@ -26,6 +26,7 @@ interface EndingCardProps {
   responseData: TResponseData;
   variablesData: TResponseVariables;
   onOpenExternalURL?: (url: string) => void | Promise<void>;
+  isPreviewMode: boolean;
   panelistId: string | null;
 }
 
@@ -41,6 +42,7 @@ export function EndingCard({
   panelistId,
   variablesData,
   onOpenExternalURL,
+  isPreviewMode,
 }: EndingCardProps) {
   const media =
     (endingCard.type === "endScreen" || endingCard.type === "affiliateOffer") &&
@@ -160,90 +162,99 @@ export function EndingCard({
       <div className="fb-text-center">
         {isResponseSendingFinished ? (
           <>
-            {(endingCard.type === "endScreen" || endingCard.type === "affiliateOffer") &&
-              (media ?? checkmark)}
-            <div>
-              <Headline
-                alignTextCenter
-                headline={
-                  endingCard.type === "endScreen" || endingCard.type === "affiliateOffer"
-                    ? replaceRecallInfo(
-                        getLocalizedValue(endingCard.headline, languageCode),
-                        responseData,
-                        variablesData
-                      )
-                    : "One moment..."
-                }
-                questionId="EndingCard"
-              />
-              <Subheader
-                subheader={
-                  endingCard.type === "endScreen" || endingCard.type === "affiliateOffer"
-                    ? replaceRecallInfo(
-                        getLocalizedValue(endingCard.subheader, languageCode),
-                        responseData,
-                        variablesData
-                      )
-                    : "You are being forwarded"
-                }
-                questionId="EndingCard"
-              />
-
-              {/* Promotional Message for Affiliate Offer */}
-              {endingCard.type === "affiliateOffer" &&
-                endingCard.promotionalMessage &&
-                renderPromotionalMessage(
-                  replaceRecallInfo(
-                    getLocalizedValue(endingCard.promotionalMessage, languageCode),
+            {endingCard.type === "endScreen" && (
+              <div>
+                {media ?? checkmark}
+                <div>
+                  <Headline
+                    alignTextCenter
+                    headline={replaceRecallInfo(
+                      getLocalizedValue(endingCard.headline, languageCode),
+                      responseData,
+                      variablesData
+                    )}
+                    questionId="EndingCard"
+                  />
+                  <Subheader
+                    subheader={replaceRecallInfo(
+                      getLocalizedValue(endingCard.subheader, languageCode),
+                      responseData,
+                      variablesData
+                    )}
+                    questionId="EndingCard"
+                  />
+                  {endingCard.buttonLabel ? (
+                    <div className="fb-mt-6 fb-flex fb-w-full fb-flex-col fb-items-center fb-justify-center fb-space-y-4">
+                      <SubmitButton
+                        buttonLabel={replaceRecallInfo(
+                          getLocalizedValue(endingCard.buttonLabel, languageCode),
+                          responseData,
+                          variablesData
+                        )}
+                        isLastQuestion={false}
+                        focus={isCurrent ? autoFocusEnabled : false}
+                        onClick={handleSubmit}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )}
+            {endingCard.type === "redirectToUrl" && (
+              <>
+                {isPreviewMode ? (
+                  <div>
+                    <Headline
+                      alignTextCenter
+                      headline={"Respondants will not see this card"}
+                      questionId="EndingCard"
+                    />
+                    <Subheader subheader={"They will be redirected immediately"} questionId="EndingCard" />
+                  </div>
+                ) : (
+                  <div className="fb-my-3">
+                    <LoadingSpinner />
+                  </div>
+                )}
+              </>
+            )}
+            {/* Promotional Message for Affiliate Offer */}
+            {endingCard.type === "affiliateOffer" &&
+              endingCard.promotionalMessage &&
+              renderPromotionalMessage(
+                replaceRecallInfo(
+                  getLocalizedValue(endingCard.promotionalMessage, languageCode),
+                  responseData,
+                  variablesData
+                )
+              )}
+            {/* Buttons for Affiliate Offer */}
+            {endingCard.type === "affiliateOffer" ? (
+              <div className="fb-mt-6 fb-flex fb-w-full fb-flex-col fb-items-center fb-justify-center fb-space-y-4">
+                {/* Primary CTA - Affiliate Offer Button */}
+                <SubmitButton
+                  buttonLabel={replaceRecallInfo(
+                    getLocalizedValue(endingCard.affiliateButtonLabel, languageCode) || "Get Offer",
                     responseData,
                     variablesData
-                  )
-                )}
+                  )}
+                  isLastQuestion={false}
+                  focus={isCurrent ? autoFocusEnabled : false}
+                  onClick={handleAffiliateSubmit}
+                />
 
-              {/* Button for End Screen */}
-              {endingCard.type === "endScreen" && endingCard.buttonLabel ? (
-                <div className="fb-mt-6 fb-flex fb-w-full fb-flex-col fb-items-center fb-justify-center fb-space-y-4">
-                  <SubmitButton
-                    buttonLabel={replaceRecallInfo(
-                      getLocalizedValue(endingCard.buttonLabel, languageCode),
-                      responseData,
-                      variablesData
-                    )}
-                    isLastQuestion={false}
-                    focus={isCurrent ? autoFocusEnabled : false}
-                    onClick={handleSubmit}
-                  />
-                </div>
-              ) : null}
-
-              {/* Buttons for Affiliate Offer */}
-              {endingCard.type === "affiliateOffer" ? (
-                <div className="fb-mt-6 fb-flex fb-w-full fb-flex-col fb-items-center fb-justify-center fb-space-y-4">
-                  {/* Primary CTA - Affiliate Offer Button */}
-                  <SubmitButton
-                    buttonLabel={replaceRecallInfo(
-                      getLocalizedValue(endingCard.affiliateButtonLabel, languageCode) || "Get Offer",
-                      responseData,
-                      variablesData
-                    )}
-                    isLastQuestion={false}
-                    focus={isCurrent ? autoFocusEnabled : false}
-                    onClick={handleAffiliateSubmit}
-                  />
-
-                  {/* Secondary Text Link - Skip */}
-                  <button
-                    className="fb-text-brand fb-mt-2 fb-cursor-pointer fb-text-sm fb-underline"
-                    onClick={handleSkipSubmit}>
-                    {replaceRecallInfo(
-                      getLocalizedValue(endingCard.skipLinkLabel, languageCode) || "No thanks, continue",
-                      responseData,
-                      variablesData
-                    )}
-                  </button>
-                </div>
-              ) : null}
-            </div>
+                {/* Secondary Text Link - Skip */}
+                <button
+                  className="fb-text-brand fb-mt-2 fb-cursor-pointer fb-text-sm fb-underline"
+                  onClick={handleSkipSubmit}>
+                  {replaceRecallInfo(
+                    getLocalizedValue(endingCard.skipLinkLabel, languageCode) || "No thanks, continue",
+                    responseData,
+                    variablesData
+                  )}
+                </button>
+              </div>
+            ) : null}
           </>
         ) : (
           <>
