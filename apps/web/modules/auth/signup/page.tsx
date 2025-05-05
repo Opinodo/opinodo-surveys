@@ -1,11 +1,3 @@
-import { FormWrapper } from "@/modules/auth/components/form-wrapper";
-import { Testimonial } from "@/modules/auth/components/testimonial";
-import {
-  getIsMultiOrgEnabled,
-  getIsSamlSsoEnabled,
-  getisSsoEnabled,
-} from "@/modules/ee/license-check/lib/utils";
-import { notFound } from "next/navigation";
 import {
   AZURE_OAUTH_ENABLED,
   DEFAULT_ORGANIZATION_ID,
@@ -23,9 +15,20 @@ import {
   SAML_TENANT,
   SIGNUP_ENABLED,
   TERMS_URL,
+  TURNSTILE_SITE_KEY,
   WEBAPP_URL,
-} from "@formbricks/lib/constants";
-import { findMatchingLocale } from "@formbricks/lib/utils/locale";
+} from "@/lib/constants";
+import { verifyInviteToken } from "@/lib/jwt";
+import { findMatchingLocale } from "@/lib/utils/locale";
+import { FormWrapper } from "@/modules/auth/components/form-wrapper";
+import { Testimonial } from "@/modules/auth/components/testimonial";
+import { getIsValidInviteToken } from "@/modules/auth/signup/lib/invite";
+import {
+  getIsMultiOrgEnabled,
+  getIsSamlSsoEnabled,
+  getisSsoEnabled,
+} from "@/modules/ee/license-check/lib/utils";
+import { notFound } from "next/navigation";
 import { SignupForm } from "./components/signup-form";
 
 export const SignupPage = async ({ searchParams: searchParamsProps }) => {
@@ -38,11 +41,20 @@ export const SignupPage = async ({ searchParams: searchParamsProps }) => {
   ]);
 
   const samlSsoEnabled = isSamlSsoEnabled && SAML_OAUTH_ENABLED;
-
   const locale = await findMatchingLocale();
-  if (!inviteToken && (!SIGNUP_ENABLED || !isMultOrgEnabled)) {
-    notFound();
+  if (!SIGNUP_ENABLED || !isMultOrgEnabled) {
+    if (!inviteToken) notFound();
+
+    try {
+      const { inviteId } = verifyInviteToken(inviteToken);
+      const isValidInviteToken = await getIsValidInviteToken(inviteId);
+
+      if (!isValidInviteToken) notFound();
+    } catch {
+      notFound();
+    }
   }
+
   const emailFromSearchParams = searchParams["email"];
 
   return (
@@ -72,6 +84,7 @@ export const SignupPage = async ({ searchParams: searchParamsProps }) => {
             isTurnstileConfigured={IS_TURNSTILE_CONFIGURED}
             samlTenant={SAML_TENANT}
             samlProduct={SAML_PRODUCT}
+            turnstileSiteKey={TURNSTILE_SITE_KEY}
           />
         </FormWrapper>
       </div>

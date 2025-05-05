@@ -1,6 +1,10 @@
+import { DEFAULT_LOCALE, SURVEYS_PER_PAGE } from "@/lib/constants";
+import { getSurveyDomain } from "@/lib/getSurveyUrl";
+import { getTagsByEnvironmentId } from "@/lib/tag/service";
+import { getUserLocale } from "@/lib/user/service";
 import { getEnvironmentAuth } from "@/modules/environments/lib/utils";
 import { TemplateList } from "@/modules/survey/components/template-list";
-import { getProjectByEnvironmentId } from "@/modules/survey/lib/project";
+import { getProjectWithTeamIdsByEnvironmentId } from "@/modules/survey/lib/project";
 import { SurveysList } from "@/modules/survey/list/components/survey-list";
 import { getSurveyCount } from "@/modules/survey/list/lib/survey";
 import { Button } from "@/modules/ui/components/button";
@@ -11,9 +15,6 @@ import { PlusIcon } from "lucide-react";
 import { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { DEFAULT_LOCALE, SURVEYS_PER_PAGE, WEBAPP_URL } from "@formbricks/lib/constants";
-import { getTagsByEnvironmentId } from "@formbricks/lib/tag/service";
-import { getUserLocale } from "@formbricks/lib/user/service";
 import { TTemplateRole } from "@formbricks/types/templates";
 
 export const metadata: Metadata = {
@@ -33,11 +34,12 @@ export const SurveysPage = async ({
   params: paramsProps,
   searchParams: searchParamsProps,
 }: SurveyTemplateProps) => {
+  const surveyDomain = getSurveyDomain();
   const searchParams = await searchParamsProps;
   const params = await paramsProps;
   const t = await getTranslate();
 
-  const project = await getProjectByEnvironmentId(params.environmentId);
+  const project = await getProjectWithTeamIdsByEnvironmentId(params.environmentId);
 
   if (!project) {
     throw new Error(t("common.project_not_found"));
@@ -80,20 +82,20 @@ export const SurveysPage = async ({
   let content;
   if (surveyCount > 0) {
     content = (
-        <>
-          <PageHeader pageTitle={t("common.surveys")} cta={isReadOnly ? <></> : <CreateSurveyButton />} />
-          <SurveysList
-            environmentId={environment.id}
-            isReadOnly={isReadOnly}
-            WEBAPP_URL={WEBAPP_URL}
-            userId={session.user.id}
-            surveysPerPage={SURVEYS_PER_PAGE}
-            currentProjectChannel={currentProjectChannel}
-            locale={locale}
-            environmentTags={environmentTags}
-          />
-        </>
-      ) ;
+      <>
+        <PageHeader pageTitle={t("common.surveys")} cta={isReadOnly ? <></> : <CreateSurveyButton />} />
+        <SurveysList
+          environmentId={environment.id}
+          isReadOnly={isReadOnly}
+          surveyDomain={surveyDomain}
+          userId={session.user.id}
+          surveysPerPage={SURVEYS_PER_PAGE}
+          currentProjectChannel={currentProjectChannel}
+          locale={locale}
+          environmentTags={environmentTags}
+        />
+      </>
+    );
   } else if (isReadOnly) {
     content = (
       <>

@@ -1,8 +1,8 @@
 import { authenticateRequest } from "@/app/api/v1/auth";
 import { responses } from "@/app/lib/api/response";
 import { generateSurveySingleUseId } from "@/app/lib/singleUseSurveys";
-import { WEBAPP_URL } from "@formbricks/lib/constants";
-import { getSurvey } from "@formbricks/lib/survey/service";
+import { WEBAPP_URL } from "@/lib/constants";
+import { getSurvey } from "@/lib/survey/service";
 import { DatabaseError } from "@formbricks/types/errors";
 
 export async function GET(request: Request) {

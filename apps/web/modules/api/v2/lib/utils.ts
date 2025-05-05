@@ -1,6 +1,10 @@
+// @ts-nocheck // We can remove this when we update the prisma client and the typescript version
+// if we don't add this we get build errors with prisma due to type-nesting
+import { IS_PRODUCTION, SENTRY_DSN } from "@/lib/constants";
 import { responses } from "@/modules/api/v2/lib/response";
 import { ApiErrorResponseV2 } from "@/modules/api/v2/types/api-error";
-import { ZodError } from "zod";
+import * as Sentry from "@sentry/nextjs";
+import { ZodCustomIssue, ZodIssue } from "zod";
 import { logger } from "@formbricks/logger";
 
 export const handleApiError = (request: Request, err: ApiErrorResponseV2): Response => {
@@ -16,7 +20,7 @@ export const handleApiError = (request: Request, err: ApiErrorResponseV2): Respo
     case "not_found":
       return responses.notFoundResponse({ details: err.details });
     case "conflict":
-      return responses.conflictResponse();
+      return responses.conflictResponse({ details: err.details });
     case "unprocessable_entity":
       return responses.unprocessableEntityResponse({ details: err.details });
     case "too_many_requests":
@@ -34,11 +38,16 @@ export const handleApiError = (request: Request, err: ApiErrorResponseV2): Respo
   }
 };
 
-export const formatZodError = (error: ZodError) => {
-  return error.issues.map((issue) => ({
-    field: issue.path.join("."),
-    issue: issue.message,
-  }));
+export const formatZodError = (error: { issues: (ZodIssue | ZodCustomIssue)[] }) => {
+  return error.issues.map((issue) => {
+    const issueParams = issue.code === "custom" ? issue.params : undefined;
+
+    return {
+      field: issue.path.join("."),
+      issue: issue.message ?? "An error occurred while processing your request. Please try again later.",
+      ...(issueParams && { meta: issueParams }),
+    };
+  });
 };
 
 export const logApiRequest = (request: Request, responseStatus: number): void => {
@@ -54,7 +63,6 @@ export const logApiRequest = (request: Request, responseStatus: number): void =>
     Object.entries(queryParams).filter(([key]) => !sensitiveParams.includes(key.toLowerCase()))
   );
 
-  // Info: Conveys general, operational messages about system progress and state.
   logger
     .withContext({
       method,
@@ -68,7 +76,22 @@ export const logApiRequest = (request: Request, responseStatus: number): void =>
 };
 
 export const logApiError = (request: Request, error: ApiErrorResponseV2): void => {
-  const correlationId = request.headers.get("x-request-id") || "";
+  const correlationId = request.headers.get("x-request-id") ?? "";
+
+  // Send the error to Sentry if the DSN is set and the error type is internal_server_error
+  // This is useful for tracking down issues without overloading Sentry with errors
+  if (SENTRY_DSN && IS_PRODUCTION && error.type === "internal_server_error") {
+    const err = new Error(`API V2 error, id: ${correlationId}`);
+
+    Sentry.captureException(err, {
+      extra: {
+        details: error.details,
+        type: error.type,
+        correlationId,
+      },
+    });
+  }
+
   logger
     .withContext({
       correlationId,

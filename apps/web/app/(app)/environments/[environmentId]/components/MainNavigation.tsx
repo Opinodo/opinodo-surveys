@@ -4,6 +4,9 @@ import { getLatestStableFbReleaseAction } from "@/app/(app)/environments/[enviro
 import { NavigationLink } from "@/app/(app)/environments/[environmentId]/components/NavigationLink";
 import { formbricksLogout } from "@/app/lib/formbricks";
 import OpinodoLogo from "@/images/opinodo-logo.png";
+import { cn } from "@/lib/cn";
+import { getAccessFlags } from "@/lib/membership/utils";
+import { capitalizeFirstLetter } from "@/lib/utils/strings";
 import { CreateOrganizationModal } from "@/modules/organization/components/CreateOrganizationModal";
 import { ProjectSwitcher } from "@/modules/projects/components/project-switcher";
 import { ProfileAvatar } from "@/modules/ui/components/avatars";
@@ -45,9 +48,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { cn } from "@formbricks/lib/cn";
-import { getAccessFlags } from "@formbricks/lib/membership/utils";
-import { capitalizeFirstLetter } from "@formbricks/lib/utils/strings";
 import { TEnvironment } from "@formbricks/types/environment";
 import { TOrganizationRole } from "@formbricks/types/memberships";
 import { TOrganization } from "@formbricks/types/organizations";
@@ -63,6 +63,7 @@ interface NavigationProps {
   projects: TProject[];
   isMultiOrgEnabled: boolean;
   isFormbricksCloud: boolean;
+  isDevelopment: boolean;
   membershipRole?: TOrganizationRole;
   organizationProjectsLimit: number;
   isLicenseActive: boolean;
@@ -79,6 +80,7 @@ export const MainNavigation = ({
   isFormbricksCloud,
   organizationProjectsLimit,
   isLicenseActive,
+  isDevelopment,
 }: NavigationProps) => {
   const router = useRouter();
   const pathname = usePathname();
@@ -263,7 +265,7 @@ export const MainNavigation = ({
                 size="icon"
                 onClick={toggleSidebar}
                 className={cn(
-                  "rounded-xl bg-slate-50 p-1 text-slate-600 transition-all hover:bg-slate-100 focus:outline-none focus:ring-0 focus:ring-transparent"
+                  "rounded-xl bg-slate-50 p-1 text-slate-600 transition-all hover:bg-slate-100 focus:ring-0 focus:ring-transparent focus:outline-none"
                 )}>
                 {isCollapsed ? (
                   <PanelLeftOpenIcon strokeWidth={1.5} />
@@ -296,7 +298,7 @@ export const MainNavigation = ({
 
           <div>
             {/* New Version Available */}
-            {!isCollapsed && isOwnerOrManager && latestVersion && !isFormbricksCloud && (
+            {!isCollapsed && isOwnerOrManager && latestVersion && !isFormbricksCloud && !isDevelopment && (
               <Link
                 href="https://github.com/formbricks/formbricks/releases"
                 target="_blank"

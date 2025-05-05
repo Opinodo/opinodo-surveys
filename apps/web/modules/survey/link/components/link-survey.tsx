@@ -33,6 +33,7 @@ interface LinkSurveyProps {
   emailVerificationStatus?: string;
   singleUseId?: string;
   singleUseResponse?: Pick<Response, "id" | "finished">;
+  surveyDomain: string;
   webAppUrl: string;
   responseCount?: number;
   verifiedEmail?: string;
@@ -44,6 +45,8 @@ interface LinkSurveyProps {
   locale: string;
   isPreview: boolean;
   contactId?: string;
+  recaptchaSiteKey?: string;
+  isSpamProtectionEnabled?: boolean;
 }
 
 export const LinkSurvey = ({
@@ -52,6 +55,7 @@ export const LinkSurvey = ({
   emailVerificationStatus,
   singleUseId,
   singleUseResponse,
+  surveyDomain,
   webAppUrl,
   responseCount,
   verifiedEmail,
@@ -63,6 +67,8 @@ export const LinkSurvey = ({
   locale,
   isPreview,
   contactId,
+  recaptchaSiteKey,
+  isSpamProtectionEnabled = false,
 }: LinkSurveyProps) => {
   const responseId = singleUseResponse?.id;
   const searchParams = useSearchParams();
@@ -186,7 +192,7 @@ export const LinkSurvey = ({
       handleResetSurvey={handleResetSurvey}
       determineStyling={determineStyling}
       isEmbed={isEmbed}
-      webAppUrl={webAppUrl}
+      surveyDomain={surveyDomain}
       IS_FORMBRICKS_CLOUD={IS_FORMBRICKS_CLOUD}
       IMPRINT_URL={IMPRINT_URL}
       PRIVACY_URL={PRIVACY_URL}
@@ -221,6 +227,8 @@ export const LinkSurvey = ({
         singleUseResponseId={responseId}
         getSetIsResponseSendingFinished={(_f: (value: boolean) => void) => {}}
         contactId={contactId}
+        recaptchaSiteKey={recaptchaSiteKey}
+        isSpamProtectionEnabled={isSpamProtectionEnabled}
       />
     </LinkSurveyWrapper>
   );

@@ -22,6 +22,7 @@ interface SettingsViewProps {
   responseCount: number;
   membershipRole?: OrganizationRole;
   isUserTargetingAllowed?: boolean;
+  isSpamProtectionAllowed: boolean;
   projectPermission: TTeamPermission | null;
   project: Project;
   environmentTags: TTag[];
@@ -38,6 +39,7 @@ export const SettingsView = ({
   responseCount,
   membershipRole,
   isUserTargetingAllowed = false,
+  isSpamProtectionAllowed,
   project,
   environmentTags,
   projectPermission,
@@ -90,6 +92,7 @@ export const SettingsView = ({
         localSurvey={localSurvey}
         setLocalSurvey={setLocalSurvey}
         responseCount={responseCount}
+        isSpamProtectionAllowed={isSpamProtectionAllowed}
       />
 
       <RecontactOptionsCard

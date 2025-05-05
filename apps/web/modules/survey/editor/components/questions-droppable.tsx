@@ -22,6 +22,8 @@ interface QuestionsDraggableProps {
   isFormbricksCloud: boolean;
   isCxMode: boolean;
   locale: TUserLocale;
+  responseCount: number;
+  onAlertTrigger: () => void;
 }
 
 export const QuestionsDroppable = ({
@@ -41,6 +43,8 @@ export const QuestionsDroppable = ({
   isFormbricksCloud,
   isCxMode,
   locale,
+  responseCount,
+  onAlertTrigger,
 }: QuestionsDraggableProps) => {
   const [parent] = useAutoAnimate();
 
@@ -69,6 +73,8 @@ export const QuestionsDroppable = ({
             isFormbricksCloud={isFormbricksCloud}
             isCxMode={isCxMode}
             locale={locale}
+            responseCount={responseCount}
+            onAlertTrigger={onAlertTrigger}
           />
         ))}
       </SortableContext>

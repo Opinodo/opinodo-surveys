@@ -1,8 +1,3 @@
-import { EmailCustomizationPreviewEmail } from "@/modules/email/emails/general/email-customization-preview-email";
-import { getTranslate } from "@/tolgee/server";
-import { render } from "@react-email/render";
-import { createTransport } from "nodemailer";
-import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import {
   DEBUG,
   MAIL_FROM,
@@ -15,9 +10,15 @@ import {
   SMTP_SECURE_ENABLED,
   SMTP_USER,
   WEBAPP_URL,
-} from "@formbricks/lib/constants";
-import { createInviteToken, createToken, createTokenForLinkSurvey } from "@formbricks/lib/jwt";
-import { getOrganizationByEnvironmentId } from "@formbricks/lib/organization/service";
+} from "@/lib/constants";
+import { getSurveyDomain } from "@/lib/getSurveyUrl";
+import { createInviteToken, createToken, createTokenForLinkSurvey } from "@/lib/jwt";
+import { getOrganizationByEnvironmentId } from "@/lib/organization/service";
+import { EmailCustomizationPreviewEmail } from "@/modules/email/emails/general/email-customization-preview-email";
+import { getTranslate } from "@/tolgee/server";
+import { render } from "@react-email/render";
+import { createTransport } from "nodemailer";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import { logger } from "@formbricks/logger";
 import type { TLinkSurveyEmailData } from "@formbricks/types/email";
 import { InvalidInputError } from "@formbricks/types/errors";
@@ -49,6 +50,10 @@ interface SendEmailDataProps {
 }
 
 export const sendEmail = async (emailData: SendEmailDataProps): Promise<boolean> => {
+  if (!IS_SMTP_CONFIGURED) {
+    logger.info("SMTP is not configured, skipping email sending");
+    return false;
+  }
   try {
     const transporter = createTransport({
       host: SMTP_HOST,
@@ -270,9 +275,9 @@ export const sendLinkSurveyToVerifiedEmail = async (data: TLinkSurveyEmailData):
   const t = await getTranslate();
   const getSurveyLink = (): string => {
     if (singleUseId) {
-      return `${WEBAPP_URL}/s/${surveyId}?verify=${encodeURIComponent(token)}&suId=${singleUseId}`;
+      return `${getSurveyDomain()}/s/${surveyId}?verify=${encodeURIComponent(token)}&suId=${singleUseId}`;
     }
-    return `${WEBAPP_URL}/s/${surveyId}?verify=${encodeURIComponent(token)}`;
+    return `${getSurveyDomain()}/s/${surveyId}?verify=${encodeURIComponent(token)}`;
   };
   const surveyLink = getSurveyLink();
 
@@ -351,17 +356,32 @@ export const sendNoLiveSurveyNotificationEmail = async (
   });
 };
 
-export const sendFollowUpEmail = async (
-  html: string,
-  subject: string,
-  to: string,
-  replyTo: string[],
-  logoUrl?: string
-): Promise<void> => {
+export const sendFollowUpEmail = async ({
+  html,
+  replyTo,
+  subject,
+  to,
+  survey,
+  response,
+  attachResponseData = false,
+  logoUrl,
+}: {
+  html: string;
+  subject: string;
+  to: string;
+  replyTo: string[];
+  attachResponseData: boolean;
+  survey: TSurvey;
+  response: TResponse;
+  logoUrl?: string;
+}): Promise<void> => {
   const emailHtmlBody = await render(
     await FollowUpEmail({
       html,
       logoUrl,
+      attachResponseData,
+      survey,
+      response,
     })
   );
 

@@ -1,12 +1,12 @@
 "use client";
 
+import { cn } from "@/lib/cn";
 import { Badge } from "@/modules/ui/components/badge";
 import { Button } from "@/modules/ui/components/button";
 import { ConfirmationModal } from "@/modules/ui/components/confirmation-modal";
 import { useTranslate } from "@tolgee/react";
 import { CheckIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { cn } from "@formbricks/lib/cn";
 import { TOrganization, TOrganizationBillingPeriod } from "@formbricks/types/organizations";
 
 interface PricingCardProps {
@@ -126,7 +126,7 @@ export const PricingCard = ({
             id={plan.id}
             className={cn(
               plan.featured ? "text-slate-900" : "text-slate-800",
-              "text-sm font-semibold leading-6"
+              "text-sm leading-6 font-semibold"
             )}>
             {t(plan.name)}
           </h2>
@@ -215,6 +215,10 @@ export const PricingCard = ({
         text={t("environments.settings.billing.switch_plan_confirmation_text", {
           plan: t(plan.name),
           price: planPeriod === "monthly" ? plan.price.monthly : plan.price.yearly,
+          period:
+            planPeriod === "monthly"
+              ? t("environments.settings.billing.per_month")
+              : t("environments.settings.billing.per_year"),
         })}
         buttonVariant="default"
         buttonLoading={loading}

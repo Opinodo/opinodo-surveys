@@ -1,14 +1,14 @@
 import "server-only";
+import { cache } from "@/lib/cache";
 import { membershipCache } from "@/lib/cache/membership";
 import { organizationCache } from "@/lib/cache/organization";
 import { teamCache } from "@/lib/cache/team";
+import { ITEMS_PER_PAGE } from "@/lib/constants";
+import { validateInputs } from "@/lib/utils/validate";
 import { TOrganizationMember } from "@/modules/ee/teams/team-list/types/team";
 import { Prisma } from "@prisma/client";
 import { cache as reactCache } from "react";
 import { prisma } from "@formbricks/database";
-import { cache } from "@formbricks/lib/cache";
-import { ITEMS_PER_PAGE } from "@formbricks/lib/constants";
-import { validateInputs } from "@formbricks/lib/utils/validate";
 import { logger } from "@formbricks/logger";
 import { ZOptionalNumber, ZString } from "@formbricks/types/common";
 import { DatabaseError, UnknownError } from "@formbricks/types/errors";
@@ -29,6 +29,7 @@ export const getMembershipByOrganizationId = reactCache(
                 select: {
                   name: true,
                   email: true,
+                  isActive: true,
                 },
               },
               userId: true,
@@ -46,6 +47,7 @@ export const getMembershipByOrganizationId = reactCache(
               userId: member.userId,
               accepted: member.accepted,
               role: member.role,
+              isActive: member.user?.isActive || false,
             };
           });
 

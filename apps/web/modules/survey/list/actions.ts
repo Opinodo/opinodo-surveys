@@ -1,5 +1,7 @@
 "use server";
 
+import { createTag, getTagsBySurveyId } from "@/lib/tag/service";
+import { addTagToSurvey, deleteTagOnSurvey } from "@/lib/tagOnSurvey/service";
 import { authenticatedActionClient } from "@/lib/utils/action-client";
 import { checkAuthorizationUpdated } from "@/lib/utils/action-client-middleware";
 import {
@@ -9,6 +11,7 @@ import {
   getProjectIdFromEnvironmentId,
   getProjectIdFromSurveyId,
 } from "@/lib/utils/helper";
+import { generateSurveySingleUseId } from "@/lib/utils/singleUseSurveys";
 import { getProjectIdIfEnvironmentExists } from "@/modules/survey/list/lib/environment";
 import {
   copySurveyToOtherEnvironment,
@@ -17,13 +20,10 @@ import {
   getSurveys,
 } from "@/modules/survey/list/lib/survey";
 import { z } from "zod";
-import { getUserProjects } from "@formbricks/lib/project/service";
-import { createTag, getTagsBySurveyId } from "@formbricks/lib/tag/service";
-import { addTagToSurvey, deleteTagOnSurvey } from "@formbricks/lib/tagOnSurvey/service";
-import { generateSurveySingleUseId } from "@formbricks/lib/utils/singleUseSurveys";
 import { ZId } from "@formbricks/types/common";
 import { ResourceNotFoundError } from "@formbricks/types/errors";
 import { ZSurveyFilterCriteria } from "@formbricks/types/surveys/types";
+import { getUserProjects } from "./lib/project";
 
 const ZGetSurveyAction = z.object({
   surveyId: z.string().cuid2(),

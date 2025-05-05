@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/cn";
 import { LocalizedEditor } from "@/modules/ee/multi-language-surveys/components/localized-editor";
 import { QuestionFormInput } from "@/modules/survey/components/question-form-input";
 import { translateText } from "@/modules/survey/editor/actions";
@@ -13,7 +14,6 @@ import { Hand, LanguagesIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { cn } from "@formbricks/lib/cn";
 import { TSurvey, TSurveyQuestionId, TSurveyWelcomeCard } from "@formbricks/types/surveys/types";
 import { TUserLocale } from "@formbricks/types/user";
 
@@ -118,14 +118,14 @@ export const EditWelcomeCard = ({
   return (
     <div className={cn(open ? "shadow-lg" : "shadow-md", "group flex flex-row rounded-lg bg-white")}>
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75">
+        <div className="bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-white">
           <LoadingSpinner />
         </div>
       )}
       <div
         className={cn(
           open ? "bg-slate-50" : "",
-          "flex w-10 items-center justify-center rounded-l-lg border-b border-l border-t group-aria-expanded:rounded-bl-none",
+          "flex w-10 items-center justify-center rounded-l-lg border-t border-b border-l group-aria-expanded:rounded-bl-none",
           isInvalid ? "bg-red-400" : "bg-white group-hover:bg-slate-50"
         )}>
         <Hand className="h-4 w-4" />

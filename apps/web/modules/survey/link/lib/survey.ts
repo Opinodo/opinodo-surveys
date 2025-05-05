@@ -1,9 +1,9 @@
 import "server-only";
+import { cache } from "@/lib/cache";
+import { surveyCache } from "@/lib/survey/cache";
 import { Prisma } from "@prisma/client";
 import { cache as reactCache } from "react";
 import { prisma } from "@formbricks/database";
-import { cache } from "@formbricks/lib/cache";
-import { surveyCache } from "@formbricks/lib/survey/cache";
 import { logger } from "@formbricks/logger";
 import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 
@@ -32,7 +32,7 @@ export const getSurveyMetadata = reactCache(async (surveyId: string) =>
         return survey;
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          logger.error(error, "Error getting survey metadata");
+          logger.error(error);
           throw new DatabaseError(error.message);
         }
         throw error;
