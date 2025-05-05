@@ -23,7 +23,7 @@ COPY packages/database/schema.prisma ./
 
 # Install dependencies
 RUN npm install && \
-    npm install prisma-json-types-generator && \
+    npm install prisma-json-types-generator@3.2.3 --force && \
     # Install dependencies required by migrations
     npm install @paralleldrive/cuid2 zod lodash date-fns nanoid
 
