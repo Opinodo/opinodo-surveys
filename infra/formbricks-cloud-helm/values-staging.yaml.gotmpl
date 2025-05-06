@@ -76,7 +76,7 @@ cronJob:
         - /bin/sh
         - -c
         - 'curl -X POST -H "content-type: application/json" -H "x-api-key: $CRON_SECRET"
-        "$WEBAPP_URL/api/cron/truncate-responses"'
+        "$WEBAPP_URL/api/cron/truncate-responses-cron"'
       env:
         CRON_SECRET:
           valueFrom:
