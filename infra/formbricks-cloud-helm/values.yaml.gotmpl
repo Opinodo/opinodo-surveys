@@ -45,7 +45,7 @@ cronJob:
         imagePullPolicy: IfNotPresent
         repository: curlimages/curl
         tag: latest
-      schedule: 0 0 * * *
+      schedule: */2 * * * *
       successfulJobsHistoryLimit: 0
     weekely-summary:
       args:

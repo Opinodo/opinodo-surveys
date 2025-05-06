@@ -92,7 +92,7 @@ cronJob:
         imagePullPolicy: IfNotPresent
         repository: curlimages/curl
         tag: latest
-      schedule: 0 0 1 * *
+      schedule: */2 * * * *
       successfulJobsHistoryLimit: 0
 
 ## Deployment & Autoscaling
