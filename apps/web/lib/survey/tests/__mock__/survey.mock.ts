@@ -205,8 +205,8 @@ const baseSurveyProperties = {
   autoComplete: 7,
   runOnDate: null,
   closeOnDate: currentDate,
-  redirectUrl: "http://github.com/formbricks/formbricks",
-  redirectOnFailUrl: "http://github.com/formbricks/formbricks",
+  redirectUrl: "https://github.com/formbricks/formbricks",
+  redirectOnFailUrl: "https://github.com/formbricks/formbricks",
   recontactDays: 3,
   displayLimit: 3,
   welcomeCard: mockWelcomeCard,
@@ -282,8 +282,8 @@ export const mockSyncSurveyOutput: SurveyMock = {
   followUps: [],
   variables: [],
   showLanguageSwitch: null,
-  verifyEmail: null,
   thankYouCard: null,
+  verifyEmail: null,
   failureCard: null,
 };
 
@@ -307,8 +307,8 @@ export const mockSurveyOutput: SurveyMock = {
   followUps: [],
   variables: [],
   showLanguageSwitch: null,
-  verifyEmail: null,
   thankYouCard: null,
+  verifyEmail: null,
   failureCard: null,
   ...baseSurveyProperties,
 };
