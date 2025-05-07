@@ -39,6 +39,7 @@ export const EditWelcomeCard = ({
   locale,
 }: EditWelcomeCardProps) => {
   const { t } = useTranslate();
+
   const [firstRender, setFirstRender] = useState(true);
   const path = usePathname();
   const environmentId = path?.split("/environments/")[1]?.split("/")[0];
