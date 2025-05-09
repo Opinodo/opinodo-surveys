@@ -53,6 +53,7 @@ describe("EndingCard", () => {
         variablesData={mockVariablesData}
         onOpenExternalURL={mockOnOpenExternalURL}
         isPreviewMode={false}
+        panelistId={"id"}
       />
     );
 
@@ -75,6 +76,7 @@ describe("EndingCard", () => {
         variablesData={mockVariablesData}
         onOpenExternalURL={mockOnOpenExternalURL}
         isPreviewMode={false}
+        panelistId={"id"}
       />
     );
 
@@ -95,6 +97,7 @@ describe("EndingCard", () => {
         variablesData={mockVariablesData}
         onOpenExternalURL={mockOnOpenExternalURL}
         isPreviewMode={false}
+        panelistId={"id"}
       />
     );
 
@@ -118,6 +121,7 @@ describe("EndingCard", () => {
         variablesData={mockVariablesData}
         onOpenExternalURL={mockOnOpenExternalURL}
         isPreviewMode={true}
+        panelistId={"id"}
       />
     );
 
@@ -139,6 +143,7 @@ describe("EndingCard", () => {
         variablesData={mockVariablesData}
         onOpenExternalURL={mockOnOpenExternalURL}
         isPreviewMode={false}
+        panelistId={"id"}
       />
     );
 
@@ -165,6 +170,7 @@ describe("EndingCard", () => {
         variablesData={mockVariablesData}
         onOpenExternalURL={mockOnOpenExternalURL}
         isPreviewMode={false}
+        panelistId={"id"}
       />
     );
 

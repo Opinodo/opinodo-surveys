@@ -38,6 +38,7 @@ const mockSurvey: TJsEnvironmentStateSurvey = {
   displayLimit: null,
   segment: null,
   showLanguageSwitch: false,
+  timerDuration: null,
 };
 
 const mockCardRefs: MutableRef<(HTMLDivElement | null)[]> = { current: [] };
