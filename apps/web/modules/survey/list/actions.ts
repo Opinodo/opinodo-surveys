@@ -11,7 +11,7 @@ import {
   getProjectIdFromEnvironmentId,
   getProjectIdFromSurveyId,
 } from "@/lib/utils/helper";
-import { generateSurveySingleUseId } from "@/lib/utils/singleUseSurveys";
+import { generateSurveySingleUseId } from "@/lib/utils/single-use-surveys";
 import { getProjectIdIfEnvironmentExists } from "@/modules/survey/list/lib/environment";
 import {
   copySurveyToOtherEnvironment,

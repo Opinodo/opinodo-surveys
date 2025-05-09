@@ -116,7 +116,7 @@ export const selectSurvey = {
   followUps: true,
 } satisfies Prisma.SurveySelect;
 
-const checkTriggersValidity = (triggers: TSurvey["triggers"], actionClasses: ActionClass[]) => {
+export const checkTriggersValidity = (triggers: TSurvey["triggers"], actionClasses: ActionClass[]) => {
   if (!triggers) return;
 
   // check if all the triggers are valid
