@@ -511,6 +511,7 @@ export function Survey({
           },
           variables: responseUpdate.variables,
           displayId: surveyState.displayId,
+          endingId: responseUpdate.endingId,
           hiddenFields: hiddenFieldsRecord,
         });
 

@@ -537,6 +537,7 @@ export const updateResponse = async (
       id: response.id,
       contactId: response.contact?.id,
       surveyId: response.surveyId,
+      ...(response.singleUseId ? { singleUseId: response.singleUseId } : {}),
     });
 
     responseNoteCache.revalidate({
