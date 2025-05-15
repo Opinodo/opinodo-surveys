@@ -385,7 +385,7 @@ export const upsertBulkContacts = async (
         contactAttributeCache.revalidate({ environmentId });
       },
       {
-        timeout: 10 * 1000, // 10 seconds
+        timeout: 30 * 1000, // 30 seconds
       }
     );
 
