@@ -604,7 +604,7 @@ export const QuestionsView = ({
   return (
     <div className="mt-12 w-full px-5 py-4">
       {loading && (
-        <div className="bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75">
           <LoadingSpinner />
         </div>
       )}
@@ -686,11 +686,7 @@ export const QuestionsView = ({
 
         {!isCxMode && (
           <>
-            <AddEndingCardButton
-              localSurvey={localSurvey}
-              setLocalSurvey={setLocalSurvey}
-              addEndingCard={addEndingCard}
-            />
+            <AddEndingCardButton localSurvey={localSurvey} addEndingCard={addEndingCard} />
             <hr />
 
             <HiddenFieldsCard
