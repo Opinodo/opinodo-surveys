@@ -31,7 +31,7 @@ export async function translateWithChatGPT(
 
     const message = response.choices[0].message.content;
 
-    if (!message) throw new Error("No translation response.");
+    if (!message) throw new Error("No translation response...");
 
     const jsonMatch = message.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     const cleanText = jsonMatch ? jsonMatch[1] : message;
