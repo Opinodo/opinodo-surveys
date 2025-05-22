@@ -4,47 +4,46 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function translateWithChatGPT(
-  targetLanguageCode: string,
+export async function translateTextMulti(
+  targetLanguageCodes: string[],
   texts: { [key: string]: string }
-): Promise<{ [key: string]: string }> {
-  console.log(targetLanguageCode);
-  const languageInstruction =
-    targetLanguageCode.toLowerCase() === "sr"
-      ? "Translate the following English phrases to Serbian using **Cyrillic script**."
-      : `Translate the following English phrases to ${targetLanguageCode}.`;
+): Promise<{ [languageCode: string]: { [key: string]: string } }> {
+  const prompt = `
+Translate the following English phrases into multiple languages.
+Return ONLY the translations as a JSON object in the format:
+{ "fr": { ... }, "es": { ... }, ... }
 
-  const prompt =
-    `${languageInstruction} Return ONLY the translations as a JSON object, keeping the original keys.` +
-    `\n\n${JSON.stringify(texts, null, 2)}`;
+Use Cyrillic script for Serbian ("sr").
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a professional translator. Keep translations accurate, natural-sounding, and preserve formatting.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.3,
-    });
+Phrases:
+${JSON.stringify(texts, null, 2)}
 
-    const message = response.choices[0].message.content;
+Languages: ${targetLanguageCodes.join(", ")}
+`;
 
-    if (!message) throw new Error("No translation response...");
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a professional translator. Keep translations accurate, natural-sounding, and preserve formatting.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    temperature: 0.3,
+  });
 
-    const jsonMatch = message.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    const cleanText = jsonMatch ? jsonMatch[1] : message;
+  const message = response.choices[0].message.content;
+  const jsonMatch = message?.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  const cleanText = jsonMatch ? jsonMatch[1] : message;
 
-    return JSON.parse(cleanText);
-  } catch (error) {
-    console.error("OpenAI Translation Error:", error);
-    throw error;
+  if (!cleanText) {
+    throw new Error("Translation response was empty or not in JSON format.");
   }
+
+  return JSON.parse(cleanText);
 }

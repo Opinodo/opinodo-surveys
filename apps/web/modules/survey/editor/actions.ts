@@ -11,7 +11,7 @@ import {
   getProjectIdFromSurveyId,
 } from "@/lib/utils/helper";
 import { checkMultiLanguagePermission } from "@/modules/ee/multi-language-surveys/lib/actions";
-import { translateWithChatGPT } from "@/modules/survey/editor/chatgpt_translations";
+import { translateTextMulti } from "@/modules/survey/editor/chatgpt_translations";
 import { createActionClass } from "@/modules/survey/editor/lib/action-class";
 import { updateSurvey } from "@/modules/survey/editor/lib/survey";
 import { getSurveyFollowUpsPermission } from "@/modules/survey/follow-ups/lib/utils";
@@ -210,8 +210,8 @@ export const createActionClassAction = authenticatedActionClient
   });
 
 export async function translateText(
-  targetLanguageCode: string,
+  targetLanguageCodes: string[],
   texts: { [key: string]: string }
-): Promise<{ [key: string]: string }> {
-  return translateWithChatGPT(targetLanguageCode, texts);
+): Promise<{ [p: string]: { [p: string]: string } }> {
+  return translateTextMulti(targetLanguageCodes, texts);
 }

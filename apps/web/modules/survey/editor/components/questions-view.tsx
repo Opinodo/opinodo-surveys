@@ -318,18 +318,26 @@ export const QuestionsView = ({
 
     const textsToTranslate = extractTextsToTranslate(questionToTranslate);
 
-    for (const language of localSurvey.languages) {
-      const languageCode = language.language.code;
-      if (languageCode !== "en" && languageCode !== "default") {
-        const translatedTexts = await translateText(languageCode, textsToTranslate);
+    const languageCodes = localSurvey.languages
+      .map((lang) => lang.language.code)
+      .filter((code) => code !== "en" && code !== "default");
+
+    try {
+      const translationsByLang = await translateText(languageCodes, textsToTranslate);
+
+      for (const [languageCode, translatedTexts] of Object.entries(translationsByLang)) {
         updateQuestionWithTranslatedTexts(questionToTranslate, translatedTexts, languageCode);
       }
-    }
 
-    updatedSurvey.questions[questionIdx] = questionToTranslate;
-    setLocalSurvey(updatedSurvey);
-    setLoading(false);
-    toast.success("Question translated.");
+      updatedSurvey.questions[questionIdx] = questionToTranslate;
+      setLocalSurvey(updatedSurvey);
+      toast.success("Question translated.");
+    } catch (error) {
+      toast.error("Translation failed.");
+      console.error("Translation error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const extractTextsToTranslate = (question: TSurveyQuestion) => {

@@ -165,18 +165,26 @@ export const EditEndingCard = ({
 
     const textsToTranslate = extractTextsToTranslateFromEndingCard(endingCardToTranslate);
 
-    for (const language of localSurvey.languages) {
-      const languageCode = language.language.code;
-      if (languageCode !== "en" && languageCode !== "default") {
-        const translatedTexts = await translateText(languageCode, textsToTranslate);
+    const languageCodes = localSurvey.languages
+      .map((lang) => lang.language.code)
+      .filter((code) => code !== "en" && code !== "default");
+
+    try {
+      const translationsByLang = await translateText(languageCodes, textsToTranslate);
+
+      for (const [languageCode, translatedTexts] of Object.entries(translationsByLang)) {
         updateEndingCardWithTranslatedTexts(endingCardToTranslate, translatedTexts, languageCode);
       }
-    }
 
-    updatedSurvey.endings[endingCardIdx] = endingCardToTranslate;
-    setLocalSurvey(updatedSurvey);
-    setLoading(false);
-    toast.success("Ending card translated.");
+      updatedSurvey.endings[endingCardIdx] = endingCardToTranslate;
+      setLocalSurvey(updatedSurvey);
+      toast.success("Ending card translated.");
+    } catch (error) {
+      toast.error("Translation failed.");
+      console.error("Translation error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const extractTextsToTranslateFromEndingCard = (endingCard) => {

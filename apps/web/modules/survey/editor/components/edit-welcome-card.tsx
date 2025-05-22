@@ -76,18 +76,26 @@ export const EditWelcomeCard = ({
 
     const textsToTranslate = extractTextsToTranslateFromWelcomeCard(welcomeCard);
 
-    for (const language of localSurvey.languages) {
-      const languageCode = language.language.code;
-      if (languageCode !== "en" && languageCode !== "default") {
-        const translatedTexts = await translateText(languageCode, textsToTranslate);
+    const languageCodes = localSurvey.languages
+      .map((lang) => lang.language.code)
+      .filter((code) => code !== "en" && code !== "default");
+
+    try {
+      const translationsByLang = await translateText(languageCodes, textsToTranslate);
+
+      for (const [languageCode, translatedTexts] of Object.entries(translationsByLang)) {
         updateEndingCardWithTranslatedTexts(welcomeCard, translatedTexts, languageCode);
       }
-    }
 
-    updatedSurvey.welcomeCard = welcomeCard;
-    setLocalSurvey(updatedSurvey);
-    setLoading(false);
-    toast.success("Ending card translated.");
+      updatedSurvey.welcomeCard = welcomeCard;
+      setLocalSurvey(updatedSurvey);
+      toast.success("Welcome card translated.");
+    } catch (error) {
+      toast.error("Translation failed.");
+      console.error("Translation error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const extractTextsToTranslateFromWelcomeCard = (welcomeCard) => {
@@ -119,14 +127,14 @@ export const EditWelcomeCard = ({
   return (
     <div className={cn(open ? "shadow-lg" : "shadow-md", "group flex flex-row rounded-lg bg-white")}>
       {loading && (
-        <div className="bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75">
           <LoadingSpinner />
         </div>
       )}
       <div
         className={cn(
           open ? "bg-slate-50" : "",
-          "flex w-10 items-center justify-center rounded-l-lg border-t border-b border-l group-aria-expanded:rounded-bl-none",
+          "flex w-10 items-center justify-center rounded-l-lg border-b border-l border-t group-aria-expanded:rounded-bl-none",
           isInvalid ? "bg-red-400" : "bg-white group-hover:bg-slate-50"
         )}>
         <Hand className="h-4 w-4" />
