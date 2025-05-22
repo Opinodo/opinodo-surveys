@@ -8,8 +8,14 @@ export async function translateWithChatGPT(
   targetLanguageCode: string,
   texts: { [key: string]: string }
 ): Promise<{ [key: string]: string }> {
+  console.log(targetLanguageCode);
+  const languageInstruction =
+    targetLanguageCode.toLowerCase() === "sr"
+      ? "Translate the following English phrases to Serbian using **Cyrillic script**."
+      : `Translate the following English phrases to ${targetLanguageCode}.`;
+
   const prompt =
-    `Translate the following English phrases to ${targetLanguageCode}. Return ONLY the translations as a JSON object, keeping the original keys.` +
+    `${languageInstruction} Return ONLY the translations as a JSON object, keeping the original keys.` +
     `\n\n${JSON.stringify(texts, null, 2)}`;
 
   try {
