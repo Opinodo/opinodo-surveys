@@ -311,6 +311,8 @@ export const QuestionsView = ({
 
   const [loading, setLoading] = useState(false);
 
+  const BATCH_SIZE = 3;
+
   const translateQuestion = async (questionIdx: number) => {
     setLoading(true);
     const updatedSurvey = { ...localSurvey };
@@ -318,12 +320,22 @@ export const QuestionsView = ({
 
     const textsToTranslate = extractTextsToTranslate(questionToTranslate);
 
-    const languageCodes = localSurvey.languages
+    const allLanguageCodes = localSurvey.languages
       .map((lang) => lang.language.code)
       .filter((code) => code !== "en" && code !== "default");
 
     try {
-      const translationsByLang = await translateText(languageCodes, textsToTranslate);
+      let translationsByLang: { [lang: string]: { [key: string]: string } } = {};
+
+      if (questionToTranslate.type === "matrix") {
+        for (let i = 0; i < allLanguageCodes.length; i += BATCH_SIZE) {
+          const batch = allLanguageCodes.slice(i, i + BATCH_SIZE);
+          const batchTranslations = await translateText(batch, textsToTranslate);
+          translationsByLang = { ...translationsByLang, ...batchTranslations };
+        }
+      } else {
+        translationsByLang = await translateText(allLanguageCodes, textsToTranslate);
+      }
 
       for (const [languageCode, translatedTexts] of Object.entries(translationsByLang)) {
         updateQuestionWithTranslatedTexts(questionToTranslate, translatedTexts, languageCode);
