@@ -240,53 +240,46 @@ export const getSurveysByActionClassId = reactCache(
 );
 
 export const getActiveLinkSurveys = reactCache(
-  (environmentId: string, tags: string[]): Promise<TSurvey[]> =>
-    cache(
-      async () => {
-        validateInputs([environmentId, ZId]);
-        let surveysPrisma;
-        try {
-          const whereClause: Prisma.SurveyWhereInput = {
-            environmentId,
-            status: "inProgress",
-            type: "link",
-          };
+  async (environmentId: string, tags: string[]): Promise<TSurvey[]> => {
+    validateInputs([environmentId, ZId]);
+    let surveysPrisma;
+    try {
+      const whereClause: Prisma.SurveyWhereInput = {
+        environmentId,
+        status: "inProgress",
+        type: "link",
+      };
 
-          if (tags.length > 0) {
-            whereClause.tags = {
-              some: {
-                name: {
-                  in: tags,
-                },
-              },
-            };
-          }
-          surveysPrisma = await prisma.survey.findMany({
-            where: whereClause,
-            select: selectSurvey,
-          });
-        } catch (error) {
-          if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            console.error(`Database error: ${error.message}`);
-            throw new DatabaseError(error.message);
-          }
-          console.error(`Unexpected error: ${error}`);
-          throw error;
-        }
-        const surveys: TSurvey[] = [];
-
-        for (const surveyPrisma of surveysPrisma) {
-          const transformedSurvey = transformPrismaSurvey<TSurvey>(surveyPrisma);
-          surveys.push(transformedSurvey);
-        }
-
-        return surveys;
-      },
-      [`getActiveLinkSurveys-${environmentId}-${JSON.stringify(tags)}`],
-      {
-        tags: [surveyCache.tag.byEnvironmentId(environmentId)],
+      if (tags.length > 0) {
+        whereClause.tags = {
+          some: {
+            name: {
+              in: tags,
+            },
+          },
+        };
       }
-    )()
+      surveysPrisma = await prisma.survey.findMany({
+        where: whereClause,
+        select: selectSurvey,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        console.error(`Database error: ${error.message}`);
+        throw new DatabaseError(error.message);
+      }
+      console.error(`Unexpected error: ${error}`);
+      throw error;
+    }
+    const surveys: TSurvey[] = [];
+
+    for (const surveyPrisma of surveysPrisma) {
+      const transformedSurvey = transformPrismaSurvey<TSurvey>(surveyPrisma);
+      surveys.push(transformedSurvey);
+    }
+
+    return surveys;
+  }
 );
 
 export const getSurveys = reactCache(
