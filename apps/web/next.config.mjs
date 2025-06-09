@@ -131,11 +131,12 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        // Apply X-Frame-Options to all routes except those starting with /s/ or /c/
+        source: "/((?!s/|c/).*)",
         headers: [
           {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
           },
         ],
       },
@@ -164,24 +165,6 @@ const nextConfig = {
             key: "Access-Control-Allow-Headers",
             value:
               "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Cache-Control",
-          },
-        ],
-      },
-      {
-        source: "/environments/(.*)",
-        headers: [
-          {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN",
-          },
-        ],
-      },
-      {
-        source: "/auth/(.*)",
-        headers: [
-          {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN",
           },
         ],
       },
