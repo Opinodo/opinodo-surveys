@@ -33,8 +33,7 @@ interface LinkSurveyProps {
   emailVerificationStatus?: string;
   singleUseId?: string;
   singleUseResponse?: Pick<Response, "id" | "finished">;
-  surveyDomain: string;
-  webAppUrl: string;
+  publicDomain: string;
   responseCount?: number;
   verifiedEmail?: string;
   languageCode: string;
@@ -55,8 +54,7 @@ export const LinkSurvey = ({
   emailVerificationStatus,
   singleUseId,
   singleUseResponse,
-  surveyDomain,
-  webAppUrl,
+  publicDomain,
   responseCount,
   verifiedEmail,
   languageCode,
@@ -140,7 +138,7 @@ export const LinkSurvey = ({
   }, [survey.isVerifyEmailEnabled, verifiedEmail]);
 
   if (hasFinishedSingleUseResponse) {
-    return <SurveyLinkUsed singleUseMessage={survey.singleUse} />;
+    return <SurveyLinkUsed singleUseMessage={survey.singleUse} project={project} />;
   }
 
   if (survey.isVerifyEmailEnabled && emailVerificationStatus !== "verified") {
@@ -192,13 +190,13 @@ export const LinkSurvey = ({
       handleResetSurvey={handleResetSurvey}
       determineStyling={determineStyling}
       isEmbed={isEmbed}
-      surveyDomain={surveyDomain}
+      publicDomain={publicDomain}
       IS_FORMBRICKS_CLOUD={IS_FORMBRICKS_CLOUD}
       IMPRINT_URL={IMPRINT_URL}
       PRIVACY_URL={PRIVACY_URL}
       isBrandingEnabled={project.linkSurveyBranding}>
       <SurveyInline
-        appUrl={webAppUrl}
+        appUrl={publicDomain}
         environmentId={survey.environmentId}
         isPreviewMode={isPreview}
         survey={survey}

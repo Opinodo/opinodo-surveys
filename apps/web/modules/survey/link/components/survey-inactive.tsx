@@ -1,5 +1,6 @@
 import { Button } from "@/modules/ui/components/button";
 import { getTranslate } from "@/tolgee/server";
+import { Project } from "@prisma/client";
 import { CheckCircle2Icon, HelpCircleIcon, PauseCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { TSurveyClosedMessage } from "@formbricks/types/surveys/types";
@@ -7,9 +8,11 @@ import { TSurveyClosedMessage } from "@formbricks/types/surveys/types";
 export const SurveyInactive = async ({
   status,
   surveyClosedMessage,
+  project,
 }: {
   status: "paused" | "completed" | "link invalid" | "scheduled" | "response submitted";
   surveyClosedMessage?: TSurveyClosedMessage | null;
+  project?: Pick<Project, "linkSurveyBranding">;
 }) => {
   const t = await getTranslate();
   const icons = {
@@ -26,10 +29,15 @@ export const SurveyInactive = async ({
     "response submitted": t("s.response_submitted"),
   };
 
+  const showCTA =
+    status !== "link invalid" &&
+    status !== "response submitted" &&
+    ((status !== "paused" && status !== "completed") || project?.linkSurveyBranding || !project) &&
+    !(status === "completed" && surveyClosedMessage);
+
   return (
     <div className="flex h-full flex-col items-center justify-between bg-gradient-to-br from-slate-200 to-slate-50 px-4 py-8 text-center">
-      <div></div>
-      <div className="flex flex-col items-center space-y-3 text-slate-300">
+      <div className="my-auto flex flex-col items-center space-y-3 text-slate-300">
         {icons[status]}
         <h1 className="text-4xl font-bold text-slate-800">
           {status === "completed" && surveyClosedMessage
@@ -41,17 +49,17 @@ export const SurveyInactive = async ({
             ? surveyClosedMessage.subheading
             : descriptions[status]}
         </p>
-        {!(status === "completed" && surveyClosedMessage) &&
-          status !== "link invalid" &&
-          status !== "response submitted" && (
-            <Button className="mt-2" asChild>
-              <Link href="https://member.digiopinion.com/overview">{t("s.take_more_surveys")}</Link>
-            </Button>
-          )}
+        {showCTA && (
+          <Button className="mt-2" asChild>
+            <Link href="https://member.digiopinion.com/overview">{t("s.take_more_surveys")}</Link>
+          </Button>
+        )}
       </div>
-      <div>
-        <Link href="https://digiopinion.com"></Link>
-      </div>
+      {(!project || project.linkSurveyBranding) && (
+        <div>
+          <Link href="https://digiopinion.com"></Link>
+        </div>
+      )}
     </div>
   );
 };
