@@ -49,10 +49,10 @@ export type TSurveyRedirectUrlCard = z.infer<typeof ZSurveyRedirectUrlCard>;
 
 export const ZSurveyAffiliateOfferCard = ZSurveyEndingBase.extend({
   type: z.literal("affiliateOffer"),
-  affiliateOfferUrl: getZSafeUrl("Invalid Affiliate Offer URL").optional(),
+  affiliateOfferUrl: getZSafeUrl.optional(),
   affiliateButtonLabel: ZI18nString.optional(),
   skipLinkLabel: ZI18nString.optional(),
-  skipLink: getZSafeUrl("Invalid Skip Link URL").optional(),
+  skipLink: getZSafeUrl.optional(),
   promotionalMessage: ZI18nString.optional(),
   headline: ZI18nString.optional(),
   subheader: ZI18nString.optional(),
