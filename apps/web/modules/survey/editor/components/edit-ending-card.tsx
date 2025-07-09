@@ -97,7 +97,7 @@ export const EditEndingCard = ({
       updateSurvey({ buttonLink: defaultRedirect });
     }
     if (endingCard.type === "affiliateOffer" && !endingCard.affiliateOfferUrl) {
-      updateSurvey({ affiliateOfferUrl: defaultRedirect });
+      updateSurvey({ affiliateOfferUrl: { default: defaultRedirect } });
     }
   }, [endingCard, defaultRedirect]);
 
