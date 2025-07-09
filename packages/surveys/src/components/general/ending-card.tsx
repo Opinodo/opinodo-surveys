@@ -103,7 +103,10 @@ export function EndingCard({
   const handleAffiliateSubmit = () => {
     if (!isRedirectDisabled) {
       if (endingCard.type === "affiliateOffer" && endingCard.affiliateOfferUrl) {
-        processAndRedirect(endingCard.affiliateOfferUrl);
+        const localizedUrl = getLocalizedValue(endingCard.affiliateOfferUrl, languageCode);
+        if (localizedUrl) {
+          processAndRedirect(localizedUrl);
+        }
       }
     }
   };
@@ -111,7 +114,10 @@ export function EndingCard({
   const handleSkipSubmit = () => {
     if (!isRedirectDisabled) {
       if (endingCard.type === "affiliateOffer" && endingCard.skipLink) {
-        processAndRedirect(endingCard.skipLink);
+        const localizedUrl = getLocalizedValue(endingCard.skipLink, languageCode);
+        if (localizedUrl) {
+          processAndRedirect(localizedUrl);
+        }
       }
     }
   };

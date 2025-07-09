@@ -67,6 +67,10 @@ export const getLocalizedValue = (value: TI18nString | undefined, languageId: st
     if (value[languageId]) {
       return value[languageId];
     }
+    // Fall back to default if specific language not found
+    if (value["default"]) {
+      return value["default"];
+    }
     return "";
   }
   return "";

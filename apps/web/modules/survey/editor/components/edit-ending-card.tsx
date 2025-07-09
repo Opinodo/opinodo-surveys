@@ -416,10 +416,14 @@ export const EditEndingCard = ({
           )}
           {endingCard.type === "affiliateOffer" && (
             <AffiliateOfferForm
+              localSurvey={localSurvey}
+              endingCardIndex={endingCardIndex}
               isInvalid={isInvalid}
               selectedLanguageCode={selectedLanguageCode}
+              setSelectedLanguageCode={setSelectedLanguageCode}
               updateSurvey={updateSurvey}
               endingCard={endingCard}
+              locale={locale}
               defaultRedirect={defaultRedirect}
             />
           )}
