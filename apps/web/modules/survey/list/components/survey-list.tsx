@@ -20,7 +20,7 @@ import { SurveyLoading } from "./survey-loading";
 interface SurveysListProps {
   environmentId: string;
   isReadOnly: boolean;
-  surveyDomain: string;
+  publicDomain: string;
   userId: string;
   surveysPerPage: number;
   currentProjectChannel: TProjectConfigChannel;
@@ -40,7 +40,7 @@ export const initialFilters: TSurveyFilters = {
 export const SurveysList = ({
   environmentId,
   isReadOnly,
-  surveyDomain,
+  publicDomain,
   userId,
   surveysPerPage: surveysLimit,
   currentProjectChannel,
@@ -127,6 +127,7 @@ export const SurveysList = ({
   const handleDeleteSurvey = async (surveyId: string) => {
     const newSurveys = surveys.filter((survey) => survey.id !== surveyId);
     setSurveys(newSurveys);
+    if (newSurveys.length === 0) setIsFetching(true);
   };
 
   const handleDuplicateSurvey = async (survey: TSurvey) => {
@@ -160,7 +161,7 @@ export const SurveysList = ({
                   survey={survey}
                   environmentId={environmentId}
                   isReadOnly={isReadOnly}
-                  surveyDomain={surveyDomain}
+                  publicDomain={publicDomain}
                   duplicateSurvey={handleDuplicateSurvey}
                   deleteSurvey={handleDeleteSurvey}
                   locale={locale}

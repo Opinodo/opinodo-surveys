@@ -312,7 +312,7 @@ export const QuestionFormInput = ({
               onAddFallback={() => {
                 inputRef.current?.focus();
               }}
-              isRecallAllowed={!isWelcomeCard && (id === "headline" || id === "subheader")}
+              isRecallAllowed={id === "headline" || id === "subheader"}
               usedLanguageCode={usedLanguageCode}
               render={({
                 value,

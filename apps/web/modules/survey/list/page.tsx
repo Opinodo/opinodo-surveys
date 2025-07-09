@@ -1,5 +1,5 @@
 import { DEFAULT_LOCALE, SURVEYS_PER_PAGE } from "@/lib/constants";
-import { getSurveyDomain } from "@/lib/getSurveyUrl";
+import { getPublicDomain } from "@/lib/getPublicUrl";
 import { getTagsByEnvironmentId } from "@/lib/tag/service";
 import { getUserLocale } from "@/lib/user/service";
 import { getEnvironmentAuth } from "@/modules/environments/lib/utils";
@@ -34,7 +34,7 @@ export const SurveysPage = async ({
   params: paramsProps,
   searchParams: searchParamsProps,
 }: SurveyTemplateProps) => {
-  const surveyDomain = getSurveyDomain();
+  const publicDomain = getPublicDomain();
   const searchParams = await searchParamsProps;
   const params = await paramsProps;
   const t = await getTranslate();
@@ -87,7 +87,7 @@ export const SurveysPage = async ({
         <SurveysList
           environmentId={environment.id}
           isReadOnly={isReadOnly}
-          surveyDomain={surveyDomain}
+          publicDomain={publicDomain}
           userId={session.user.id}
           surveysPerPage={SURVEYS_PER_PAGE}
           currentProjectChannel={currentProjectChannel}

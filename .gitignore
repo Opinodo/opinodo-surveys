@@ -81,5 +81,6 @@ infra/terraform/.terraform/
 /.idea/
 /*.iml
 packages/ios/FormbricksSDK/FormbricksSDK.xcodeproj/project.xcworkspace/xcuserdata
+.cursorrules
 
 **/.claude/settings.local.json

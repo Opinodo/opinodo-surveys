@@ -61,7 +61,7 @@ RUN jq -r '.devDependencies.prisma' packages/database/package.json > /prisma_ver
 #
 FROM base AS runner
 
-RUN npm install --ignore-scripts -g corepack@latest 
+RUN npm install --ignore-scripts -g corepack@latest
 RUN corepack enable
 
 RUN apk add --no-cache curl \
@@ -127,7 +127,7 @@ RUN chmod -R 755 ./node_modules/@noble/hashes
 COPY --from=installer /app/node_modules/zod ./node_modules/zod
 RUN chmod -R 755 ./node_modules/zod
 
-RUN npm install --ignore-scripts -g tsx typescript pino-pretty 
+RUN npm install --ignore-scripts -g tsx typescript pino-pretty
 RUN npm install -g prisma
 
 EXPOSE 3000
