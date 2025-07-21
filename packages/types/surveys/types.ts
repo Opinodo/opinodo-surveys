@@ -884,7 +884,7 @@ export const ZSurvey = z
     recaptcha: ZSurveyRecaptcha.nullable(),
     isSingleResponsePerEmailEnabled: z.boolean(),
     isBackButtonHidden: z.boolean(),
-    pin: z.string().min(4, { message: "PIN must be a four digit number" }).nullish(),
+    pin: z.string().length(4, { message: "PIN must be a four digit number" }).nullish(),
     resultShareKey: z.string().nullable(),
     reward: z.number(),
     priority: z.number(),

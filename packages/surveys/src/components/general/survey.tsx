@@ -459,6 +459,18 @@ export function Survey({
     return { nextQuestionId, calculatedVariables: calculationResults };
   };
 
+  const getWebSurveyMeta = useCallback(() => {
+    if (!isWebEnvironment) return {};
+
+    const url = new URL(window.location.href);
+    const source = url.searchParams.get("source");
+
+    return {
+      url: url.href,
+      ...(source ? { source } : {}),
+    };
+  }, [isWebEnvironment]);
+
   const onResponseCreateOrUpdate = useCallback(
     async (responseUpdate: TResponseUpdate) => {
       // Always trigger the onResponse callback even in preview mode
@@ -502,7 +514,7 @@ export function Survey({
           language:
             responseUpdate.language === "default" ? getDefaultLanguageCode(survey) : responseUpdate.language,
           meta: {
-            ...(isWebEnvironment && { url: window.location.href }),
+            ...getWebSurveyMeta(),
             action,
             source: new URLSearchParams(window.location.search).get("source") || "",
             utm_source: new URLSearchParams(window.location.search).get("utm_source") || "",
@@ -529,9 +541,9 @@ export function Survey({
       contactId,
       userId,
       survey,
-      isWebEnvironment,
       action,
       hiddenFieldsRecord,
+      getWebSurveyMeta,
     ]
   );
 
@@ -754,7 +766,6 @@ export function Survey({
         <div
           className={cn(
             "fb-no-scrollbar fb-bg-survey-bg fb-flex fb-h-full fb-w-full fb-flex-col fb-justify-between fb-overflow-hidden fb-transition-all fb-duration-1000 fb-ease-in-out",
-            cardArrangement === "simple" ? "fb-survey-shadow" : "",
             offset === 0 || cardArrangement === "simple" ? "fb-opacity-100" : "fb-opacity-0"
           )}>
           <div className="fb-flex fb-h-6 fb-justify-end fb-pr-2 fb-pt-2">

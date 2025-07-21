@@ -146,7 +146,6 @@ export const mockPrismaPerson: Prisma.ContactGetPayload<{
   include: typeof selectContact;
 }> = {
   id: mockId,
-  userId: mockId,
   attributes: [
     {
       value: "de",
