@@ -119,17 +119,18 @@ export const SurveyTagsWrapper: React.FC<SurveyTagsWrapperProps> = ({
                 tagName: tagName?.trim() ?? "",
               });
 
-              if (createTagSurvey?.data) {
+              if (createTagSurvey?.data?.ok && createTagSurvey.data.data) {
+                const tagData = createTagSurvey.data.data;
                 setTagsState((prevTags) => [
                   ...prevTags,
                   {
-                    tagId: createTagSurvey.data?.id ?? "",
-                    tagName: createTagSurvey.data?.name ?? "",
+                    tagId: tagData.id,
+                    tagName: tagData.name,
                   },
                 ]);
                 const createTagToSurveyActionSurvey = await createTagToSurveyAction({
                   surveyId,
-                  tagId: createTagSurvey.data.id,
+                  tagId: tagData.id,
                 });
 
                 if (createTagToSurveyActionSurvey?.data) {
@@ -141,8 +142,11 @@ export const SurveyTagsWrapper: React.FC<SurveyTagsWrapperProps> = ({
                   });
                 }
               } else {
-                const errorMessage = getFormattedErrorMessage(createTagSurvey);
-                if (errorMessage.includes("Unique constraint failed on the fields")) {
+                const errorMessage =
+                  createTagSurvey?.data?.ok === false
+                    ? createTagSurvey.data.error.message
+                    : getFormattedErrorMessage(createTagSurvey);
+                if (errorMessage.includes("Tag with this name already exists")) {
                   toast.error("Tag already exists", {
                     duration: 2000,
                     icon: <AlertCircleIcon className="h-5 w-5 text-orange-500" />,
