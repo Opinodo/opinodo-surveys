@@ -12,7 +12,7 @@ import {
   getProjectIdFromEnvironmentId,
   getProjectIdFromSurveyId,
 } from "@/lib/utils/helper";
-import { generateSurveySingleUseId } from "@/lib/utils/single-use-surveys";
+import { generateSurveySingleUseIds } from "@/lib/utils/single-use-surveys";
 import { withAuditLogging } from "@/modules/ee/audit-logs/lib/handler";
 import { getProjectIdIfEnvironmentExists } from "@/modules/survey/list/lib/environment";
 import {
@@ -195,9 +195,10 @@ export const deleteSurveyAction = authenticatedActionClient.schema(ZDeleteSurvey
 const ZGenerateSingleUseIdAction = z.object({
   surveyId: z.string().cuid2(),
   isEncrypted: z.boolean(),
+  count: z.number().min(1).max(5000).default(1),
 });
 
-export const generateSingleUseIdAction = authenticatedActionClient
+export const generateSingleUseIdsAction = authenticatedActionClient
   .schema(ZGenerateSingleUseIdAction)
   .action(async ({ ctx, parsedInput }) => {
     await checkAuthorizationUpdated({
@@ -216,7 +217,7 @@ export const generateSingleUseIdAction = authenticatedActionClient
       ],
     });
 
-    return generateSurveySingleUseId(parsedInput.isEncrypted);
+    return generateSurveySingleUseIds(parsedInput.count, parsedInput.isEncrypted);
   });
 
 const ZGetSurveysAction = z.object({

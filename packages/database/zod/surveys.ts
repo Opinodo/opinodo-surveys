@@ -181,7 +181,6 @@ const ZSurveyBase = z.object({
       inputBorderColor: ZStylingColor.nullish(),
       cardBackgroundColor: ZStylingColor.nullish(),
       cardBorderColor: ZStylingColor.nullish(),
-      cardShadowColor: ZStylingColor.nullish(),
       highlightBorderColor: ZStylingColor.nullish(),
       isDarkModeEnabled: z.boolean().nullish(),
       roundness: z.number().nullish(),
