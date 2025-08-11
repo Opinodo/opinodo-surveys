@@ -88,9 +88,24 @@ vi.mock("@/modules/ui/components/dropdown-selector", () => ({
     </div>
   ),
 }));
-vi.mock("@/modules/ui/components/modal", () => ({
-  Modal: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-testid="modal">{children}</div> : null,
+vi.mock("@/modules/ui/components/dialog", () => ({
+  Dialog: ({ children, open, onOpenChange }: any) =>
+    open ? (
+      <div data-testid="dialog" role="dialog">
+        {children}
+        <button onClick={() => onOpenChange(false)}>Close Dialog</button>
+      </div>
+    ) : null,
+  DialogContent: ({ children, ...props }: any) => (
+    <div data-testid="dialog-content" {...props}>
+      {children}
+    </div>
+  ),
+  DialogHeader: ({ children }: any) => <div data-testid="dialog-header">{children}</div>,
+  DialogTitle: ({ children }: any) => <h2 data-testid="dialog-title">{children}</h2>,
+  DialogDescription: ({ children }: any) => <p data-testid="dialog-description">{children}</p>,
+  DialogBody: ({ children }: any) => <div data-testid="dialog-body">{children}</div>,
+  DialogFooter: ({ children }: any) => <div data-testid="dialog-footer">{children}</div>,
 }));
 vi.mock("next/image", () => ({
   // eslint-disable-next-line @next/next/no-img-element
@@ -205,7 +220,6 @@ const surveys: TSurvey[] = [
     welcomeCard: { enabled: true } as unknown as TSurvey["welcomeCard"],
     hiddenFields: { enabled: true, fieldIds: [] },
     pin: null,
-    resultShareKey: null,
     displayLimit: null,
   } as unknown as TSurvey,
   {
@@ -243,7 +257,6 @@ const surveys: TSurvey[] = [
     welcomeCard: { enabled: true } as unknown as TSurvey["welcomeCard"],
     hiddenFields: { enabled: true, fieldIds: [] },
     pin: null,
-    resultShareKey: null,
     displayLimit: null,
   } as unknown as TSurvey,
 ];
@@ -304,10 +317,9 @@ describe("AddIntegrationModal", () => {
       />
     );
 
-    expect(screen.getByTestId("modal")).toBeInTheDocument();
-    expect(
-      screen.getByText("Link Google Sheet", { selector: "div.text-xl.font-medium" })
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("dialog-title")).toHaveTextContent("Link Google Sheet");
+    expect(screen.getByTestId("dialog-description")).toHaveTextContent("Sync responses with Google Sheets.");
     // Use getByPlaceholderText for the input
     expect(
       screen.getByPlaceholderText("https://docs.google.com/spreadsheets/d/<your-spreadsheet-id>")
@@ -332,10 +344,9 @@ describe("AddIntegrationModal", () => {
       />
     );
 
-    expect(screen.getByTestId("modal")).toBeInTheDocument();
-    expect(
-      screen.getByText("Link Google Sheet", { selector: "div.text-xl.font-medium" })
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("dialog-title")).toHaveTextContent("Link Google Sheet");
+    expect(screen.getByTestId("dialog-description")).toHaveTextContent("Sync responses with Google Sheets.");
     // Use getByPlaceholderText for the input
     expect(
       screen.getByPlaceholderText("https://docs.google.com/spreadsheets/d/<your-spreadsheet-id>")

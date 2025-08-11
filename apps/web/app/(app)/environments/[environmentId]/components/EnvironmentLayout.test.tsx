@@ -9,8 +9,12 @@ import {
 } from "@/lib/organization/service";
 import { getUserProjects } from "@/lib/project/service";
 import { getUser } from "@/lib/user/service";
-import { getOrganizationProjectsLimit } from "@/modules/ee/license-check/lib/utils";
+import {
+  getAccessControlPermission,
+  getOrganizationProjectsLimit,
+} from "@/modules/ee/license-check/lib/utils";
 import { getProjectPermissionByUserId } from "@/modules/ee/teams/lib/roles";
+import { getTeamsByOrganizationId } from "@/modules/ee/teams/team-list/lib/team";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { Session } from "next-auth";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -49,9 +53,13 @@ vi.mock("@/lib/membership/utils", () => ({
 }));
 vi.mock("@/modules/ee/license-check/lib/utils", () => ({
   getOrganizationProjectsLimit: vi.fn(),
+  getAccessControlPermission: vi.fn(),
 }));
 vi.mock("@/modules/ee/teams/lib/roles", () => ({
   getProjectPermissionByUserId: vi.fn(),
+}));
+vi.mock("@/modules/ee/teams/team-list/lib/team", () => ({
+  getTeamsByOrganizationId: vi.fn(),
 }));
 vi.mock("@/tolgee/server", () => ({
   getTranslate: async () => (key: string) => key,
@@ -71,7 +79,13 @@ vi.mock("@/lib/constants", () => ({
 
 // Mock components
 vi.mock("@/app/(app)/environments/[environmentId]/components/MainNavigation", () => ({
-  MainNavigation: () => <div data-testid="main-navigation">MainNavigation</div>,
+  MainNavigation: ({ organizationTeams, isAccessControlAllowed }: any) => (
+    <div data-testid="main-navigation">
+      MainNavigation
+      <div data-testid="organization-teams">{JSON.stringify(organizationTeams || [])}</div>
+      <div data-testid="is-access-control-allowed">{isAccessControlAllowed?.toString() || "false"}</div>
+    </div>
+  ),
 }));
 vi.mock("@/app/(app)/environments/[environmentId]/components/TopControlBar", () => ({
   TopControlBar: () => <div data-testid="top-control-bar">TopControlBar</div>,
@@ -104,7 +118,7 @@ const mockUser = {
   identityProvider: "email",
   createdAt: new Date(),
   updatedAt: new Date(),
-  notificationSettings: { alert: {}, weeklySummary: {} },
+  notificationSettings: { alert: {} },
 } as unknown as TUser;
 
 const mockOrganization = {
@@ -156,6 +170,17 @@ const mockProjectPermission = {
   role: "admin",
 } as any;
 
+const mockOrganizationTeams = [
+  {
+    id: "team-1",
+    name: "Development Team",
+  },
+  {
+    id: "team-2",
+    name: "Marketing Team",
+  },
+];
+
 const mockSession: Session = {
   user: {
     id: "user-1",
@@ -176,6 +201,8 @@ describe("EnvironmentLayout", () => {
     vi.mocked(getMonthlyOrganizationResponseCount).mockResolvedValue(500);
     vi.mocked(getOrganizationProjectsLimit).mockResolvedValue(null as any);
     vi.mocked(getProjectPermissionByUserId).mockResolvedValue(mockProjectPermission);
+    vi.mocked(getTeamsByOrganizationId).mockResolvedValue(mockOrganizationTeams);
+    vi.mocked(getAccessControlPermission).mockResolvedValue(true);
     mockIsDevelopment = false;
     mockIsFormbricksCloud = false;
   });
@@ -286,6 +313,110 @@ describe("EnvironmentLayout", () => {
       })
     );
     expect(screen.getByTestId("downgrade-banner")).toBeInTheDocument();
+  });
+
+  test("passes isAccessControlAllowed props to MainNavigation", async () => {
+    vi.resetModules();
+    await vi.doMock("@/modules/ee/license-check/lib/license", () => ({
+      getEnterpriseLicense: vi.fn().mockResolvedValue({
+        active: false,
+        isPendingDowngrade: false,
+        features: { isMultiOrgEnabled: false },
+        lastChecked: new Date(),
+        fallbackLevel: "live",
+      }),
+    }));
+    const { EnvironmentLayout } = await import(
+      "@/app/(app)/environments/[environmentId]/components/EnvironmentLayout"
+    );
+    render(
+      await EnvironmentLayout({
+        environmentId: "env-1",
+        session: mockSession,
+        children: <div>Child Content</div>,
+      })
+    );
+
+    expect(screen.getByTestId("is-access-control-allowed")).toHaveTextContent("true");
+    expect(vi.mocked(getAccessControlPermission)).toHaveBeenCalledWith(mockOrganization.billing.plan);
+  });
+
+  test("handles empty organizationTeams array", async () => {
+    vi.mocked(getTeamsByOrganizationId).mockResolvedValue([]);
+    vi.resetModules();
+    await vi.doMock("@/modules/ee/license-check/lib/license", () => ({
+      getEnterpriseLicense: vi.fn().mockResolvedValue({
+        active: false,
+        isPendingDowngrade: false,
+        features: { isMultiOrgEnabled: false },
+        lastChecked: new Date(),
+        fallbackLevel: "live",
+      }),
+    }));
+    const { EnvironmentLayout } = await import(
+      "@/app/(app)/environments/[environmentId]/components/EnvironmentLayout"
+    );
+    render(
+      await EnvironmentLayout({
+        environmentId: "env-1",
+        session: mockSession,
+        children: <div>Child Content</div>,
+      })
+    );
+
+    expect(screen.getByTestId("organization-teams")).toHaveTextContent("[]");
+  });
+
+  test("handles null organizationTeams", async () => {
+    vi.mocked(getTeamsByOrganizationId).mockResolvedValue(null);
+    vi.resetModules();
+    await vi.doMock("@/modules/ee/license-check/lib/license", () => ({
+      getEnterpriseLicense: vi.fn().mockResolvedValue({
+        active: false,
+        isPendingDowngrade: false,
+        features: { isMultiOrgEnabled: false },
+        lastChecked: new Date(),
+        fallbackLevel: "live",
+      }),
+    }));
+    const { EnvironmentLayout } = await import(
+      "@/app/(app)/environments/[environmentId]/components/EnvironmentLayout"
+    );
+    render(
+      await EnvironmentLayout({
+        environmentId: "env-1",
+        session: mockSession,
+        children: <div>Child Content</div>,
+      })
+    );
+
+    expect(screen.getByTestId("organization-teams")).toHaveTextContent("[]");
+  });
+
+  test("handles isAccessControlAllowed false", async () => {
+    vi.mocked(getAccessControlPermission).mockResolvedValue(false);
+    vi.resetModules();
+    await vi.doMock("@/modules/ee/license-check/lib/license", () => ({
+      getEnterpriseLicense: vi.fn().mockResolvedValue({
+        active: false,
+        isPendingDowngrade: false,
+        features: { isMultiOrgEnabled: false },
+        lastChecked: new Date(),
+        fallbackLevel: "live",
+      }),
+    }));
+    const { EnvironmentLayout } = await import(
+      "@/app/(app)/environments/[environmentId]/components/EnvironmentLayout"
+    );
+    render(
+      await EnvironmentLayout({
+        environmentId: "env-1",
+        session: mockSession,
+        children: <div>Child Content</div>,
+      })
+    );
+
+    expect(screen.getByTestId("is-access-control-allowed")).toHaveTextContent("false");
   });
 
   test("throws error if user not found", async () => {

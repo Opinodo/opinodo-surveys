@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const ZRole = z.enum(["project_manager", "engineer", "founder", "marketing_specialist", "other"]);
 
-export const ZUserLocale = z.enum(["en-US", "de-DE", "pt-BR", "fr-FR", "zh-Hant-TW", "pt-PT"]);
+export const ZUserLocale = z.enum(["en-US", "de-DE", "pt-BR", "fr-FR", "zh-Hant-TW", "pt-PT", "ro-RO"]);
 
 export type TUserLocale = z.infer<typeof ZUserLocale>;
 export const ZUserObjective = z.enum([
@@ -18,7 +18,6 @@ export type TUserObjective = z.infer<typeof ZUserObjective>;
 
 export const ZUserNotificationSettings = z.object({
   alert: z.record(z.boolean()),
-  weeklySummary: z.record(z.boolean()),
   unsubscribedOrganizationIds: z.array(z.string()).optional(),
 });
 
@@ -93,3 +92,13 @@ export const ZUserCreateInput = z.object({
 });
 
 export type TUserCreateInput = z.infer<typeof ZUserCreateInput>;
+
+export const ZUserPersonalInfoUpdateInput = ZUserUpdateInput.pick({
+  name: true,
+  email: true,
+  locale: true,
+}).extend({
+  password: ZUserPassword.optional(),
+});
+
+export type TUserPersonalInfoUpdateInput = z.infer<typeof ZUserPersonalInfoUpdateInput>;

@@ -11,20 +11,20 @@ locals {
   tags = {
     Project     = local.project
     Environment = local.environment
-    MangedBy    = "Terraform"
+    ManagedBy   = "Terraform"
     Blueprint   = local.name
   }
   tags_map = {
     prod = {
       Project     = local.project
       Environment = "prod"
-      MangedBy    = "Terraform"
+      ManagedBy   = "Terraform"
       Blueprint   = "${local.project}-prod"
     }
     stage = {
       Project     = local.project
       Environment = "stage"
-      MangedBy    = "Terraform"
+      ManagedBy   = "Terraform"
       Blueprint   = "${local.project}-stage"
     }
   }

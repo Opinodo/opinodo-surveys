@@ -176,7 +176,6 @@
         "WEBAPP_URL",
         "WEBHOOK_SECRET",
         "UNSPLASH_ACCESS_KEY",
-        "UNKEY_ROOT_KEY",
         "PROMETHEUS_ENABLED",
         "PROMETHEUS_EXPORTER_PORT",
         "USER_MANAGEMENT_MINIMUM_ROLE"
@@ -241,6 +240,9 @@
     "storybook": {
       "cache": false,
       "persistent": true
+    },
+    "storybook#storybook": {
+      "dependsOn": ["@formbricks/logger#build"]
     },
     "test": {
       "outputs": []

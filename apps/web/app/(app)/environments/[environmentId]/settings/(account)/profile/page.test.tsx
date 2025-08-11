@@ -76,7 +76,7 @@ const mockUser = {
   imageUrl: "http://example.com/avatar.png",
   twoFactorEnabled: false,
   identityProvider: "email",
-  notificationSettings: { alert: {}, weeklySummary: {}, unsubscribedOrganizationIds: [] },
+  notificationSettings: { alert: {}, unsubscribedOrganizationIds: [] },
   createdAt: new Date(),
   updatedAt: new Date(),
   role: "project_manager",
@@ -121,8 +121,9 @@ describe("ProfilePage", () => {
       expect(screen.getByTestId("account-security")).toBeInTheDocument(); // Shown because 2FA license is enabled
       expect(screen.queryByTestId("upgrade-prompt")).not.toBeInTheDocument();
       expect(screen.getByTestId("delete-account")).toBeInTheDocument();
-      // Use a regex to match the text content, allowing for variable whitespace
-      expect(screen.getByText(new RegExp(`common\\.profile\\s*:\\s*${mockUser.id}`))).toBeInTheDocument(); // SettingsId
+      // Check for IdBadge content
+      expect(screen.getByText("common.profile_id")).toBeInTheDocument();
+      expect(screen.getByText(mockUser.id)).toBeInTheDocument();
     });
   });
 

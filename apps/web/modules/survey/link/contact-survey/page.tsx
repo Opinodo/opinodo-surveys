@@ -3,8 +3,10 @@ import { getSurvey } from "@/modules/survey/lib/survey";
 import { SurveyInactive } from "@/modules/survey/link/components/survey-inactive";
 import { renderSurvey } from "@/modules/survey/link/components/survey-renderer";
 import { getExistingContactResponse } from "@/modules/survey/link/lib/data";
+import { checkAndValidateSingleUseId } from "@/modules/survey/link/lib/helper";
 import { getBasicSurveyMetadata } from "@/modules/survey/link/lib/metadata-utils";
 import { getProjectByEnvironmentId } from "@/modules/survey/link/lib/project";
+import { getTranslate } from "@/tolgee/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -13,6 +15,7 @@ interface ContactSurveyPageProps {
     jwt: string;
   }>;
   searchParams: Promise<{
+    suId?: string;
     verify?: string;
     lang?: string;
     embed?: string;
@@ -46,15 +49,23 @@ export const ContactSurveyPage = async (props: ContactSurveyPageProps) => {
   const searchParams = await props.searchParams;
   const params = await props.params;
 
+  const t = await getTranslate();
   const { jwt } = params;
-  const { preview } = searchParams;
+  const { preview, suId } = searchParams;
 
   const result = verifyContactSurveyToken(jwt);
   if (!result.ok) {
+    if (
+      result.error.type === "bad_request" &&
+      result.error.details?.some((detail) => detail.issue === "token_expired")
+    ) {
+      return <SurveyInactive surveyClosedMessage={{ heading: t("c.link_expired") }} status="link expired" />;
+    }
     // When token is invalid, we don't have survey data to get project branding settings
     // So we show SurveyInactive without project data (shows branding by default for backward compatibility)
     return <SurveyInactive status="link invalid" />;
   }
+
   const { surveyId, contactId } = result.data;
 
   const existingResponse = await getExistingContactResponse(surveyId, contactId)();
@@ -74,10 +85,26 @@ export const ContactSurveyPage = async (props: ContactSurveyPageProps) => {
     notFound();
   }
 
+  const isSingleUseSurvey = survey?.singleUse?.enabled;
+  const isSingleUseSurveyEncrypted = survey?.singleUse?.isEncrypted;
+
+  let singleUseId: string | undefined = undefined;
+
+  if (isSingleUseSurvey) {
+    const validatedSingleUseId = checkAndValidateSingleUseId(suId, isSingleUseSurveyEncrypted);
+    if (!validatedSingleUseId) {
+      const project = await getProjectByEnvironmentId(survey.environmentId);
+      return <SurveyInactive status="link invalid" project={project ?? undefined} />;
+    }
+
+    singleUseId = validatedSingleUseId;
+  }
+
   return renderSurvey({
     survey,
     searchParams,
     contactId,
     isPreview,
+    singleUseId,
   });
 };

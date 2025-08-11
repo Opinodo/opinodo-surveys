@@ -215,7 +215,7 @@ export const SurveyMenuBar = ({
     }
 
     try {
-      const isSurveyValidResult = isSurveyValid(localSurvey, selectedLanguageCode, t);
+      const isSurveyValidResult = isSurveyValid(localSurvey, selectedLanguageCode, t, responseCount);
       if (!isSurveyValidResult) {
         setIsSurveySaving(false);
         return false;
@@ -250,6 +250,7 @@ export const SurveyMenuBar = ({
       if (updatedSurveyResponse?.data) {
         setLocalSurvey(updatedSurveyResponse.data);
         toast.success(t("environments.surveys.edit.changes_saved"));
+        router.refresh();
       } else {
         const errorMessage = getFormattedErrorMessage(updatedSurveyResponse);
         toast.error(errorMessage);
@@ -283,7 +284,7 @@ export const SurveyMenuBar = ({
     }
 
     try {
-      const isSurveyValidResult = isSurveyValid(localSurvey, selectedLanguageCode, t);
+      const isSurveyValidResult = isSurveyValid(localSurvey, selectedLanguageCode, t, responseCount);
       if (!isSurveyValidResult) {
         setIsSurveyPublishing(false);
         return;

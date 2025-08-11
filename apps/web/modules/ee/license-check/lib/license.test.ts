@@ -102,6 +102,8 @@ describe("License Core Logic", () => {
       spamProtection: true,
       ai: false,
       auditLogs: true,
+      multiLanguageSurveys: true,
+      accessControl: true,
     };
     const mockFetchedLicenseDetails: TEnterpriseLicenseDetails = {
       status: "active",
@@ -157,7 +159,6 @@ describe("License Core Logic", () => {
           active: true,
           features: mockFetchedLicenseDetails.features,
           lastChecked: expect.any(Date),
-          version: 1,
         },
         expect.any(Number)
       );
@@ -231,9 +232,10 @@ describe("License Core Logic", () => {
             saml: false,
             spamProtection: false,
             auditLogs: false,
+            multiLanguageSurveys: false,
+            accessControl: false,
           },
           lastChecked: expect.any(Date),
-          version: 1,
         },
         expect.any(Number)
       );
@@ -251,6 +253,8 @@ describe("License Core Logic", () => {
           saml: false,
           spamProtection: false,
           auditLogs: false,
+          multiLanguageSurveys: false,
+          accessControl: false,
         },
         lastChecked: expect.any(Date),
         isPendingDowngrade: false,
@@ -278,6 +282,8 @@ describe("License Core Logic", () => {
         saml: false,
         spamProtection: false,
         auditLogs: false,
+        multiLanguageSurveys: false,
+        accessControl: false,
       };
       expect(mockCache.set).toHaveBeenCalledWith(
         expect.stringContaining("fb:license:"),
@@ -285,7 +291,6 @@ describe("License Core Logic", () => {
           active: false,
           features: expectedFeatures,
           lastChecked: expect.any(Date),
-          version: 1,
         },
         expect.any(Number)
       );
@@ -364,7 +369,7 @@ describe("License Core Logic", () => {
         },
       }));
       // Import hashString to compute the expected cache key
-      const { hashString } = await import("@/lib/hashString");
+      const { hashString } = await import("@/lib/hash-string");
       const hashedKey = hashString("test-license-key");
       const detailsKey = `fb:license:${hashedKey}:status`;
       // Patch the cache mock to match the actual key logic
@@ -476,7 +481,7 @@ describe("License Core Logic", () => {
           HTTP_PROXY: undefined,
         },
       }));
-      const { hashString } = await import("@/lib/hashString");
+      const { hashString } = await import("@/lib/hash-string");
       const expectedHash = hashString(testLicenseKey);
       const { getEnterpriseLicense } = await import("./license");
       await getEnterpriseLicense();

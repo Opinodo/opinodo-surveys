@@ -1,5 +1,5 @@
 import { getFormattedErrorMessage } from "@/lib/utils/helper";
-import { generateSingleUseIdAction } from "@/modules/survey/list/actions";
+import { generateSingleUseIdsAction } from "@/modules/survey/list/actions";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import toast from "react-hot-toast";
 import { describe, expect, test, vi } from "vitest";
@@ -8,7 +8,7 @@ import { useSingleUseId } from "./useSingleUseId";
 
 // Mock external functions
 vi.mock("@/modules/survey/list/actions", () => ({
-  generateSingleUseIdAction: vi.fn().mockResolvedValue({ data: "initialId" }),
+  generateSingleUseIdsAction: vi.fn().mockResolvedValue({ data: ["initialId"] }),
 }));
 
 vi.mock("@/lib/utils/helper", () => ({
@@ -31,19 +31,33 @@ describe("useSingleUseId", () => {
     },
   } as TSurvey;
 
-  test("should initialize singleUseId to undefined", () => {
-    vi.mocked(generateSingleUseIdAction).mockResolvedValueOnce({ data: "mockSingleUseId" });
+  test("should return early with undefined values when isReadOnly is true", async () => {
+    const { result } = renderHook(() => useSingleUseId(mockSurvey, true));
 
-    const { result } = renderHook(() => useSingleUseId(mockSurvey));
+    // Should immediately return undefined for singleUseId
+    expect(result.current.singleUseId).toBeUndefined();
+
+    // Should return a dummy function that resolves to undefined
+    const refreshResult = await result.current.refreshSingleUseId();
+    expect(refreshResult).toBeUndefined();
+
+    // Should not call the API when in read-only mode
+    expect(generateSingleUseIdsAction).not.toHaveBeenCalled();
+  });
+
+  test("should initialize singleUseId to undefined", () => {
+    vi.mocked(generateSingleUseIdsAction).mockResolvedValueOnce({ data: ["mockSingleUseId"] });
+
+    const { result } = renderHook(() => useSingleUseId(mockSurvey, false));
 
     // Right after mount, before the async effect resolves, singleUseId should be undefined
     expect(result.current.singleUseId).toBeUndefined();
   });
 
   test("should fetch and set singleUseId if singleUse is enabled", async () => {
-    vi.mocked(generateSingleUseIdAction).mockResolvedValueOnce({ data: "mockSingleUseId" });
+    vi.mocked(generateSingleUseIdsAction).mockResolvedValueOnce({ data: ["mockSingleUseId"] });
 
-    const { result, rerender } = renderHook((props) => useSingleUseId(props), {
+    const { result, rerender } = renderHook((props) => useSingleUseId(props, false), {
       initialProps: mockSurvey,
     });
 
@@ -52,9 +66,10 @@ describe("useSingleUseId", () => {
       expect(result.current.singleUseId).toBe("mockSingleUseId");
     });
 
-    expect(generateSingleUseIdAction).toHaveBeenCalledWith({
+    expect(generateSingleUseIdsAction).toHaveBeenCalledWith({
       surveyId: "survey123",
       isEncrypted: true,
+      count: 1,
     });
 
     // Re-render with the same props to ensure it doesn't break
@@ -74,19 +89,19 @@ describe("useSingleUseId", () => {
       },
     } as TSurvey;
 
-    const { result } = renderHook(() => useSingleUseId(disabledSurvey));
+    const { result } = renderHook(() => useSingleUseId(disabledSurvey, false));
 
     await waitFor(() => {
       expect(result.current.singleUseId).toBeUndefined();
     });
 
-    expect(generateSingleUseIdAction).not.toHaveBeenCalled();
+    expect(generateSingleUseIdsAction).not.toHaveBeenCalled();
   });
 
   test("should show toast error if the API call fails", async () => {
-    vi.mocked(generateSingleUseIdAction).mockResolvedValueOnce({ serverError: "Something went wrong" });
+    vi.mocked(generateSingleUseIdsAction).mockResolvedValueOnce({ serverError: "Something went wrong" });
 
-    const { result } = renderHook(() => useSingleUseId(mockSurvey));
+    const { result } = renderHook(() => useSingleUseId(mockSurvey, false));
 
     await waitFor(() => {
       expect(result.current.singleUseId).toBeUndefined();
@@ -98,19 +113,19 @@ describe("useSingleUseId", () => {
 
   test("should refreshSingleUseId on demand", async () => {
     // Set up the initial mock response
-    vi.mocked(generateSingleUseIdAction).mockResolvedValueOnce({ data: "initialId" });
+    vi.mocked(generateSingleUseIdsAction).mockResolvedValueOnce({ data: ["initialId"] });
 
-    const { result } = renderHook(() => useSingleUseId(mockSurvey));
+    const { result } = renderHook(() => useSingleUseId(mockSurvey, false));
 
     // We need to wait for the initial async effect to complete
     // This ensures the hook has time to update state with the first mock value
     await waitFor(() => {
-      expect(generateSingleUseIdAction).toHaveBeenCalledTimes(1);
+      expect(generateSingleUseIdsAction).toHaveBeenCalledTimes(1);
     });
 
     // Reset the mock and set up the next response for refreshSingleUseId call
-    vi.mocked(generateSingleUseIdAction).mockClear();
-    vi.mocked(generateSingleUseIdAction).mockResolvedValueOnce({ data: "refreshedId" });
+    vi.mocked(generateSingleUseIdsAction).mockClear();
+    vi.mocked(generateSingleUseIdsAction).mockResolvedValueOnce({ data: ["refreshedId"] });
 
     // Call refreshSingleUseId and wait for it to complete
     let refreshedValue;
@@ -125,9 +140,10 @@ describe("useSingleUseId", () => {
     expect(result.current.singleUseId).toBe("refreshedId");
 
     // Verify the API was called with correct parameters
-    expect(generateSingleUseIdAction).toHaveBeenCalledWith({
+    expect(generateSingleUseIdsAction).toHaveBeenCalledWith({
       surveyId: "survey123",
       isEncrypted: true,
+      count: 1,
     });
   });
 });

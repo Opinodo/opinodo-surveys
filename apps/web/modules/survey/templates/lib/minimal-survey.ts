@@ -35,7 +35,6 @@ export const getMinimalSurvey = (t: TFnType): TSurvey => ({
   recaptcha: null,
   singleUse: null,
   styling: null,
-  resultShareKey: null,
   segment: null,
   languages: [],
   showLanguageSwitch: false,

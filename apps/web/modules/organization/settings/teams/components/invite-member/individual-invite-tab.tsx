@@ -23,7 +23,7 @@ interface IndividualInviteTabProps {
   setOpen: (v: boolean) => void;
   onSubmit: (data: { name: string; email: string; role: TOrganizationRole }[]) => void;
   teams: TOrganizationTeam[];
-  canDoRoleManagement: boolean;
+  isAccessControlAllowed: boolean;
   isFormbricksCloud: boolean;
   environmentId: string;
   membershipRole?: TOrganizationRole;
@@ -33,7 +33,7 @@ export const IndividualInviteTab = ({
   setOpen,
   onSubmit,
   teams,
-  canDoRoleManagement,
+  isAccessControlAllowed,
   isFormbricksCloud,
   environmentId,
   membershipRole,
@@ -52,7 +52,7 @@ export const IndividualInviteTab = ({
   const form = useForm<TFormData>({
     resolver: zodResolver(ZFormSchema),
     defaultValues: {
-      role: canDoRoleManagement ? "member" : "owner",
+      role: isAccessControlAllowed ? "member" : "owner",
       teamIds: [],
     },
   });
@@ -106,7 +106,7 @@ export const IndividualInviteTab = ({
         <div>
           <AddMemberRole
             control={control}
-            canDoRoleManagement={canDoRoleManagement}
+            isAccessControlAllowed={isAccessControlAllowed}
             isFormbricksCloud={isFormbricksCloud}
             membershipRole={membershipRole}
           />
@@ -117,7 +117,7 @@ export const IndividualInviteTab = ({
           )}
         </div>
 
-        {canDoRoleManagement && (
+        {isAccessControlAllowed && (
           <FormField
             control={control}
             name="teamIds"
@@ -133,7 +133,7 @@ export const IndividualInviteTab = ({
                     onChange={(val) => field.onChange(val)}
                   />
                   {!teamOptions.length && (
-                    <Small className="italic">
+                    <Small className="font-normal text-amber-600">
                       {t("environments.settings.teams.create_first_team_message")}
                     </Small>
                   )}
@@ -143,7 +143,7 @@ export const IndividualInviteTab = ({
           />
         )}
 
-        {!canDoRoleManagement && (
+        {!isAccessControlAllowed && (
           <Alert>
             <AlertDescription className="flex">
               {t("environments.settings.teams.upgrade_plan_notice_message")}
@@ -161,11 +161,11 @@ export const IndividualInviteTab = ({
           </Alert>
         )}
 
-        <div className="flex justify-between">
+        <div className="flex items-end justify-end gap-x-2">
           <Button
             size="default"
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={() => {
               setOpen(false);
             }}>

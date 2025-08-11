@@ -81,7 +81,6 @@ const mockSurvey = {
   welcomeCard: { enabled: false } as unknown as TSurvey["welcomeCard"],
   surveyClosedMessage: null,
   singleUse: null,
-  resultShareKey: null,
   variables: [],
   segment: null,
   autoClose: null,
@@ -101,7 +100,7 @@ const mockProject = {
     highlightBorderColor: null,
     cardBackgroundColor: { light: "#FFFFFF", dark: "#000000" },
     cardBorderColor: { light: "#FFFFFF", dark: "#000000" },
-    cardShadowColor: { light: "#FFFFFF", dark: "#000000" },
+
     questionColor: { light: "#FFFFFF", dark: "#000000" },
     inputColor: { light: "#FFFFFF", dark: "#000000" },
     inputBorderColor: { light: "#FFFFFF", dark: "#000000" },
@@ -123,7 +122,7 @@ const mockComputedStyling = {
   inputBorderColor: "#000000",
   cardBackgroundColor: "#FFFFFF",
   cardBorderColor: "#EEEEEE",
-  cardShadowColor: "#AAAAAA",
+
   highlightBorderColor: null,
   thankYouCardIconColor: "#007BFF",
   thankYouCardIconBgColor: "#DDDDDD",

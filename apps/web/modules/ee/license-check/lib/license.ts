@@ -1,5 +1,6 @@
+import "server-only";
 import { env } from "@/lib/env";
-import { hashString } from "@/lib/hashString";
+import { hashString } from "@/lib/hash-string";
 import { createCacheKey } from "@/modules/cache/lib/cacheKeys";
 import { getCache } from "@/modules/cache/lib/service";
 import {
@@ -35,7 +36,6 @@ type TPreviousResult = {
   active: boolean;
   lastChecked: Date;
   features: TEnterpriseLicenseFeatures | null;
-  version: number; // For cache versioning
 };
 
 // Validation schemas
@@ -51,6 +51,8 @@ const LicenseFeaturesSchema = z.object({
   saml: z.boolean(),
   spamProtection: z.boolean(),
   auditLogs: z.boolean(),
+  multiLanguageSurveys: z.boolean(),
+  accessControl: z.boolean(),
 });
 
 const LicenseDetailsSchema = z.object({
@@ -111,6 +113,8 @@ const DEFAULT_FEATURES: TEnterpriseLicenseFeatures = {
   saml: false,
   spamProtection: false,
   auditLogs: false,
+  multiLanguageSurveys: false,
+  accessControl: false,
 };
 
 // Helper functions
@@ -136,7 +140,6 @@ const getPreviousResult = async (): Promise<TPreviousResult> => {
       active: false,
       lastChecked: new Date(0),
       features: DEFAULT_FEATURES,
-      version: 1,
     };
   }
 
@@ -157,7 +160,6 @@ const getPreviousResult = async (): Promise<TPreviousResult> => {
     active: false,
     lastChecked: new Date(0),
     features: DEFAULT_FEATURES,
-    version: 1,
   };
 };
 
@@ -196,7 +198,6 @@ const trackApiError = (error: LicenseApiError) => {
 const validateFallback = (previousResult: TPreviousResult): boolean => {
   if (!previousResult.features) return false;
   if (previousResult.lastChecked.getTime() === new Date(0).getTime()) return false;
-  if (previousResult.version !== 1) return false; // Add version check
   return true;
 };
 
@@ -223,7 +224,6 @@ const handleInitialFailure = async (currentTime: Date) => {
     active: false,
     features: DEFAULT_FEATURES,
     lastChecked: currentTime,
-    version: 1,
   };
   await setPreviousResult(initialFailResult);
   return {
@@ -369,7 +369,6 @@ export const getEnterpriseLicense = reactCache(
           active: liveLicenseDetails.status === "active",
           features: liveLicenseDetails.features,
           lastChecked: currentTime,
-          version: 1,
         };
         await setPreviousResult(currentLicenseState);
         return {

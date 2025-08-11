@@ -365,87 +365,77 @@ export function WelcomeCard({
   }, [isCurrent, adEventFired]);
 
   return (
-    <div>
-      <ScrollableContainer>
-        <div>
-          {fileUrl ? (
-            <img
-              src={fileUrl}
-              className="fb-mb-8 fb-max-h-96 fb-w-1/4 fb-rounded-lg fb-object-contain"
-              alt="Company Logo"
-            />
-          ) : null}
+    <ScrollableContainer>
+      <div>
+        {fileUrl ? (
+          <img src={fileUrl} className="fb-mb-8 fb-max-h-96 fb-w-1/4 fb-object-contain" alt="Company Logo" />
+        ) : null}
 
-          <Headline
-            headline={replaceRecallInfo(
-              getLocalizedValue(headline, languageCode),
-              responseData,
-              variablesData
-            )}
-            questionId="welcomeCard"
-          />
-          <HtmlBody
-            htmlString={replaceRecallInfo(getLocalizedValue(html, languageCode), responseData, variablesData)}
-            questionId="welcomeCard"
-          />
-        </div>
-      </ScrollableContainer>
-      <div className="fb-mx-6 fb-mt-4 fb-flex fb-items-center fb-gap-4 fb-py-4">
-        <SubmitButton
-          buttonLabel={
-            adLoaded && !adEventFired
-              ? translations.watchAd || "Please watch ad to continue"
-              : getLocalizedValue(buttonLabel, languageCode)
-          }
-          isLastQuestion={false}
-          focus={isCurrent && adEventFired ? autoFocusEnabled : false}
-          tabIndex={isCurrent && adEventFired ? 0 : -1}
-          onClick={adEventFired ? handleSubmit : undefined}
-          type="button"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-            }
-          }}
-          disabled={!adEventFired && adLoaded}
+        <Headline
+          headline={replaceRecallInfo(getLocalizedValue(headline, languageCode), responseData, variablesData)}
+          questionId="welcomeCard"
         />
-        {adLoaded && !adEventFired && (
-          <div className="fb-flex fb-items-center fb-text-sm fb-text-gray-600">
-            <TimerIcon />
-            <span className="fb-ml-1">{timeRemaining}s</span>
-          </div>
-        )}
-      </div>
-      <div id="bm-int" className="fb-mt-4 fb-text-center"></div>
+        <HtmlBody
+          htmlString={replaceRecallInfo(getLocalizedValue(html, languageCode), responseData, variablesData)}
+          questionId="welcomeCard"
+        />
+        <div className="fb-mt-4 fb-flex fb-items-center fb-gap-4 fb-pt-4">
+          <SubmitButton
+            buttonLabel={
+              adLoaded && !adEventFired
+                ? translations.watchAd || "Please watch ad to continue"
+                : getLocalizedValue(buttonLabel, languageCode)
+            }
+            isLastQuestion={false}
+            focus={isCurrent && adEventFired ? autoFocusEnabled : false}
+            tabIndex={isCurrent && adEventFired ? 0 : -1}
+            onClick={adEventFired ? handleSubmit : undefined}
+            type="button"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+              }
+            }}
+            disabled={!adEventFired && adLoaded}
+          />
+          {adLoaded && !adEventFired && (
+            <div className="fb-flex fb-items-center fb-text-sm fb-text-gray-600">
+              <TimerIcon />
+              <span className="fb-ml-1">{timeRemaining}s</span>
+            </div>
+          )}
+        </div>
+        <div id="bm-int" className="fb-mt-4 fb-text-center"></div>
 
-      {timeToFinish && !showResponseCount ? (
-        <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
-          <TimerIcon />
-          <p className="fb-pt-1 fb-text-xs">
-            <span> Takes {calculateTimeToComplete()} </span>
-          </p>
-        </div>
-      ) : null}
-      {showResponseCount && !timeToFinish && responseCount && responseCount > 3 ? (
-        <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
-          <UsersIcon />
-          <p className="fb-pt-1 fb-text-xs">
-            <span>{`${responseCount.toString()} people responded`}</span>
-          </p>
-        </div>
-      ) : null}
-      {timeToFinish && showResponseCount ? (
-        <div className="fb-items-center fb-text-subheading fb-my-4 fb-ml-6 fb-flex">
-          <TimerIcon />
-          <p className="fb-pt-1 fb-text-xs">
-            <span> Takes {calculateTimeToComplete()} </span>
-            <span>
-              {responseCount && responseCount > 3 ? `⋅ ${responseCount.toString()} people responded` : ""}
-            </span>
-          </p>
-        </div>
-      ) : null}
-    </div>
+        {timeToFinish && !showResponseCount ? (
+          <div className="fb-items-center fb-text-subheading fb-my-4 fb-flex">
+            <TimerIcon />
+            <p className="fb-pt-1 fb-text-xs">
+              <span> Takes {calculateTimeToComplete()} </span>
+            </p>
+          </div>
+        ) : null}
+        {showResponseCount && !timeToFinish && responseCount && responseCount > 3 ? (
+          <div className="fb-items-center fb-text-subheading fb-my-4 fb-flex">
+            <UsersIcon />
+            <p className="fb-pt-1 fb-text-xs">
+              <span data-testid="fb__surveys__welcome-card__response-count">{`${responseCount.toString()} people responded`}</span>
+            </p>
+          </div>
+        ) : null}
+        {timeToFinish && showResponseCount ? (
+          <div className="fb-items-center fb-text-subheading fb-my-4 fb-flex">
+            <TimerIcon />
+            <p className="fb-pt-1 fb-text-xs" data-testid="fb__surveys__welcome-card__info-text-test">
+              <span> Takes {calculateTimeToComplete()} </span>
+              <span data-testid="fb__surveys__welcome-card__response-count">
+                {responseCount && responseCount > 3 ? `⋅ ${responseCount.toString()} people responded` : ""}
+              </span>
+            </p>
+          </div>
+        ) : null}
+      </div>
+    </ScrollableContainer>
   );
 }
 

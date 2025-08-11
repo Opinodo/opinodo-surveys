@@ -9,9 +9,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/modules/ui/components/dropdown-menu";
+import { cn } from "@/modules/ui/lib/utils";
 import { Table } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { ArrowDownToLineIcon, Trash2Icon } from "lucide-react";
+import { ArrowDownToLineIcon, Loader2Icon, Trash2Icon } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -20,7 +21,7 @@ interface SelectedRowSettingsProps<T> {
   deleteRowsAction: (rowId: string[]) => void;
   type: "response" | "contact";
   deleteAction: (id: string) => Promise<void>;
-  downloadRowsAction?: (rowIds: string[], format: string) => void;
+  downloadRowsAction?: (rowIds: string[], format: string) => Promise<void>;
 }
 
 export const SelectedRowSettings = <T,>({
@@ -32,6 +33,7 @@ export const SelectedRowSettings = <T,>({
 }: SelectedRowSettingsProps<T>) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const { t } = useTranslate();
   const selectedRowCount = table.getFilteredSelectedRowModel().rows.length;
 
@@ -73,20 +75,27 @@ export const SelectedRowSettings = <T,>({
 
   // Handle download selected rows
   const handleDownloadSelectedRows = async (format: string) => {
+    setIsDownloading(true);
     const rowsToDownload = table.getFilteredSelectedRowModel().rows.map((row) => row.id);
     if (downloadRowsAction && rowsToDownload.length > 0) {
-      downloadRowsAction(rowsToDownload, format);
+      await downloadRowsAction(rowsToDownload, format);
     }
+    setIsDownloading(false);
   };
 
   // Helper component for the separator
   const Separator = () => <div>|</div>;
 
+  const deleteDialogText =
+    type === "response"
+      ? t("environments.surveys.responses.delete_response_confirmation")
+      : t("environments.contacts.delete_contact_confirmation");
+
   return (
     <>
       <div className="bg-primary flex items-center gap-x-2 rounded-md p-1 px-2 text-xs text-white">
         <div className="lowercase">
-          {selectedRowCount} {t(`common.${type}s`)} {t("common.selected")}
+          {`${selectedRowCount} ${type === "response" ? t("common.responses") : t("common.contacts")} ${t("common.selected")}`}
         </div>
         <Separator />
         <Button
@@ -107,10 +116,13 @@ export const SelectedRowSettings = <T,>({
         <Separator />
         {downloadRowsAction && (
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger
+              asChild
+              className={cn(isDownloading && "cursor-not-allowed opacity-50")}
+              disabled={isDownloading}>
               <Button variant="outline" size="sm" className="h-6 gap-1 border-none px-2">
+                {isDownloading ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <ArrowDownToLineIcon />}
                 {t("common.download")}
-                <ArrowDownToLineIcon />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -141,9 +153,10 @@ export const SelectedRowSettings = <T,>({
       <DeleteDialog
         open={isDeleteDialogOpen}
         setOpen={setIsDeleteDialogOpen}
-        deleteWhat={t(`common.${type}`)}
+        deleteWhat={type === "response" ? t("common.responses") : t("common.contacts")}
         onDelete={handleDelete}
         isDeleting={isDeleting}
+        text={deleteDialogText}
       />
     </>
   );

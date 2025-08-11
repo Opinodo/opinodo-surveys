@@ -7,6 +7,7 @@ import { TSurvey } from "@/modules/survey/list/types/surveys";
 import { Button } from "@/modules/ui/components/button";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useTranslate } from "@tolgee/react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { wrapThrows } from "@formbricks/types/error-handlers";
 import { TProjectConfigChannel } from "@formbricks/types/project";
@@ -47,9 +48,11 @@ export const SurveysList = ({
   environmentTags,
   locale,
 }: SurveysListProps) => {
+  const router = useRouter();
   const [surveys, setSurveys] = useState<TSurvey[]>([]);
   const [isFetching, setIsFetching] = useState(true);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(false);
   const { t } = useTranslate();
   const [surveyFilters, setSurveyFilters] = useState<TSurveyFilters>(initialFilters);
   const [isFilterInitialized, setIsFilterInitialized] = useState(false);
@@ -102,7 +105,7 @@ export const SurveysList = ({
       };
       fetchInitialSurveys();
     }
-  }, [environmentId, surveysLimit, filters, isFilterInitialized]);
+  }, [environmentId, surveysLimit, filters, isFilterInitialized, refreshTrigger]);
 
   const fetchNextPage = useCallback(async () => {
     setIsFetching(true);
@@ -127,13 +130,15 @@ export const SurveysList = ({
   const handleDeleteSurvey = async (surveyId: string) => {
     const newSurveys = surveys.filter((survey) => survey.id !== surveyId);
     setSurveys(newSurveys);
-    if (newSurveys.length === 0) setIsFetching(true);
+    if (newSurveys.length === 0) {
+      setIsFetching(true);
+      router.refresh();
+    }
   };
 
-  const handleDuplicateSurvey = async (survey: TSurvey) => {
-    const newSurveys = [survey, ...surveys];
-    setSurveys(newSurveys);
-  };
+  const triggerRefresh = useCallback(() => {
+    setRefreshTrigger((prev) => !prev);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -162,9 +167,9 @@ export const SurveysList = ({
                   environmentId={environmentId}
                   isReadOnly={isReadOnly}
                   publicDomain={publicDomain}
-                  duplicateSurvey={handleDuplicateSurvey}
                   deleteSurvey={handleDeleteSurvey}
                   locale={locale}
+                  onSurveysCopied={triggerRefresh}
                 />
               );
             })}
