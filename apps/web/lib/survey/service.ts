@@ -67,6 +67,7 @@ export const selectSurvey = {
   timerDuration: true,
   showLanguageSwitch: true,
   recaptcha: true,
+  metadata: true,
   languages: {
     select: {
       default: true,

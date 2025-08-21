@@ -234,6 +234,60 @@ export const buildWhereClause = (survey: TSurvey, filterCriteria?: TResponseFilt
             },
           });
           break;
+        case "contains":
+          meta.push({
+            meta: {
+              path: updatedKey,
+              string_contains: val.value,
+            },
+          });
+          break;
+        case "doesNotContain":
+          meta.push({
+            NOT: {
+              meta: {
+                path: updatedKey,
+                string_contains: val.value,
+              },
+            },
+          });
+          break;
+        case "startsWith":
+          meta.push({
+            meta: {
+              path: updatedKey,
+              string_starts_with: val.value,
+            },
+          });
+          break;
+        case "doesNotStartWith":
+          meta.push({
+            NOT: {
+              meta: {
+                path: updatedKey,
+                string_starts_with: val.value,
+              },
+            },
+          });
+          break;
+        case "endsWith":
+          meta.push({
+            meta: {
+              path: updatedKey,
+              string_ends_with: val.value,
+            },
+          });
+          break;
+        case "doesNotEndWith":
+          meta.push({
+            NOT: {
+              meta: {
+                path: updatedKey,
+                string_ends_with: val.value,
+              },
+            },
+          });
+          break;
       }
     });
 
@@ -571,7 +625,7 @@ export const extractSurveyDetails = (survey: TSurvey, responses: TResponse[]) =>
     const headline = getLocalizedValue(question.headline, "default") ?? question.id;
     if (question.type === "matrix") {
       return question.rows.map((row) => {
-        return `${idx + 1}. ${headline} - ${getLocalizedValue(row, "default")}`;
+        return `${idx + 1}. ${headline} - ${getLocalizedValue(row.label, "default")}`;
       });
     } else if (
       question.type === "multipleChoiceMulti" ||
@@ -613,7 +667,6 @@ export const getResponsesJson = (
       "Survey ID": response.surveyId,
       "Formbricks ID (internal)": response.contact?.id || "",
       "User ID": response.contact?.userId || "",
-      Notes: response.notes.map((note) => `${note.user.name}: ${note.text}`).join("\n"),
       Tags: response.tags.map((tag) => tag.name).join(", "),
     });
 
@@ -639,8 +692,8 @@ export const getResponsesJson = (
         questionHeadline.forEach((headline, index) => {
           if (answer) {
             const row = question.rows[index];
-            if (row && row.default && answer[row.default] !== undefined) {
-              jsonData[idx][headline] = answer[row.default];
+            if (row && row.label.default && answer[row.label.default] !== undefined) {
+              jsonData[idx][headline] = answer[row.label.default];
             } else {
               jsonData[idx][headline] = "";
             }
@@ -727,10 +780,13 @@ export const getResponseMeta = (
 
     responses.forEach((response) => {
       Object.entries(response.meta).forEach(([key, value]) => {
-        // skip url
-        if (key === "url") return;
-
         // Handling nested objects (like userAgent)
+        if (key === "url") {
+          if (!meta[key]) {
+            meta[key] = new Set();
+          }
+          return;
+        }
         if (typeof value === "object" && value !== null) {
           Object.entries(value).forEach(([nestedKey, nestedValue]) => {
             if (typeof nestedValue === "string" && nestedValue) {

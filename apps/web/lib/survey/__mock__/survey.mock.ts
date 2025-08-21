@@ -125,7 +125,6 @@ export const mockUser: TUser = {
   name: "mock User",
   email: "test@unit.com",
   emailVerified: currentDate,
-  imageUrl: "https://www.google.com",
   createdAt: currentDate,
   updatedAt: currentDate,
   twoFactorEnabled: false,
@@ -283,12 +282,14 @@ export const mockSyncSurveyOutput: SurveyMock = {
   thankYouCard: null,
   verifyEmail: null,
   failureCard: null,
+  metadata: {},
 };
 
 export const mockSurveyOutput: SurveyMock = {
   type: "link",
   status: "inProgress",
   displayOption: "respondMultiple",
+  metadata: {},
   triggers: [{ actionClass: mockActionClass }],
   projectOverwrites: null,
   recaptcha: null,
@@ -334,6 +335,7 @@ export const updateSurveyInput: TSurvey = {
   showLanguageSwitch: null,
   variables: [],
   followUps: [],
+  metadata: {},
   ...commonMockProperties,
   ...baseSurveyProperties,
 };

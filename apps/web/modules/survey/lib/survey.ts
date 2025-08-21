@@ -46,6 +46,7 @@ export const selectSurvey = {
   limitedCountries: true,
   timerDuration: true,
   isBackButtonHidden: true,
+  metadata: true,
   languages: {
     select: {
       default: true,

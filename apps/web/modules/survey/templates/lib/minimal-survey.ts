@@ -49,4 +49,5 @@ export const getMinimalSurvey = (t: TFnType): TSurvey => ({
   timerDuration: null,
   followUps: [],
   isBackButtonHidden: false,
+  metadata: {},
 });

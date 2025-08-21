@@ -377,7 +377,6 @@ export function WelcomeCard({
         />
         <HtmlBody
           htmlString={replaceRecallInfo(getLocalizedValue(html, languageCode), responseData, variablesData)}
-          questionId="welcomeCard"
         />
         <div className="fb-mt-4 fb-flex fb-items-center fb-gap-4 fb-pt-4">
           <SubmitButton
