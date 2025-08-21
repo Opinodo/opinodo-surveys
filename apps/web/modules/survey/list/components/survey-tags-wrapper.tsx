@@ -1,6 +1,7 @@
 "use client";
 
 import { getFormattedErrorMessage } from "@/lib/utils/helper";
+import { TagError } from "@/modules/projects/settings/types/tag";
 import { Button } from "@/modules/ui/components/button";
 import { Tag } from "@/modules/ui/components/tag";
 import { TagsCombobox } from "@/modules/ui/components/tags-combobox";
@@ -49,6 +50,63 @@ export const SurveyTagsWrapper: React.FC<SurveyTagsWrapperProps> = ({
     } catch (e) {
       toast.error("An error occurred deleting the tag");
     }
+  };
+
+  const handleCreateTag = async (tagName: string) => {
+    setOpen(false);
+
+    const createTagResponse = await createTagAction({
+      environmentId,
+      tagName: tagName?.trim() ?? "",
+    });
+
+    if (createTagResponse?.data?.ok) {
+      const tag = createTagResponse.data.data;
+      setTagsState((prevTags) => [
+        ...prevTags,
+        {
+          tagId: tag.id,
+          tagName: tag.name,
+        },
+      ]);
+
+      const createTagToSurveyActionResponse = await createTagToSurveyAction({
+        surveyId,
+        tagId: tag.id,
+      });
+
+      if (createTagToSurveyActionResponse?.data) {
+        updateFetchedSurveys();
+        setSearchValue("");
+        setTagIdToHighlight(tag.id);
+      } else {
+        const errorMessage = getFormattedErrorMessage(createTagToSurveyActionResponse);
+        toast.error(errorMessage || "Failed to add tag to survey", {
+          duration: 2000,
+        });
+      }
+
+      return;
+    }
+
+    if (
+      createTagResponse?.data?.ok === false &&
+      createTagResponse?.data?.error?.code === TagError.TAG_NAME_ALREADY_EXISTS
+    ) {
+      toast.error("Tag already exists", {
+        duration: 2000,
+        icon: <AlertCircleIcon className="h-5 w-5 text-orange-500" />,
+      });
+
+      setSearchValue("");
+      return;
+    }
+
+    const errorMessage = getFormattedErrorMessage(createTagResponse);
+    toast.error(errorMessage ?? "Something went wrong", {
+      duration: 2000,
+    });
+    setSearchValue("");
   };
 
   useEffect(() => {
@@ -111,52 +169,8 @@ export const SurveyTagsWrapper: React.FC<SurveyTagsWrapperProps> = ({
             setSearchValue={setSearchValue}
             tags={environmentTags?.map((tag) => ({ value: tag.id, label: tag.name })) ?? []}
             currentTags={tagsState.map((tag) => ({ value: tag.tagId, label: tag.tagName }))}
-            createTag={async (tagName) => {
-              setOpen(false);
-
-              const createTagSurvey = await createTagAction({
-                environmentId,
-                tagName: tagName?.trim() ?? "",
-              });
-
-              if (createTagSurvey?.data) {
-                setTagsState((prevTags) => [
-                  ...prevTags,
-                  {
-                    tagId: createTagSurvey.data?.id ?? "",
-                    tagName: createTagSurvey.data?.name ?? "",
-                  },
-                ]);
-                const createTagToSurveyActionSurvey = await createTagToSurveyAction({
-                  surveyId,
-                  tagId: createTagSurvey.data.id,
-                });
-
-                if (createTagToSurveyActionSurvey?.data) {
-                  updateFetchedSurveys();
-                  setSearchValue("");
-                } else {
-                  toast.error("create tag to survey action failed", {
-                    duration: 2000,
-                  });
-                }
-              } else {
-                const errorMessage = getFormattedErrorMessage(createTagSurvey);
-                if (errorMessage.includes("Unique constraint failed on the fields")) {
-                  toast.error("Tag already exists", {
-                    duration: 2000,
-                    icon: <AlertCircleIcon className="h-5 w-5 text-orange-500" />,
-                  });
-                } else {
-                  toast.error(errorMessage ?? "Something went wrong", {
-                    duration: 2000,
-                  });
-                }
-
-                setSearchValue("");
-              }
-            }}
-            addTag={(tagId) => {
+            createTag={handleCreateTag}
+            addTag={async (tagId) => {
               setTagsState((prevTags) => [
                 ...prevTags,
                 {
@@ -165,11 +179,24 @@ export const SurveyTagsWrapper: React.FC<SurveyTagsWrapperProps> = ({
                 },
               ]);
 
-              createTagToSurveyAction({ surveyId, tagId }).then(() => {
-                updateFetchedSurveys();
-                setSearchValue("");
-                setOpen(false);
-              });
+              try {
+                const result = await createTagToSurveyAction({ surveyId, tagId });
+                if (result?.data) {
+                  updateFetchedSurveys();
+                  setSearchValue("");
+                  setOpen(false);
+                  setTagIdToHighlight(tagId);
+                } else {
+                  const errorMessage = getFormattedErrorMessage(result);
+                  toast.error(errorMessage || "Failed to add tag to survey", {
+                    duration: 2000,
+                  });
+                }
+              } catch (error) {
+                toast.error("An error occurred while adding the tag", {
+                  duration: 2000,
+                });
+              }
             }}
           />
         )}
