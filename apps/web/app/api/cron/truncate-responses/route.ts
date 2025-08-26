@@ -1,5 +1,6 @@
 import { authenticateRequest } from "@/app/api/v1/auth";
 import { responses } from "@/app/lib/api/response";
+import { NextRequest } from "next/server";
 import { prisma } from "@formbricks/database";
 import { logger } from "@formbricks/logger";
 
@@ -8,7 +9,7 @@ import { logger } from "@formbricks/logger";
  * This is faster than using Prisma's delete operations for large tables
  * Warning: This will delete ALL data in the responses table and related tables
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const authentication = await authenticateRequest(request);
   if (!authentication) return responses.notAuthenticatedResponse();
 

@@ -3,6 +3,7 @@ import { responses } from "@/app/lib/api/response";
 import { generateSurveySingleUseId } from "@/app/lib/singleUseSurveys";
 import { WEBAPP_URL } from "@/lib/constants";
 import { getActiveLinkSurveys } from "@/lib/survey/service";
+import { NextRequest } from "next/server";
 import { DatabaseError } from "@formbricks/types/errors";
 import { TSurvey, TSurveyLogic, TSurveyLogicAction, TSurveyQuestion } from "@formbricks/types/surveys/types";
 
@@ -69,7 +70,7 @@ function calculateTimeToComplete(survey: TSurvey): number {
   return minutes;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const authentication = await authenticateRequest(request);
     if (!authentication) return responses.notAuthenticatedResponse();
