@@ -28,7 +28,6 @@ describe("ResponseTimeline", () => {
     name: "Test User",
     createdAt: new Date(),
     updatedAt: new Date(),
-    imageUrl: null,
     objective: null,
     role: "founder",
     email: "test@example.com",
@@ -38,7 +37,6 @@ describe("ResponseTimeline", () => {
     isActive: true,
     notificationSettings: {
       alert: {},
-      weeklySummary: {},
     },
     locale: "en-US",
     lastLoginAt: new Date(),
@@ -58,7 +56,6 @@ describe("ResponseTimeline", () => {
     singleUseId: null,
     language: "en",
     ttc: {},
-    notes: [],
     tags: [],
   };
 

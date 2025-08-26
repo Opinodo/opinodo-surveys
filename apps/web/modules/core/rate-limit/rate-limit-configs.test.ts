@@ -57,7 +57,6 @@ describe("rateLimitConfigs", () => {
       expect(rateLimitConfigs).toHaveProperty("auth");
       expect(rateLimitConfigs).toHaveProperty("api");
       expect(rateLimitConfigs).toHaveProperty("actions");
-      expect(rateLimitConfigs).toHaveProperty("share");
     });
 
     test("should have all auth configurations", () => {
@@ -67,17 +66,12 @@ describe("rateLimitConfigs", () => {
 
     test("should have all API configurations", () => {
       const apiConfigs = Object.keys(rateLimitConfigs.api);
-      expect(apiConfigs).toEqual(["v1", "v2", "client"]);
+      expect(apiConfigs).toEqual(["v1", "v2", "client", "syncUserIdentification"]);
     });
 
     test("should have all action configurations", () => {
       const actionConfigs = Object.keys(rateLimitConfigs.actions);
-      expect(actionConfigs).toEqual(["emailUpdate", "surveyFollowUp"]);
-    });
-
-    test("should have all share configurations", () => {
-      const shareConfigs = Object.keys(rateLimitConfigs.share);
-      expect(shareConfigs).toEqual(["url"]);
+      expect(actionConfigs).toEqual(["emailUpdate", "surveyFollowUp", "sendLinkSurveyEmail"]);
     });
   });
 
@@ -87,12 +81,11 @@ describe("rateLimitConfigs", () => {
         ...Object.values(rateLimitConfigs.auth),
         ...Object.values(rateLimitConfigs.api),
         ...Object.values(rateLimitConfigs.actions),
-        ...Object.values(rateLimitConfigs.share),
       ];
 
-      allConfigs.forEach((config) => {
+      for (const config of allConfigs) {
         expect(() => ZRateLimitConfig.parse(config)).not.toThrow();
-      });
+      }
     });
   });
 
@@ -104,7 +97,6 @@ describe("rateLimitConfigs", () => {
       Object.values(rateLimitConfigs.auth).forEach((config) => allNamespaces.push(config.namespace));
       Object.values(rateLimitConfigs.api).forEach((config) => allNamespaces.push(config.namespace));
       Object.values(rateLimitConfigs.actions).forEach((config) => allNamespaces.push(config.namespace));
-      Object.values(rateLimitConfigs.share).forEach((config) => allNamespaces.push(config.namespace));
 
       const uniqueNamespaces = new Set(allNamespaces);
       expect(uniqueNamespaces.size).toBe(allNamespaces.length);
@@ -137,30 +129,50 @@ describe("rateLimitConfigs", () => {
         { config: rateLimitConfigs.auth.signup, identifier: "user-signup" },
         { config: rateLimitConfigs.api.v1, identifier: "api-v1-key" },
         { config: rateLimitConfigs.api.v2, identifier: "api-v2-key" },
+        { config: rateLimitConfigs.api.client, identifier: "client-api-key" },
+        { config: rateLimitConfigs.api.syncUserIdentification, identifier: "sync-user-id" },
         { config: rateLimitConfigs.actions.emailUpdate, identifier: "user-profile" },
-        { config: rateLimitConfigs.share.url, identifier: "share-url" },
       ];
 
-      const testAllowedRequest = async (config: any, identifier: string) => {
+      for (const { config, identifier } of testCases) {
+        // Test allowed request
         mockEval.mockClear();
         mockEval.mockResolvedValue([1, 1]);
-        const result = await checkRateLimit(config, identifier);
-        expect(result.ok).toBe(true);
-        expect((result as any).data.allowed).toBe(true);
-      };
+        const allowedResult = await checkRateLimit(config, identifier);
+        expect(allowedResult.ok).toBe(true);
+        expect((allowedResult as any).data.allowed).toBe(true);
 
-      const testExceededLimit = async (config: any, identifier: string) => {
-        // When limit is exceeded, remaining should be 0
+        // Test exceeded limit
         mockEval.mockClear();
         mockEval.mockResolvedValue([config.allowedPerInterval + 1, 0]);
-        const result = await checkRateLimit(config, identifier);
-        expect(result.ok).toBe(true);
-        expect((result as any).data.allowed).toBe(false);
-      };
+        const exceededResult = await checkRateLimit(config, identifier);
+        expect(exceededResult.ok).toBe(true);
+        expect((exceededResult as any).data.allowed).toBe(false);
+      }
+    });
 
-      for (const { config, identifier } of testCases) {
-        await testAllowedRequest(config, identifier);
-        await testExceededLimit(config, identifier);
+    test("should properly configure syncUserIdentification rate limit", async () => {
+      const config = rateLimitConfigs.api.syncUserIdentification;
+
+      // Verify configuration values
+      expect(config.interval).toBe(60); // 1 minute
+      expect(config.allowedPerInterval).toBe(5); // 5 requests per minute
+      expect(config.namespace).toBe("api:sync-user-identification");
+
+      // Test with allowed request
+      mockEval.mockResolvedValue([1, 1]); // 1 request used, allowed (1 = true)
+      const allowedResult = await checkRateLimit(config, "env-user-123");
+      expect(allowedResult.ok).toBe(true);
+      if (allowedResult.ok) {
+        expect(allowedResult.data.allowed).toBe(true);
+      }
+
+      // Test when limit is exceeded
+      mockEval.mockResolvedValue([6, 0]); // 6 requests used (exceeds limit of 5), not allowed (0 = false)
+      const exceededResult = await checkRateLimit(config, "env-user-123");
+      expect(exceededResult.ok).toBe(true);
+      if (exceededResult.ok) {
+        expect(exceededResult.data.allowed).toBe(false);
       }
     });
   });

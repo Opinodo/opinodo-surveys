@@ -131,7 +131,6 @@ describe("CreateOrganizationPage", () => {
     name: "Test User",
     email: "test@example.com",
     emailVerified: null,
-    imageUrl: null,
     twoFactorEnabled: false,
     identityProvider: "email" as const,
     createdAt: new Date(),
@@ -151,16 +150,6 @@ describe("CreateOrganizationPage", () => {
     objective: null,
     notificationSettings: {
       alert: {
-        surveyInvite: true,
-        surveyResponse: true,
-        surveyClosed: true,
-        surveyPaused: true,
-        surveyCompleted: true,
-        surveyDeleted: true,
-        surveyUpdated: true,
-        surveyCreated: true,
-      },
-      weeklySummary: {
         surveyInvite: true,
         surveyResponse: true,
         surveyClosed: true,

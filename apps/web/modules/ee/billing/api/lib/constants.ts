@@ -74,11 +74,10 @@ export const getCloudPricingData = (t: TFnType): { plans: TPricingPlan[] } => {
       t("environments.settings.billing.custom_project_limit"),
       t("environments.settings.billing.team_access_roles"),
       t("environments.project.languages.multi_language_surveys"),
-      t("environments.settings.enterprise.saml_sso"),
       t("environments.settings.billing.uptime_sla_99"),
       t("environments.settings.billing.premium_support_with_slas"),
     ],
-    href: "https://app.formbricks.com/s/cm7k8esy20001jp030fh8a9o5?source=billingView&delivery=cloud",
+    href: "https://formbricks.com/custom-plan?source=billingView",
   };
 
   return {

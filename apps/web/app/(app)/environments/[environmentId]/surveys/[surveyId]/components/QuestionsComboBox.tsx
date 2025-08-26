@@ -28,6 +28,7 @@ import {
   HomeIcon,
   ImageIcon,
   LanguagesIcon,
+  LinkIcon,
   ListIcon,
   ListOrderedIcon,
   MessageSquareTextIcon,
@@ -94,6 +95,7 @@ const questionIcons = {
   source: ArrowUpFromDotIcon,
   action: MousePointerClickIcon,
   country: FlagIcon,
+  url: LinkIcon,
 
   // others
   Language: LanguagesIcon,
@@ -138,7 +140,7 @@ export const SelectedCommandItem = ({ label, questionType, type }: Partial<Quest
 
   const getLabelStyle = (): string | undefined => {
     if (type !== OptionsType.META) return undefined;
-    return label === "os" ? "uppercase" : "capitalize";
+    return label === "os" || label === "url" ? "uppercase" : "capitalize";
   };
 
   return (
@@ -188,7 +190,7 @@ export const QuestionsComboBox = ({ options, selected, onChangeValue }: Question
       </button>
       <div className="relative mt-2 h-full">
         {open && (
-          <div className="animate-in bg-popover absolute top-0 z-50 max-h-52 w-full overflow-auto rounded-md bg-white outline-none">
+          <div className="animate-in absolute top-0 z-50 w-full overflow-auto rounded-md bg-white outline-none">
             <CommandList>
               <CommandEmpty>{t("common.no_result_found")}</CommandEmpty>
               {options?.map((data) => (

@@ -4510,11 +4510,32 @@
             }
           },
           {
+            "description": "The ID of the survey to fetch responses for",
             "example": "{{surveyId}}",
             "in": "query",
             "name": "surveyId",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "description": "Number of items to return",
+            "example": "{{limit}}",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Number of items to skip",
+            "example": "{{skip}}",
+            "in": "query",
+            "name": "skip",
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
             }
           }
         ],
@@ -4542,7 +4563,6 @@
                         "url": "https://postman.com",
                         "userAgent": {}
                       },
-                      "notes": [],
                       "person": {
                         "attributes": {
                           "Created From": "API",
@@ -4576,7 +4596,6 @@
                       "meta": {
                         "userAgent": {}
                       },
-                      "notes": [],
                       "person": {
                         "attributes": {
                           "Created From": "API",
@@ -4610,7 +4629,6 @@
                       "meta": {
                         "userAgent": {}
                       },
-                      "notes": [],
                       "person": {
                         "attributes": {
                           "Created From": "API",
@@ -4644,7 +4662,6 @@
                       "meta": {
                         "userAgent": {}
                       },
-                      "notes": [],
                       "person": {
                         "attributes": {
                           "Created From": "API",
@@ -4678,7 +4695,6 @@
                       "meta": {
                         "userAgent": {}
                       },
-                      "notes": [],
                       "person": {
                         "attributes": {
                           "Created From": "API",
@@ -4712,7 +4728,6 @@
                       "meta": {
                         "userAgent": {}
                       },
-                      "notes": [],
                       "person": {
                         "attributes": {
                           "Created From": "API",
@@ -4752,7 +4767,6 @@
                           "os": "Linux"
                         }
                       },
-                      "notes": [],
                       "person": null,
                       "personAttributes": null,
                       "singleUseId": null,
@@ -4781,7 +4795,6 @@
                           "os": "Linux"
                         }
                       },
-                      "notes": [],
                       "person": null,
                       "personAttributes": null,
                       "singleUseId": null,
@@ -4808,7 +4821,6 @@
                           "os": "Linux"
                         }
                       },
-                      "notes": [],
                       "person": null,
                       "personAttributes": null,
                       "singleUseId": null,
@@ -4837,7 +4849,6 @@
                           "os": "Linux"
                         }
                       },
-                      "notes": [],
                       "person": null,
                       "personAttributes": null,
                       "singleUseId": null,
@@ -4862,7 +4873,6 @@
                           "os": "Linux"
                         }
                       },
-                      "notes": [],
                       "person": null,
                       "personAttributes": null,
                       "singleUseId": null,
@@ -4981,7 +4991,6 @@
                       "url": "https://postman.com",
                       "userAgent": {}
                     },
-                    "notes": [],
                     "person": {
                       "attributes": {
                         "Created From": "API",
@@ -5162,7 +5171,6 @@
                       "url": "https://postman.com",
                       "userAgent": {}
                     },
-                    "notes": [],
                     "person": {
                       "attributes": {
                         "Created From": "API",
@@ -5337,7 +5345,6 @@
                       "url": "https://postman.com",
                       "userAgent": {}
                     },
-                    "notes": [],
                     "person": {
                       "attributes": {
                         "Created From": "API",
@@ -5531,7 +5538,6 @@
                       "url": "https://postman.com",
                       "userAgent": {}
                     },
-                    "notes": [],
                     "person": {
                       "attributes": {
                         "Created From": "API",
@@ -6109,7 +6115,6 @@
                       ],
                       "recontactDays": null,
                       "redirectUrl": null,
-                      "resultShareKey": null,
                       "runOnDate": null,
                       "segment": null,
                       "showLanguageSwitch": null,
@@ -6293,7 +6298,6 @@
                   ],
                   "recontactDays": null,
                   "redirectUrl": null,
-                  "resultShareKey": null,
                   "runOnDate": null,
                   "segmentId": null,
                   "showLanguageSwitch": null,
@@ -6414,7 +6418,6 @@
                     ],
                     "recontactDays": null,
                     "redirectUrl": null,
-                    "resultShareKey": null,
                     "runOnDate": null,
                     "segment": null,
                     "showLanguageSwitch": null,
@@ -6683,7 +6686,6 @@
                     ],
                     "recontactDays": null,
                     "redirectUrl": null,
-                    "resultShareKey": null,
                     "runOnDate": null,
                     "segment": null,
                     "showLanguageSwitch": null,
@@ -6939,7 +6941,6 @@
                     ],
                     "recontactDays": null,
                     "redirectUrl": null,
-                    "resultShareKey": null,
                     "runOnDate": null,
                     "segment": null,
                     "showLanguageSwitch": null,
@@ -7145,7 +7146,6 @@
                     ],
                     "recontactDays": null,
                     "redirectUrl": null,
-                    "resultShareKey": null,
                     "runOnDate": null,
                     "segment": null,
                     "showLanguageSwitch": null,

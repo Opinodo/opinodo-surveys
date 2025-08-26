@@ -118,7 +118,6 @@ describe("Page", () => {
       name: "Test User",
       email: "test@example.com",
       emailVerified: null,
-      imageUrl: null,
       twoFactorEnabled: false,
       identityProvider: "email",
       createdAt: new Date(),
@@ -127,7 +126,6 @@ describe("Page", () => {
       objective: null,
       notificationSettings: {
         alert: {},
-        weeklySummary: {},
         unsubscribedOrganizationIds: [],
       },
       locale: "en-US",
@@ -162,7 +160,6 @@ describe("Page", () => {
       name: "Test User",
       email: "test@example.com",
       emailVerified: null,
-      imageUrl: null,
       twoFactorEnabled: false,
       identityProvider: "email",
       createdAt: new Date(),
@@ -171,7 +168,6 @@ describe("Page", () => {
       objective: null,
       notificationSettings: {
         alert: {},
-        weeklySummary: {},
         unsubscribedOrganizationIds: [],
       },
       locale: "en-US",
@@ -252,7 +248,6 @@ describe("Page", () => {
       name: "Test User",
       email: "test@example.com",
       emailVerified: null,
-      imageUrl: null,
       twoFactorEnabled: false,
       identityProvider: "email",
       createdAt: new Date(),
@@ -261,7 +256,6 @@ describe("Page", () => {
       objective: null,
       notificationSettings: {
         alert: {},
-        weeklySummary: {},
         unsubscribedOrganizationIds: [],
       },
       locale: "en-US",
@@ -342,7 +336,6 @@ describe("Page", () => {
       name: "Test User",
       email: "test@example.com",
       emailVerified: null,
-      imageUrl: null,
       twoFactorEnabled: false,
       identityProvider: "email",
       createdAt: new Date(),
@@ -351,7 +344,6 @@ describe("Page", () => {
       objective: null,
       notificationSettings: {
         alert: {},
-        weeklySummary: {},
         unsubscribedOrganizationIds: [],
       },
       locale: "en-US",

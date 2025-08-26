@@ -156,20 +156,6 @@ export const SURVEY_BG_COLORS = [
   "#CDFAD5",
 ];
 
-// Rate Limiting
-export const CLIENT_SIDE_API_RATE_LIMIT = {
-  interval: 60, // 1 minute
-  allowedPerInterval: 100,
-};
-export const MANAGEMENT_API_RATE_LIMIT = {
-  interval: 60, // 1 minute
-  allowedPerInterval: 100,
-};
-export const SYNC_USER_IDENTIFICATION_RATE_LIMIT = {
-  interval: 60, // 1 minute
-  allowedPerInterval: 5,
-};
-
 export const DEBUG = env.DEBUG === "1";
 
 // Enterprise License constant
@@ -191,7 +177,16 @@ export const STRIPE_API_VERSION = "2024-06-20";
 export const MAX_ATTRIBUTE_CLASSES_PER_ENVIRONMENT = 150;
 
 export const DEFAULT_LOCALE = "en-US";
-export const AVAILABLE_LOCALES: TUserLocale[] = ["en-US", "de-DE", "pt-BR", "fr-FR", "zh-Hant-TW", "pt-PT"];
+export const AVAILABLE_LOCALES: TUserLocale[] = [
+  "en-US",
+  "de-DE",
+  "pt-BR",
+  "fr-FR",
+  "zh-Hant-TW",
+  "pt-PT",
+  "ro-RO",
+  "ja-JP",
+];
 
 // Billing constants
 

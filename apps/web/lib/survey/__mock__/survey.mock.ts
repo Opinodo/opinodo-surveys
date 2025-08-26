@@ -125,7 +125,6 @@ export const mockUser: TUser = {
   name: "mock User",
   email: "test@unit.com",
   emailVerified: currentDate,
-  imageUrl: "https://www.google.com",
   createdAt: currentDate,
   updatedAt: currentDate,
   twoFactorEnabled: false,
@@ -133,7 +132,7 @@ export const mockUser: TUser = {
   objective: "improve_user_retention",
   notificationSettings: {
     alert: {},
-    weeklySummary: {},
+
     unsubscribedOrganizationIds: [],
   },
   role: "other",
@@ -274,7 +273,6 @@ export const mockSyncSurveyOutput: SurveyMock = {
   pin: null,
   segment: null,
   segmentId: null,
-  resultShareKey: null,
   inlineTriggers: null,
   languages: mockSurveyLanguages,
   ...baseSurveyProperties,
@@ -283,6 +281,7 @@ export const mockSyncSurveyOutput: SurveyMock = {
   showLanguageSwitch: null,
   thankYouCard: null,
   verifyEmail: null,
+  metadata: {},
   failureCard: null,
 };
 
@@ -290,6 +289,7 @@ export const mockSurveyOutput: SurveyMock = {
   type: "link",
   status: "inProgress",
   displayOption: "respondMultiple",
+  metadata: {},
   triggers: [{ actionClass: mockActionClass }],
   projectOverwrites: null,
   recaptcha: null,
@@ -300,7 +300,6 @@ export const mockSurveyOutput: SurveyMock = {
   pin: null,
   segment: null,
   segmentId: null,
-  resultShareKey: null,
   inlineTriggers: null,
   languages: mockSurveyLanguages,
   followUps: [],
@@ -331,12 +330,12 @@ export const updateSurveyInput: TSurvey = {
   createdBy: null,
   pin: null,
   recaptcha: null,
-  resultShareKey: null,
   segment: null,
   languages: [],
   showLanguageSwitch: null,
   variables: [],
   followUps: [],
+  metadata: {},
   ...commonMockProperties,
   ...baseSurveyProperties,
 };

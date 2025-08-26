@@ -90,7 +90,6 @@ const mockPipelineInput = {
     personAttributes: {},
     singleUseId: null,
     personId: "person1",
-    notes: [],
     tags: [],
     variables: {
       [variableId]: "Variable Value",
@@ -152,7 +151,6 @@ const mockSurvey = {
   environmentId: "env1",
   singleUse: null,
   surveyClosedMessage: null,
-  resultShareKey: null,
   pin: null,
 } as unknown as TSurvey;
 

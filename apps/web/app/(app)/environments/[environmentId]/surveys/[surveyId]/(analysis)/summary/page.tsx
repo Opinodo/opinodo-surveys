@@ -9,9 +9,9 @@ import { getUser } from "@/lib/user/service";
 import { getSegments } from "@/modules/ee/contacts/segments/lib/segments";
 import { getIsContactsEnabled } from "@/modules/ee/license-check/lib/utils";
 import { getEnvironmentAuth } from "@/modules/environments/lib/utils";
+import { IdBadge } from "@/modules/ui/components/id-badge";
 import { PageContentWrapper } from "@/modules/ui/components/page-content-wrapper";
 import { PageHeader } from "@/modules/ui/components/page-header";
-import { SettingsId } from "@/modules/ui/components/settings-id";
 import { getTranslate } from "@/tolgee/server";
 import { notFound } from "next/navigation";
 
@@ -70,13 +70,11 @@ const SurveyPage = async (props: { params: Promise<{ environmentId: string; surv
         environment={environment}
         survey={survey}
         surveyId={params.surveyId}
-        publicDomain={publicDomain}
-        isReadOnly={isReadOnly}
         locale={user.locale ?? DEFAULT_LOCALE}
         initialSurveySummary={initialSurveySummary}
       />
 
-      <SettingsId title={t("common.survey_id")} id={surveyId} />
+      <IdBadge id={surveyId} label={t("common.survey_id")} variant="column" />
     </PageContentWrapper>
   );
 };

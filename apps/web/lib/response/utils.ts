@@ -1,19 +1,102 @@
-import "server-only";
 import { getLocalizedValue } from "@/lib/i18n/utils";
 import { Prisma } from "@prisma/client";
 import {
   TResponse,
+  TResponseDataValue,
   TResponseFilterCriteria,
   TResponseHiddenFieldsFilter,
   TResponseTtc,
   TSurveyContactAttributes,
   TSurveyMetaFieldFilter,
 } from "@formbricks/types/responses";
-import { TSurvey } from "@formbricks/types/surveys/types";
+import {
+  TSurvey,
+  TSurveyMultipleChoiceQuestion,
+  TSurveyPictureSelectionQuestion,
+  TSurveyQuestion,
+  TSurveyRankingQuestion,
+} from "@formbricks/types/surveys/types";
 import { processResponseData } from "../responses";
 import { getTodaysDateTimeFormatted } from "../time";
 import { getFormattedDateTimeString } from "../utils/datetime";
 import { sanitizeString } from "../utils/strings";
+
+/**
+ * Extracts choice IDs from response values for multiple choice questions
+ * @param responseValue - The response value (string for single choice, array for multi choice)
+ * @param question - The survey question containing choices
+ * @param language - The language to match against (defaults to "default")
+ * @returns Array of choice IDs
+ */
+export const extractChoiceIdsFromResponse = (
+  responseValue: TResponseDataValue,
+  question: TSurveyQuestion,
+  language: string = "default"
+): string[] => {
+  // Type guard to ensure the question has choices
+  if (
+    question.type !== "multipleChoiceMulti" &&
+    question.type !== "multipleChoiceSingle" &&
+    question.type !== "ranking" &&
+    question.type !== "pictureSelection"
+  ) {
+    return [];
+  }
+  const isPictureSelection = question.type === "pictureSelection";
+
+  if (!responseValue) {
+    return [];
+  }
+
+  // For picture selection questions, the response value is already choice ID(s)
+  if (isPictureSelection) {
+    if (Array.isArray(responseValue)) {
+      // Multi-selection: array of choice IDs
+      return responseValue.filter((id): id is string => typeof id === "string");
+    } else if (typeof responseValue === "string") {
+      // Single selection: single choice ID
+      return [responseValue];
+    }
+    return [];
+  }
+
+  const defaultLanguage = language ?? "default";
+
+  // Helper function to find choice by label - eliminates duplication
+  const findChoiceByLabel = (choiceLabel: string): string | null => {
+    const targetChoice = question.choices.find((c) => {
+      // Try exact language match first
+      if (c.label[defaultLanguage] === choiceLabel) {
+        return true;
+      }
+      // Fall back to checking all language values
+      return Object.values(c.label).includes(choiceLabel);
+    });
+    return targetChoice?.id || "other";
+  };
+
+  if (Array.isArray(responseValue)) {
+    // Multiple choice case - response is an array of selected choice labels
+    return responseValue.map(findChoiceByLabel).filter((choiceId): choiceId is string => choiceId !== null);
+  } else if (typeof responseValue === "string") {
+    // Single choice case - response is a single choice label
+    const choiceId = findChoiceByLabel(responseValue);
+    return choiceId ? [choiceId] : [];
+  }
+
+  return [];
+};
+
+export const getChoiceIdByValue = (
+  value: string,
+  question: TSurveyMultipleChoiceQuestion | TSurveyRankingQuestion | TSurveyPictureSelectionQuestion
+) => {
+  if (question.type === "pictureSelection") {
+    return question.choices.find((choice) => choice.imageUrl === value)?.id ?? "other";
+  }
+
+  return question.choices.find((choice) => choice.label.default === value)?.id ?? "other";
+};
 
 export const calculateTtcTotal = (ttc: TResponseTtc) => {
   const result = { ...ttc };
@@ -148,6 +231,60 @@ export const buildWhereClause = (survey: TSurvey, filterCriteria?: TResponseFilt
             meta: {
               path: updatedKey,
               not: val.value,
+            },
+          });
+          break;
+        case "contains":
+          meta.push({
+            meta: {
+              path: updatedKey,
+              string_contains: val.value,
+            },
+          });
+          break;
+        case "doesNotContain":
+          meta.push({
+            NOT: {
+              meta: {
+                path: updatedKey,
+                string_contains: val.value,
+              },
+            },
+          });
+          break;
+        case "startsWith":
+          meta.push({
+            meta: {
+              path: updatedKey,
+              string_starts_with: val.value,
+            },
+          });
+          break;
+        case "doesNotStartWith":
+          meta.push({
+            NOT: {
+              meta: {
+                path: updatedKey,
+                string_starts_with: val.value,
+              },
+            },
+          });
+          break;
+        case "endsWith":
+          meta.push({
+            meta: {
+              path: updatedKey,
+              string_ends_with: val.value,
+            },
+          });
+          break;
+        case "doesNotEndWith":
+          meta.push({
+            NOT: {
+              meta: {
+                path: updatedKey,
+                string_ends_with: val.value,
+              },
             },
           });
           break;
@@ -488,12 +625,19 @@ export const extractSurveyDetails = (survey: TSurvey, responses: TResponse[]) =>
     const headline = getLocalizedValue(question.headline, "default") ?? question.id;
     if (question.type === "matrix") {
       return question.rows.map((row) => {
-        return `${idx + 1}. ${headline} - ${getLocalizedValue(row, "default")}`;
+        return `${idx + 1}. ${headline} - ${getLocalizedValue(row.label, "default")}`;
       });
+    } else if (
+      question.type === "multipleChoiceMulti" ||
+      question.type === "multipleChoiceSingle" ||
+      question.type === "ranking"
+    ) {
+      return [`${idx + 1}. ${headline}`, `${idx + 1}. ${headline} - Option ID`];
     } else {
       return [`${idx + 1}. ${headline}`];
     }
   });
+
   const hiddenFields = survey.hiddenFields?.fieldIds || [];
   const userAttributes =
     survey.type === "app"
@@ -523,7 +667,6 @@ export const getResponsesJson = (
       "Survey ID": response.surveyId,
       "Formbricks ID (internal)": response.contact?.id || "",
       "User ID": response.contact?.userId || "",
-      Notes: response.notes.map((note) => `${note.user.name}: ${note.text}`).join("\n"),
       Tags: response.tags.map((tag) => tag.name).join(", "),
     });
 
@@ -549,13 +692,26 @@ export const getResponsesJson = (
         questionHeadline.forEach((headline, index) => {
           if (answer) {
             const row = question.rows[index];
-            if (row && row.default && answer[row.default] !== undefined) {
-              jsonData[idx][headline] = answer[row.default];
+            if (row && row.label.default && answer[row.label.default] !== undefined) {
+              jsonData[idx][headline] = answer[row.label.default];
             } else {
               jsonData[idx][headline] = "";
             }
           }
         });
+      } else if (
+        question.type === "multipleChoiceMulti" ||
+        question.type === "multipleChoiceSingle" ||
+        question.type === "ranking"
+      ) {
+        // Set the main response value
+        jsonData[idx][questionHeadline[0]] = processResponseData(answer);
+
+        // Set the option IDs using the reusable function
+        if (questionHeadline[1]) {
+          const choiceIds = extractChoiceIdsFromResponse(answer, question, response.language || "default");
+          jsonData[idx][questionHeadline[1]] = choiceIds.join(", ");
+        }
       } else {
         jsonData[idx][questionHeadline[0]] = processResponseData(answer);
       }
@@ -624,10 +780,13 @@ export const getResponseMeta = (
 
     responses.forEach((response) => {
       Object.entries(response.meta).forEach(([key, value]) => {
-        // skip url
-        if (key === "url") return;
-
         // Handling nested objects (like userAgent)
+        if (key === "url") {
+          if (!meta[key]) {
+            meta[key] = new Set();
+          }
+          return;
+        }
         if (typeof value === "object" && value !== null) {
           Object.entries(value).forEach(([nestedKey, nestedValue]) => {
             if (typeof nestedValue === "string" && nestedValue) {
