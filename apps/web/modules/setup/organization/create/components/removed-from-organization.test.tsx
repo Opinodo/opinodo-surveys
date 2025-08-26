@@ -56,14 +56,12 @@ const mockUser = {
   id: "user-123",
   name: "Test User",
   email: "test@example.com",
-  imageUrl: null,
   twoFactorEnabled: false,
   identityProvider: "email",
   createdAt: new Date(),
   updatedAt: new Date(),
   notificationSettings: {
     alert: {},
-    weeklySummary: {},
   },
   role: "other",
 } as TUser;

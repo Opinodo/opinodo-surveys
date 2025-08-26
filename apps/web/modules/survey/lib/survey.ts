@@ -37,7 +37,6 @@ export const selectSurvey = {
   surveyClosedMessage: true,
   singleUse: true,
   pin: true,
-  resultShareKey: true,
   showLanguageSwitch: true,
   recaptcha: true,
   reward: true,
@@ -47,6 +46,7 @@ export const selectSurvey = {
   limitedCountries: true,
   timerDuration: true,
   isBackButtonHidden: true,
+  metadata: true,
   languages: {
     select: {
       default: true,

@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/modules/ui/components/dropdown-menu";
+import { cn } from "@/modules/ui/lib/utils";
 import { TFnType, useTranslate } from "@tolgee/react";
 import {
   differenceInDays,
@@ -31,8 +32,7 @@ import {
   subQuarters,
   subYears,
 } from "date-fns";
-import { ArrowDownToLineIcon, ChevronDown, ChevronUp, DownloadIcon } from "lucide-react";
-import { useParams } from "next/navigation";
+import { ArrowDownToLineIcon, ChevronDown, ChevronUp, DownloadIcon, Loader2Icon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { TSurvey } from "@formbricks/types/surveys/types";
@@ -125,8 +125,6 @@ const getDateRangeLabel = (from: Date, to: Date, t: TFnType) => {
 };
 
 export const CustomFilter = ({ survey }: CustomFilterProps) => {
-  const params = useParams();
-  const isSharingPage = !!params.sharingKey;
   const { t } = useTranslate();
   const { selectedFilter, dateRange, setDateRange, resetState } = useResponseFilter();
   const [filterRange, setFilterRange] = useState(
@@ -138,6 +136,7 @@ export const CustomFilter = ({ survey }: CustomFilterProps) => {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState<boolean>(false);
   const [isFilterDropDownOpen, setIsFilterDropDownOpen] = useState<boolean>(false);
   const [hoveredRange, setHoveredRange] = useState<DateRange | null>(null);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
   const firstMountRef = useRef(true);
 
@@ -239,28 +238,29 @@ export const CustomFilter = ({ survey }: CustomFilterProps) => {
     setSelectingDate(DateSelected.FROM);
   };
 
-  const handleDowndloadResponses = async (filter: FilterDownload, filetype: "csv" | "xlsx") => {
-    try {
-      const responseFilters = filter === FilterDownload.ALL ? {} : filters;
-      const responsesDownloadUrlResponse = await getResponsesDownloadUrlAction({
-        surveyId: survey.id,
-        format: filetype,
-        filterCriteria: responseFilters,
-      });
-      if (responsesDownloadUrlResponse?.data) {
-        const link = document.createElement("a");
-        link.href = responsesDownloadUrlResponse.data;
-        link.download = "";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        const errorMessage = getFormattedErrorMessage(responsesDownloadUrlResponse);
-        toast.error(errorMessage);
-      }
-    } catch (error) {
-      toast.error("Error downloading responses");
+  const handleDownloadResponses = async (filter: FilterDownload, filetype: "csv" | "xlsx") => {
+    const responseFilters = filter === FilterDownload.ALL ? {} : filters;
+    setIsDownloading(true);
+
+    const responsesDownloadUrlResponse = await getResponsesDownloadUrlAction({
+      surveyId: survey.id,
+      format: filetype,
+      filterCriteria: responseFilters,
+    });
+
+    if (responsesDownloadUrlResponse?.data) {
+      const link = document.createElement("a");
+      link.href = responsesDownloadUrlResponse.data;
+      link.download = "";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      const errorMessage = getFormattedErrorMessage(responsesDownloadUrlResponse);
+      toast.error(errorMessage);
     }
+
+    setIsDownloading(false);
   };
 
   useClickOutside(datePickerRef, () => handleDatePickerClose());
@@ -385,51 +385,62 @@ export const CustomFilter = ({ survey }: CustomFilterProps) => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {!isSharingPage && (
-            <DropdownMenu
-              onOpenChange={(value) => {
-                value && handleDatePickerClose();
-              }}>
-              <DropdownMenuTrigger asChild className="focus:bg-muted cursor-pointer outline-none">
-                <div className="min-w-auto h-auto rounded-md border border-slate-200 bg-white p-3 hover:border-slate-300 sm:flex sm:px-6 sm:py-3">
-                  <div className="hidden w-full items-center justify-between sm:flex">
-                    <span className="text-sm text-slate-700">{t("common.download")}</span>
+          <DropdownMenu
+            onOpenChange={(value) => {
+              value && handleDatePickerClose();
+            }}>
+            <DropdownMenuTrigger
+              asChild
+              className={cn(
+                "focus:bg-muted cursor-pointer outline-none",
+                isDownloading && "cursor-not-allowed opacity-50"
+              )}
+              disabled={isDownloading}
+              data-testid="fb__custom-filter-download-responses-button">
+              <div className="min-w-auto h-auto rounded-md border border-slate-200 bg-white p-3 hover:border-slate-300 sm:flex sm:px-6 sm:py-3">
+                <div className="hidden w-full items-center justify-between sm:flex">
+                  <span className="text-sm text-slate-700">{t("common.download")}</span>
+                  {isDownloading ? (
+                    <Loader2Icon className="ml-2 h-4 w-4 animate-spin" />
+                  ) : (
                     <ArrowDownToLineIcon className="ml-2 h-4 w-4" />
-                  </div>
-                  <DownloadIcon className="block h-4 sm:hidden" />
+                  )}
                 </div>
-              </DropdownMenuTrigger>
+                <DownloadIcon className="block h-4 sm:hidden" />
+              </div>
+            </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  onClick={() => {
-                    handleDowndloadResponses(FilterDownload.ALL, "csv");
-                  }}>
-                  <p className="text-slate-700">{t("environments.surveys.summary.all_responses_csv")}</p>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    handleDowndloadResponses(FilterDownload.ALL, "xlsx");
-                  }}>
-                  <p className="text-slate-700">{t("environments.surveys.summary.all_responses_excel")}</p>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    handleDowndloadResponses(FilterDownload.FILTER, "csv");
-                  }}>
-                  <p className="text-slate-700">{t("environments.surveys.summary.filtered_responses_csv")}</p>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    handleDowndloadResponses(FilterDownload.FILTER, "xlsx");
-                  }}>
-                  <p className="text-slate-700">
-                    {t("environments.surveys.summary.filtered_responses_excel")}
-                  </p>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                data-testid="fb__custom-filter-download-all-csv"
+                onClick={async () => {
+                  await handleDownloadResponses(FilterDownload.ALL, "csv");
+                }}>
+                <p className="text-slate-700">{t("environments.surveys.summary.all_responses_csv")}</p>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                data-testid="fb__custom-filter-download-all-xlsx"
+                onClick={async () => {
+                  await handleDownloadResponses(FilterDownload.ALL, "xlsx");
+                }}>
+                <p className="text-slate-700">{t("environments.surveys.summary.all_responses_excel")}</p>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                data-testid="fb__custom-filter-download-filtered-csv"
+                onClick={async () => {
+                  await handleDownloadResponses(FilterDownload.FILTER, "csv");
+                }}>
+                <p className="text-slate-700">{t("environments.surveys.summary.filtered_responses_csv")}</p>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                data-testid="fb__custom-filter-download-filtered-xlsx"
+                onClick={async () => {
+                  await handleDownloadResponses(FilterDownload.FILTER, "xlsx");
+                }}>
+                <p className="text-slate-700">{t("environments.surveys.summary.filtered_responses_excel")}</p>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         {isDatePickerOpen && (
           <div ref={datePickerRef} className="absolute top-full z-50 my-2 rounded-md border bg-white">

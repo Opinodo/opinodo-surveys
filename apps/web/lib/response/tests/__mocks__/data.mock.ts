@@ -5,15 +5,11 @@ import { TDisplay } from "@formbricks/types/displays";
 import { TResponse, TResponseFilterCriteria, TResponseUpdateInput } from "@formbricks/types/responses";
 import { TSurvey, TSurveyQuestionTypeEnum } from "@formbricks/types/surveys/types";
 import { TTag } from "@formbricks/types/tags";
-import { responseNoteSelect } from "../../../responseNote/service";
 import { responseSelection } from "../../service";
 import { constantsForTests } from "../constants";
 
 type ResponseMock = Prisma.ResponseGetPayload<{
   include: typeof responseSelection;
-}>;
-type ResponseNoteMock = Prisma.ResponseNoteGetPayload<{
-  include: typeof responseNoteSelect;
 }>;
 
 export const mockEnvironmentId = "ars2tjk8hsi8oqk1uac00mo7";
@@ -31,25 +27,6 @@ export const mockMeta = {
     browser: constantsForTests.browser,
     os: constantsForTests.text,
     device: constantsForTests.text,
-  },
-};
-
-export const mockResponseNote: ResponseNoteMock = {
-  id: "clnndevho0mqrqp0fm2ozul8p",
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  text: constantsForTests.text,
-  isEdited: constantsForTests.boolean,
-  isResolved: constantsForTests.boolean,
-  responseId: mockResponseId,
-  userId: mockUserId,
-  response: {
-    id: mockResponseId,
-    surveyId: mockSurveyId,
-  },
-  user: {
-    id: mockContactId,
-    name: constantsForTests.fullName,
   },
 };
 
@@ -95,7 +72,6 @@ export const mockResponse: ResponseMock = {
   finished: false,
   failed: false,
   meta: mockMeta,
-  notes: [mockResponseNote],
   tags: mockTags,
   personId: mockContactId,
   updatedAt: new Date(),
@@ -144,7 +120,6 @@ export const mockResponses: ResponseMock[] = [
     },
     language: null,
     tags: getMockTags(["tag1", "tag3"]),
-    notes: [],
     endingId: null,
     displayId: null,
   },
@@ -172,7 +147,6 @@ export const mockResponses: ResponseMock[] = [
     person: null,
     language: null,
     tags: getMockTags(["tag1", "tag2"]),
-    notes: [],
   },
   {
     id: "clsk7b15p001fk8iu04qpvo2f",
@@ -196,7 +170,6 @@ export const mockResponses: ResponseMock[] = [
     personId: mockContactId,
     person: null,
     tags: getMockTags(["tag2", "tag3"]),
-    notes: [],
     language: null,
   },
   {
@@ -221,7 +194,6 @@ export const mockResponses: ResponseMock[] = [
     personId: mockContactId,
     person: null,
     tags: getMockTags(["tag1", "tag4"]),
-    notes: [],
     language: null,
   },
   {
@@ -246,7 +218,6 @@ export const mockResponses: ResponseMock[] = [
     personId: mockContactId,
     person: null,
     tags: getMockTags(["tag4", "tag5"]),
-    notes: [],
     language: null,
   },
 ];
@@ -530,7 +501,6 @@ export const mockSurvey: TSurvey = {
     isEncrypted: true,
   },
   pin: null,
-  resultShareKey: null,
   triggers: [],
   languages: [],
   segment: [],

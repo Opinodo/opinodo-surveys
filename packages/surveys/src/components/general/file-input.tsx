@@ -4,7 +4,7 @@ import { getMimeType, isFulfilled, isRejected } from "@/lib/utils";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { type JSXInternal } from "preact/src/jsx";
-import { type TAllowedFileExtension } from "@formbricks/types/common";
+import { type TAllowedFileExtension, ZAllowedFileExtension } from "@formbricks/types/common";
 import { type TJsFileUploadParams } from "@formbricks/types/js";
 import { type TUploadFileConfig } from "@formbricks/types/storage";
 
@@ -182,11 +182,14 @@ export function FileInput({
 
     // filter out files that are not allowed
     const validFiles = fileArray.filter((file) => {
-      const fileExtension = file.type.substring(file.type.lastIndexOf("/") + 1) as TAllowedFileExtension;
+      const fileExtension = file.name.split(".").pop()?.toLowerCase() as TAllowedFileExtension;
+      if (!fileExtension || fileExtension === file.name.toLowerCase()) return false;
+
       if (allowedFileExtensions) {
         return allowedFileExtensions.includes(fileExtension);
       }
-      return true;
+
+      return Object.values(ZAllowedFileExtension.enum).includes(fileExtension);
     });
 
     if (!validFiles.length) {
@@ -372,11 +375,11 @@ export function FileInput({
                   d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
                 />
               </svg>
-              <label
+              <span
                 className="fb-text-placeholder fb-mt-2 fb-text-sm dark:fb-text-slate-400"
                 id={`${uniqueHtmlFor}-label`}>
                 Click or drag to upload files.
-              </label>
+              </span>
               <input
                 type="file"
                 id={uniqueHtmlFor}

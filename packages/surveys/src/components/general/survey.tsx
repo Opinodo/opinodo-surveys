@@ -792,6 +792,9 @@ export function Survey({
       }
     };
 
+    const isLanguageSwitchVisible = getShowLanguageSwitch(offset);
+    const isCloseButtonVisible = getShowSurveyCloseButton(offset);
+
     return (
       <AutoCloseWrapper
         survey={localSurvey}
@@ -804,38 +807,63 @@ export function Survey({
             "fb-no-scrollbar fb-bg-survey-bg fb-flex fb-h-full fb-w-full fb-flex-col fb-justify-between fb-overflow-hidden fb-transition-all fb-duration-1000 fb-ease-in-out",
             offset === 0 || cardArrangement === "simple" ? "fb-opacity-100" : "fb-opacity-0"
           )}>
-          <div className="fb-flex fb-h-6 fb-justify-end fb-pr-2 fb-pt-2">
-            {getShowLanguageSwitch(offset) && (
-              <LanguageSwitch
-                surveyLanguages={localSurvey.languages}
-                setSelectedLanguageCode={setselectedLanguage}
-              />
+          <div className={cn("fb-relative")}>
+            <div className="fb-flex fb-flex-col fb-w-full fb-items-end">
+              {showProgressBar ? <ProgressBar survey={localSurvey} questionId={questionId} /> : null}
+
+              <div
+                className={cn(
+                  "fb-relative fb-w-full",
+                  isCloseButtonVisible || isLanguageSwitchVisible ? "fb-h-8" : "fb-h-5"
+                )}>
+                <div className="fb-flex fb-items-center fb-justify-end fb-absolute fb-top-0 fb-right-0">
+                  {isLanguageSwitchVisible && (
+                    <LanguageSwitch
+                      surveyLanguages={localSurvey.languages}
+                      setSelectedLanguageCode={setselectedLanguage}
+                      hoverColor={styling.inputColor?.light ?? "#f8fafc"}
+                      borderRadius={styling.roundness ?? 8}
+                    />
+                  )}
+                  {isLanguageSwitchVisible && isCloseButtonVisible && (
+                    <div aria-hidden="true" className="fb-h-5 fb-w-px fb-bg-slate-200 fb-z-[1001]" />
+                  )}
+
+                  {isCloseButtonVisible && (
+                    <SurveyCloseButton
+                      onClose={onClose}
+                      hoverColor={styling.inputColor?.light ?? "#f8fafc"}
+                      borderRadius={styling.roundness ?? 8}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+            <div
+              ref={contentRef}
+              className={cn(
+                loadingElement ? "fb-animate-pulse fb-opacity-60" : "",
+                fullSizeCards ? "" : "fb-my-auto"
+              )}>
+              {content()}
+            </div>
+            {timeLeft !== undefined && !isEndingPage && (
+              <p className="fb-flex fb-justify-center fb-items-center fb-text-signature fb-text-xs">
+                <b>
+                  <span className="fb-text-branding-text hover:fb-text-signature">
+                    {translations.timeLeft}: {formatTime(timeLeft)}
+                  </span>
+                </b>
+              </p>
             )}
-            {getShowSurveyCloseButton(offset) && <SurveyCloseButton onClose={onClose} />}
-          </div>
-          <div
-            ref={contentRef}
-            className={cn(
-              loadingElement ? "fb-animate-pulse fb-opacity-60" : "",
-              fullSizeCards ? "" : "fb-my-auto"
-            )}>
-            {content()}
-          </div>
-          {timeLeft !== undefined && !isEndingPage && (
-            <p className="fb-flex fb-justify-center fb-items-center fb-text-signature fb-text-xs">
-              <b>
-                <span className="fb-text-branding-text hover:fb-text-signature">
-                  {translations.timeLeft}: {formatTime(timeLeft)}
-                </span>
-              </b>
-            </p>
-          )}
-          <div className="fb-space-y-4">
-            <div className="fb-px-4 space-y-2">
+            <div
+              className={cn(
+                "fb-flex fb-flex-col fb-justify-center fb-gap-2",
+                isCloseButtonVisible || isLanguageSwitchVisible ? "fb-p-2" : "fb-p-3"
+              )}>
               {isBrandingEnabled ? <FormbricksBranding /> : null}
               {isSpamProtectionEnabled ? <RecaptchaBranding /> : null}
             </div>
-            {showProgressBar ? <ProgressBar survey={localSurvey} questionId={questionId} /> : <div></div>}
           </div>
         </div>
       </AutoCloseWrapper>

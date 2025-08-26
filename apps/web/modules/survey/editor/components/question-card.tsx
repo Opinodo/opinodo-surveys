@@ -565,6 +565,7 @@ export const QuestionCard = ({
                   questionIdx={questionIdx}
                   localSurvey={localSurvey}
                   updateQuestion={updateQuestion}
+                  selectedLanguageCode={selectedLanguageCode}
                 />
               </Collapsible.CollapsibleContent>
             </Collapsible.Root>

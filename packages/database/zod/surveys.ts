@@ -5,6 +5,7 @@ import { extendZodWithOpenApi } from "zod-openapi";
 import {
   ZCountry,
   ZSurveyEnding,
+  ZSurveyMetadata,
   ZSurveyQuestion,
   ZSurveyRecaptcha,
   ZSurveyVariable,
@@ -85,9 +86,6 @@ const ZSurveyBase = z.object({
     }),
   displayProgressBar: z.boolean().nullable().openapi({
     description: "Whether to display the progress bar",
-  }),
-  resultShareKey: z.string().nullable().openapi({
-    description: "The result share key of the survey",
   }),
   pin: z.string().nullable().openapi({
     description: "The pin of the survey",
@@ -223,6 +221,9 @@ const ZSurveyBase = z.object({
     }),
   recaptcha: ZSurveyRecaptcha.openapi({
     description: "Google reCAPTCHA configuration",
+  }),
+  metadata: ZSurveyMetadata.openapi({
+    description: "Custom link metadata for social sharing",
   }),
   displayPercentage: z.number().nullable().openapi({
     description: "The display percentage of the survey",

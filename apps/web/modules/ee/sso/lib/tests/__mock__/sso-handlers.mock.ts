@@ -9,11 +9,10 @@ export const mockUser: TUser = {
   name: "Test User",
   notificationSettings: {
     alert: {},
-    weeklySummary: {},
+
     unsubscribedOrganizationIds: [],
   },
   emailVerified: new Date(),
-  imageUrl: "https://example.com/image.png",
   twoFactorEnabled: false,
   identityProvider: "google",
   locale: "en-US",

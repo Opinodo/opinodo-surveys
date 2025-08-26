@@ -3,9 +3,10 @@ import { responses } from "@/app/lib/api/response";
 import { generateSurveySingleUseId } from "@/app/lib/singleUseSurveys";
 import { WEBAPP_URL } from "@/lib/constants";
 import { getSurvey } from "@/lib/survey/service";
+import { NextRequest } from "next/server";
 import { DatabaseError } from "@formbricks/types/errors";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const authentication = await authenticateRequest(request);
     if (!authentication) return responses.notAuthenticatedResponse();

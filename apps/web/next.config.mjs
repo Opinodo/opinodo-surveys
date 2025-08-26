@@ -129,6 +129,9 @@ const nextConfig = {
     return config;
   },
   async headers() {
+    const isProduction = process.env.NODE_ENV === "production";
+    const scriptSrcUnsafeEval = isProduction ? "" : " 'unsafe-eval'";
+
     return [
       {
         // Apply X-Frame-Options to all routes except those starting with /s/ or /c/
@@ -439,7 +442,7 @@ const sentryOptions = {
   automaticVercelMonitors: false,
   autoUploadSourceMaps: false,
   hideSourceMaps: false,
-  
+
   // Don't automatically create releases - we handle this in GitHub Actions
   release: {
     create: false,
