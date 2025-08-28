@@ -78,6 +78,8 @@ export function Survey({
   isWebEnvironment = true,
   getRecaptchaToken,
   isSpamProtectionEnabled,
+  dir = "auto",
+  setDir,
 }: SurveyContainerProps) {
   let apiClient: ApiClient | null = null;
 
@@ -179,7 +181,7 @@ export function Survey({
     !getSetIsResponseSendingFinished
   );
   const [isSurveyFinished, setIsSurveyFinished] = useState(false);
-  const [selectedLanguage, setselectedLanguage] = useState(languageCode);
+  const [selectedLanguage, setSelectedLanguage] = useState(languageCode);
   const [languageKey] = useState<LanguageCode>(languageCode as LanguageCode);
   const [loadingElement, setLoadingElement] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
@@ -327,7 +329,7 @@ export function Survey({
   }, [getSetIsResponseSendingFinished]);
 
   useEffect(() => {
-    setselectedLanguage(languageCode);
+    setSelectedLanguage(languageCode);
   }, [languageCode]);
 
   useEffect(() => {
@@ -786,6 +788,7 @@ export function Survey({
               currentQuestionId={questionId}
               isBackButtonHidden={localSurvey.isBackButtonHidden}
               onOpenExternalURL={onOpenExternalURL}
+              dir={dir}
             />
           )
         );
@@ -816,13 +819,16 @@ export function Survey({
                   "fb-relative fb-w-full",
                   isCloseButtonVisible || isLanguageSwitchVisible ? "fb-h-8" : "fb-h-5"
                 )}>
-                <div className="fb-flex fb-items-center fb-justify-end fb-absolute fb-top-0 fb-right-0">
+                <div className={cn("fb-flex fb-items-center fb-justify-end fb-w-full")}>
                   {isLanguageSwitchVisible && (
                     <LanguageSwitch
+                      survey={localSurvey}
                       surveyLanguages={localSurvey.languages}
-                      setSelectedLanguageCode={setselectedLanguage}
+                      setSelectedLanguageCode={setSelectedLanguage}
                       hoverColor={styling.inputColor?.light ?? "#f8fafc"}
                       borderRadius={styling.roundness ?? 8}
+                      setDir={setDir}
+                      dir={dir}
                     />
                   )}
                   {isLanguageSwitchVisible && isCloseButtonVisible && (
