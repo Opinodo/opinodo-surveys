@@ -30,8 +30,12 @@ ENV DATABASE_URL="postgresql://placeholder:for@build:5432/gets_overwritten_at_ru
 ENV ENCRYPTION_KEY="placeholder_for_build_key_of_64_chars_get_overwritten_at_runtime"
 
 # Increase Node.js memory limit as a regular build argument
-ARG NODE_OPTIONS="--max_old_space_size=4096"
+ARG NODE_OPTIONS="--max_old_space_size=8192"
 ENV NODE_OPTIONS=${NODE_OPTIONS}
+
+# Target architecture - automatically provided by Docker in multi-platform builds
+# but needs explicit declaration for some build systems (like Depot)
+ARG TARGETARCH
 
 # Set the working directory
 WORKDIR /app
