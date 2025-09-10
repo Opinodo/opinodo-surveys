@@ -102,6 +102,12 @@ export function Survey({
   }, [appUrl, environmentId, mode, survey.id, userId, singleUseId, singleUseResponseId, contactId]);
 
   // Update the responseQueue to use the stored responseId
+
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  const [localSurvey, setlocalSurvey] = useState<TJsEnvironmentStateSurvey>(survey);
+  const [currentVariables, setCurrentVariables] = useState<TResponseVariables>({});
+
   const responseQueue = useMemo(() => {
     if (appUrl && environmentId && surveyState) {
       return new ResponseQueue(
@@ -122,6 +128,13 @@ export function Survey({
 
             if (getSetIsResponseSendingFinished) {
               getSetIsResponseSendingFinished((_prev) => {});
+            }
+          },
+          onQuotaFull: (quotaInfo) => {
+            if (quotaInfo.action === "endSurvey") {
+              setIsResponseSendingFinished(true);
+              setIsSurveyFinished(true);
+              setQuestionId(quotaInfo.endingCardId);
             }
           },
         },

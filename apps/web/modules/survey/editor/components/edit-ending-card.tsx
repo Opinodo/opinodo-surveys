@@ -8,7 +8,11 @@ import { EditorCardMenu } from "@/modules/survey/editor/components/editor-card-m
 import { EndScreenForm } from "@/modules/survey/editor/components/end-screen-form";
 import { RedirectUrlForm } from "@/modules/survey/editor/components/redirect-url-form";
 // New import
-import { findEndingCardUsedInLogic, formatTextWithSlashes } from "@/modules/survey/editor/lib/utils";
+import {
+  findEndingCardUsedInLogic,
+  formatTextWithSlashes,
+  isUsedInQuota,
+} from "@/modules/survey/editor/lib/utils";
 import { ConfirmationModal } from "@/modules/ui/components/confirmation-modal";
 import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import { OptionsSwitch } from "@/modules/ui/components/options-switch";
@@ -22,6 +26,7 @@ import { GripIcon, Handshake, Link2, Undo2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { TOrganizationBillingPlan } from "@formbricks/types/organizations";
+import { TSurveyQuota } from "@formbricks/types/quota";
 import {
   TSurvey,
   TSurveyAffiliateOfferCard,
@@ -45,6 +50,7 @@ interface EditEndingCardProps {
   isFormbricksCloud: boolean;
   locale: TUserLocale;
   defaultRedirect: string;
+  quotas: TSurveyQuota[];
 }
 
 export const EditEndingCard = ({
@@ -61,6 +67,7 @@ export const EditEndingCard = ({
   isFormbricksCloud,
   locale,
   defaultRedirect,
+  quotas,
 }: EditEndingCardProps) => {
   const endingCard = localSurvey.endings[endingCardIndex];
   const { t } = useTranslate();
@@ -121,6 +128,15 @@ export const EditEndingCard = ({
   };
 
   const deleteEndingCard = () => {
+    const quotaIdx = quotas.findIndex((quota) => isUsedInQuota(quota, { endingCardId: endingCard.id }));
+    if (quotaIdx !== -1) {
+      toast.error(
+        t("environments.surveys.edit.ending_used_in_quota", {
+          quotaName: quotas[quotaIdx].name,
+        })
+      );
+      return;
+    }
     const isEndingCardUsedInFollowUps = localSurvey.followUps.some((followUp) => {
       if (followUp.trigger.type === "endings") {
         if (followUp.trigger.properties?.endingIds?.includes(endingCard.id)) {

@@ -14,7 +14,7 @@ import { EditWelcomeCard } from "@/modules/survey/editor/components/edit-welcome
 import { HiddenFieldsCard } from "@/modules/survey/editor/components/hidden-fields-card";
 import { QuestionsDroppable } from "@/modules/survey/editor/components/questions-droppable";
 import { SurveyVariablesCard } from "@/modules/survey/editor/components/survey-variables-card";
-import { findQuestionUsedInLogic } from "@/modules/survey/editor/lib/utils";
+import { findQuestionUsedInLogic, isUsedInQuota } from "@/modules/survey/editor/lib/utils";
 import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import {
   DndContext,
@@ -32,6 +32,7 @@ import { useTranslate } from "@tolgee/react";
 import React, { SetStateAction, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { TOrganizationBillingPlan } from "@formbricks/types/organizations";
+import { TSurveyQuota } from "@formbricks/types/quota";
 import {
   TConditionGroup,
   TSingleCondition,
@@ -72,6 +73,7 @@ interface QuestionsViewProps {
   locale: TUserLocale;
   responseCount: number;
   setIsCautionDialogOpen: (open: boolean) => void;
+  quotas: TSurveyQuota[];
 }
 
 export const QuestionsView = ({
@@ -92,6 +94,7 @@ export const QuestionsView = ({
   locale,
   responseCount,
   setIsCautionDialogOpen,
+  quotas,
 }: QuestionsViewProps) => {
   const { t } = useTranslate();
   const internalQuestionIdMap = useMemo(() => {
@@ -274,9 +277,19 @@ export const QuestionsView = ({
 
     // checking if this question is used in logic of any other question
     const quesIdx = findQuestionUsedInLogic(localSurvey, questionId);
-
     if (quesIdx !== -1) {
       toast.error(t("environments.surveys.edit.question_used_in_logic", { questionIndex: quesIdx + 1 }));
+      return;
+    }
+
+    const quotaIdx = quotas.findIndex((quota) => isUsedInQuota(quota, { questionId }));
+    if (quotaIdx !== -1) {
+      toast.error(
+        t("environments.surveys.edit.question_used_in_quota", {
+          questionIndex: questionIdx + 1,
+          quotaName: quotas[quotaIdx].name,
+        })
+      );
       return;
     }
 
@@ -698,6 +711,7 @@ export const QuestionsView = ({
                     project.defaultRedirectOnCompleteUrl ?? "https://member.digiopinion.com/overview"
                   }
                   locale={locale}
+                  quotas={quotas}
                 />
               );
             })}
@@ -714,6 +728,7 @@ export const QuestionsView = ({
               setLocalSurvey={setLocalSurvey}
               setActiveQuestionId={setActiveQuestionId}
               activeQuestionId={activeQuestionId}
+              quotas={quotas}
             />
 
             <SurveyVariablesCard
@@ -721,6 +736,7 @@ export const QuestionsView = ({
               setLocalSurvey={setLocalSurvey}
               activeQuestionId={activeQuestionId}
               setActiveQuestionId={setActiveQuestionId}
+              quotas={quotas}
             />
 
             <MultiLanguageCard
