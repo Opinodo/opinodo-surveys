@@ -9,6 +9,7 @@ import { validateInputs } from "@/lib/utils/validate";
 import { evaluateResponseQuotas } from "@/modules/ee/quotas/lib/evaluation-service";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@formbricks/database";
+import { logger } from "@formbricks/logger";
 import { TContactAttributes } from "@formbricks/types/contact-attribute";
 import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TResponseWithQuotaFull } from "@formbricks/types/quota";
@@ -93,7 +94,15 @@ export const createResponse = async (
   validateInputs([responseInput, ZResponseInput]);
   captureTelemetry("response created");
 
-  const { environmentId, contactId, finished, ttc: initialTtc } = responseInput;
+  const {
+    environmentId,
+    contactId,
+    finished,
+    ttc: initialTtc,
+    surveyId,
+    displayId,
+    singleUseId,
+  } = responseInput;
 
   try {
     let contact: { id: string; attributes: TContactAttributes } | null = null;

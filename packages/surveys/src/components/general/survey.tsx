@@ -145,11 +145,6 @@ export function Survey({
     return null;
   }, [appUrl, environmentId, getSetIsError, getSetIsResponseSendingFinished, surveyState]);
 
-  const [hasInteracted, setHasInteracted] = useState(false);
-
-  const [localSurvey, setlocalSurvey] = useState<TJsEnvironmentStateSurvey>(survey);
-  const [currentVariables, setCurrentVariables] = useState<TResponseVariables>({});
-
   const [timeLeft, setTimeLeft] = useState<number | undefined>(survey.timerDuration ?? undefined);
   const [isEndingPage, setIsEndingPage] = useState(false);
   const [isPreview] = useState(!getSetIsResponseSendingFinished);
