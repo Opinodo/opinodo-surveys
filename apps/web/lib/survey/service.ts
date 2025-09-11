@@ -44,8 +44,6 @@ export const selectSurvey = {
   recontactDays: true,
   displayLimit: true,
   autoClose: true,
-  runOnDate: true,
-  closeOnDate: true,
   delay: true,
   displayPercentage: true,
   autoComplete: true,
@@ -590,19 +588,6 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       ...data,
       type,
     };
-
-    // Remove scheduled status when runOnDate is not set
-    if (data.status === "scheduled" && data.runOnDate === null) {
-      data.status = "inProgress";
-    }
-    // Set scheduled status when runOnDate is set and in the future on completed surveys
-    if (
-      (data.status === "completed" || data.status === "paused" || data.status === "inProgress") &&
-      data.runOnDate &&
-      data.runOnDate > new Date()
-    ) {
-      data.status = "scheduled";
-    }
 
     if (data.reward !== undefined) {
       data.reward = Math.max(0, Math.min(20, data.reward));

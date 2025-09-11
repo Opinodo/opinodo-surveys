@@ -31,7 +31,6 @@ const getCreatorOptions = (t: TFnType): TFilterOption[] => [
 ];
 
 const getStatusOptions = (t: TFnType): TFilterOption[] => [
-  { label: t("common.scheduled"), value: "scheduled" },
   { label: t("common.paused"), value: "paused" },
   { label: t("common.completed"), value: "completed" },
   { label: t("common.draft"), value: "draft" },
@@ -89,13 +88,7 @@ export const SurveyFilters = ({
   };
 
   const handleStatusChange = (value: string) => {
-    if (
-      value === "inProgress" ||
-      value === "paused" ||
-      value === "completed" ||
-      value === "draft" ||
-      value === "scheduled"
-    ) {
+    if (value === "inProgress" || value === "paused" || value === "completed" || value === "draft") {
       if (status.includes(value)) {
         setSurveyFilters((prev) => ({ ...prev, status: prev.status.filter((v) => v !== value) }));
       } else {

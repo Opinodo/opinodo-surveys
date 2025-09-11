@@ -306,8 +306,6 @@ export const mockSurvey: TSurvey = {
   recontactDays: null,
   displayLimit: null,
   autoClose: null,
-  runOnDate: null,
-  closeOnDate: null,
   delay: 0,
   displayPercentage: null,
   autoComplete: null,
