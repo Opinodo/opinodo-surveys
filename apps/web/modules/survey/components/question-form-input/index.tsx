@@ -58,6 +58,7 @@ interface QuestionFormInputProps {
   className?: string;
   locale: TUserLocale;
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+  isStorageConfigured: boolean;
 }
 
 export const QuestionFormInput = ({
@@ -79,6 +80,7 @@ export const QuestionFormInput = ({
   className,
   locale,
   onKeyDown,
+  isStorageConfigured = true,
 }: QuestionFormInputProps) => {
   const { t } = useTranslate();
   const defaultLanguageCode =
@@ -348,6 +350,7 @@ export const QuestionFormInput = ({
                         fileUrl={getFileUrl()}
                         videoUrl={getVideoUrl()}
                         isVideoAllowed={true}
+                        isStorageConfigured={isStorageConfigured}
                       />
                     )}
 
@@ -410,6 +413,7 @@ export const QuestionFormInput = ({
                               variant="secondary"
                               size="icon"
                               aria-label="Toggle image uploader"
+                              data-testid="toggle-image-uploader-button"
                               className="ml-2"
                               onClick={(e) => {
                                 e.preventDefault();

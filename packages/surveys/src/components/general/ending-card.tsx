@@ -7,6 +7,7 @@ import { ScrollableContainer } from "@/components/wrappers/scrollable-container"
 import { getLocalizedValue } from "@/lib/i18n";
 import { replaceRecallInfo } from "@/lib/recall";
 import { useEffect } from "preact/hooks";
+import { useTranslation } from "react-i18next";
 import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
 import { type TResponseData, type TResponseVariables } from "@formbricks/types/responses";
 import {
@@ -44,6 +45,7 @@ export function EndingCard({
   onOpenExternalURL,
   isPreviewMode,
 }: EndingCardProps) {
+  const { t } = useTranslation();
   const media =
     (endingCard.type === "endScreen" || endingCard.type === "affiliateOffer") &&
     (endingCard.imageUrl ?? endingCard.videoUrl) ? (
@@ -212,10 +214,13 @@ export function EndingCard({
                   <div>
                     <Headline
                       alignTextCenter
-                      headline={"Respondents will not see this card"}
+                      headline={t("common.respondents_will_not_see_this_card")}
                       questionId="EndingCard"
                     />
-                    <Subheader subheader={"They will be redirected immediately"} questionId="EndingCard" />
+                    <Subheader
+                      subheader={t("common.they_will_be_redirected_immediately")}
+                      questionId="EndingCard"
+                    />
                   </div>
                 ) : (
                   <div className="fb-my-3">
@@ -267,7 +272,7 @@ export function EndingCard({
             <div className="fb-my-3">
               <LoadingSpinner />
             </div>
-            <h1 className="fb-text-brand">Sending responses...</h1>
+            <h1 className="fb-text-brand">{t("common.sending_responses")}</h1>
           </>
         )}
       </div>

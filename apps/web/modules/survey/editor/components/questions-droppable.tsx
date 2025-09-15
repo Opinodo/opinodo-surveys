@@ -24,6 +24,7 @@ interface QuestionsDraggableProps {
   locale: TUserLocale;
   responseCount: number;
   onAlertTrigger: () => void;
+  isStorageConfigured: boolean;
 }
 
 export const QuestionsDroppable = ({
@@ -45,6 +46,7 @@ export const QuestionsDroppable = ({
   locale,
   responseCount,
   onAlertTrigger,
+  isStorageConfigured = true,
 }: QuestionsDraggableProps) => {
   const [parent] = useAutoAnimate();
 
@@ -75,6 +77,7 @@ export const QuestionsDroppable = ({
             locale={locale}
             responseCount={responseCount}
             onAlertTrigger={onAlertTrigger}
+            isStorageConfigured={isStorageConfigured}
           />
         ))}
       </SortableContext>

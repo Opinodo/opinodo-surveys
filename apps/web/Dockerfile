@@ -54,8 +54,15 @@ RUN touch apps/web/.env
 # Install the dependencies
 RUN pnpm install --ignore-scripts
 
-# Build the project
-RUN NODE_OPTIONS="--max_old_space_size=4096" pnpm build --filter=@formbricks/web...
+# Build the database package first
+RUN pnpm build --filter=@formbricks/database
+
+# Build the project using our secret reader script
+# This mounts the secrets only during this build step without storing them in layers
+RUN --mount=type=secret,id=database_url \
+    --mount=type=secret,id=encryption_key \
+    --mount=type=secret,id=sentry_auth_token \
+    /tmp/read-secrets.sh pnpm build --filter=@formbricks/web...
 
 # Extract Prisma version
 RUN jq -r '.devDependencies.prisma' packages/database/package.json > /prisma_version.txt

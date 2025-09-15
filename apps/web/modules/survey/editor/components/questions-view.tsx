@@ -73,6 +73,7 @@ interface QuestionsViewProps {
   locale: TUserLocale;
   responseCount: number;
   setIsCautionDialogOpen: (open: boolean) => void;
+  isStorageConfigured: boolean;
   quotas: TSurveyQuota[];
 }
 
@@ -94,6 +95,7 @@ export const QuestionsView = ({
   locale,
   responseCount,
   setIsCautionDialogOpen,
+  isStorageConfigured = true,
   quotas,
 }: QuestionsViewProps) => {
   const { t } = useTranslate();
@@ -652,6 +654,7 @@ export const QuestionsView = ({
             setSelectedLanguageCode={setSelectedLanguageCode}
             selectedLanguageCode={selectedLanguageCode}
             locale={locale}
+            isStorageConfigured={isStorageConfigured}
           />
         </div>
       )}
@@ -680,6 +683,7 @@ export const QuestionsView = ({
           locale={locale}
           responseCount={responseCount}
           onAlertTrigger={() => setIsCautionDialogOpen(true)}
+          isStorageConfigured={isStorageConfigured}
         />
       </DndContext>
 
@@ -711,6 +715,7 @@ export const QuestionsView = ({
                     project.defaultRedirectOnCompleteUrl ?? "https://member.digiopinion.com/overview"
                   }
                   locale={locale}
+                  isStorageConfigured={isStorageConfigured}
                   quotas={quotas}
                 />
               );

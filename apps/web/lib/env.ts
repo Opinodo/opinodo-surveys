@@ -55,8 +55,10 @@ export const env = createEnv({
     OIDC_ISSUER: z.string().optional(),
     OIDC_SIGNING_ALGORITHM: z.string().optional(),
     OPENTELEMETRY_LISTENER_URL: z.string().optional(),
-    REDIS_URL: z.string().optional(),
-    REDIS_HTTP_URL: z.string().optional(),
+    REDIS_URL:
+      process.env.NODE_ENV === "test"
+        ? z.string().optional()
+        : z.string().url("REDIS_URL is required for caching, rate limiting, and audit logging"),
     PASSWORD_RESET_DISABLED: z.enum(["1", "0"]).optional(),
     POSTHOG_API_HOST: z.string().optional(),
     POSTHOG_API_KEY: z.string().optional(),
@@ -112,7 +114,6 @@ export const env = createEnv({
     TURNSTILE_SITE_KEY: z.string().optional(),
     RECAPTCHA_SITE_KEY: z.string().optional(),
     RECAPTCHA_SECRET_KEY: z.string().optional(),
-    UPLOADS_DIR: z.string().min(1).optional(),
     VERCEL_URL: z.string().optional(),
     WEBAPP_URL: z.string().url().optional(),
     UNSPLASH_ACCESS_KEY: z.string().optional(),
@@ -185,7 +186,6 @@ export const env = createEnv({
     OIDC_ISSUER: process.env.OIDC_ISSUER,
     OIDC_SIGNING_ALGORITHM: process.env.OIDC_SIGNING_ALGORITHM,
     REDIS_URL: process.env.REDIS_URL,
-    REDIS_HTTP_URL: process.env.REDIS_HTTP_URL,
     PASSWORD_RESET_DISABLED: process.env.PASSWORD_RESET_DISABLED,
     PRIVACY_URL: process.env.PRIVACY_URL,
     RATE_LIMITING_DISABLED: process.env.RATE_LIMITING_DISABLED,
@@ -214,7 +214,6 @@ export const env = createEnv({
     RECAPTCHA_SITE_KEY: process.env.RECAPTCHA_SITE_KEY,
     RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
     TERMS_URL: process.env.TERMS_URL,
-    UPLOADS_DIR: process.env.UPLOADS_DIR,
     VERCEL_URL: process.env.VERCEL_URL,
     WEBAPP_URL: process.env.WEBAPP_URL,
     UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
