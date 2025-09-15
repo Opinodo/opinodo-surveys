@@ -16,6 +16,7 @@ interface AffiliateOfferFormProps {
   endingCard: TSurveyAffiliateOfferCard;
   locale: TUserLocale;
   defaultRedirect: string;
+  isStorageConfigured: boolean;
 }
 
 export const AffiliateOfferForm = ({
@@ -28,6 +29,7 @@ export const AffiliateOfferForm = ({
   endingCard,
   locale,
   defaultRedirect,
+  isStorageConfigured = true,
 }: AffiliateOfferFormProps) => {
   const { t } = useTranslate();
 
@@ -57,6 +59,7 @@ export const AffiliateOfferForm = ({
           selectedLanguageCode={selectedLanguageCode}
           setSelectedLanguageCode={setSelectedLanguageCode}
           locale={locale}
+          isStorageConfigured={isStorageConfigured}
         />
       </div>
 
@@ -74,6 +77,7 @@ export const AffiliateOfferForm = ({
           selectedLanguageCode={selectedLanguageCode}
           setSelectedLanguageCode={setSelectedLanguageCode}
           locale={locale}
+          isStorageConfigured={isStorageConfigured}
         />
       </div>
 
@@ -94,6 +98,7 @@ export const AffiliateOfferForm = ({
           selectedLanguageCode={selectedLanguageCode}
           setSelectedLanguageCode={setSelectedLanguageCode}
           locale={locale}
+          isStorageConfigured={isStorageConfigured}
         />
       </div>
 
@@ -112,6 +117,7 @@ export const AffiliateOfferForm = ({
             selectedLanguageCode={selectedLanguageCode}
             setSelectedLanguageCode={setSelectedLanguageCode}
             locale={locale}
+            isStorageConfigured={isStorageConfigured}
           />
           <p className="text-xs text-slate-500">
             {t("environments.surveys.edit.affiliate_offer_url_description") ||
@@ -133,6 +139,7 @@ export const AffiliateOfferForm = ({
             selectedLanguageCode={selectedLanguageCode}
             setSelectedLanguageCode={setSelectedLanguageCode}
             locale={locale}
+            isStorageConfigured={isStorageConfigured}
           />
         </div>
       </div>
@@ -152,6 +159,7 @@ export const AffiliateOfferForm = ({
             selectedLanguageCode={selectedLanguageCode}
             setSelectedLanguageCode={setSelectedLanguageCode}
             locale={locale}
+            isStorageConfigured={isStorageConfigured}
           />
           <p className="text-xs text-slate-500">
             {t("environments.surveys.edit.skip_link_url_description") ||
@@ -172,6 +180,7 @@ export const AffiliateOfferForm = ({
             selectedLanguageCode={selectedLanguageCode}
             setSelectedLanguageCode={setSelectedLanguageCode}
             locale={locale}
+            isStorageConfigured={isStorageConfigured}
           />
         </div>
       </div>

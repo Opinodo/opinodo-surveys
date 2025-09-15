@@ -444,6 +444,7 @@ export const EditEndingCard = ({
               endingCard={endingCard}
               locale={locale}
               defaultRedirect={defaultRedirect}
+              isStorageConfigured={isStorageConfigured}
             />
           )}
         </Collapsible.CollapsibleContent>

@@ -28,6 +28,7 @@ RUN apk update && apk add --no-cache cmake g++ gcc jq make openssl-dev python3
 # Set hardcoded environment variables for build time
 ENV DATABASE_URL="postgresql://placeholder:for@build:5432/gets_overwritten_at_runtime?schema=public"
 ENV ENCRYPTION_KEY="placeholder_for_build_key_of_64_chars_get_overwritten_at_runtime"
+ENV REDIS_URL="redis://placeholder:6379"
 
 # Increase Node.js memory limit as a regular build argument
 ARG NODE_OPTIONS="--max_old_space_size=8192"
@@ -48,6 +49,10 @@ WORKDIR /app
 # Prepare the build
 COPY . .
 
+# Copy the read-secrets script to the expected location
+COPY apps/web/scripts/docker/read-secrets.sh /tmp/read-secrets.sh
+RUN chmod +x /tmp/read-secrets.sh
+
 # Create a .env file
 RUN touch apps/web/.env
 
@@ -61,6 +66,7 @@ RUN pnpm build --filter=@formbricks/database
 # This mounts the secrets only during this build step without storing them in layers
 RUN --mount=type=secret,id=database_url \
     --mount=type=secret,id=encryption_key \
+    --mount=type=secret,id=redis_url \
     --mount=type=secret,id=sentry_auth_token \
     /tmp/read-secrets.sh pnpm build --filter=@formbricks/web...
 

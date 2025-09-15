@@ -276,7 +276,6 @@ export const mockSyncSurveyOutput: SurveyMock = {
   variables: [],
   showLanguageSwitch: null,
   metadata: {},
-  failureCard: null,
 };
 
 export const mockSurveyOutput: SurveyMock = {
