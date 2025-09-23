@@ -1,3 +1,7 @@
+import { PlusIcon } from "lucide-react";
+import { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { DEFAULT_LOCALE, SURVEYS_PER_PAGE } from "@/lib/constants";
 import { getPublicDomain } from "@/lib/getPublicUrl";
 import { getTagsByEnvironmentId } from "@/lib/tag/service";
@@ -11,11 +15,6 @@ import { Button } from "@/modules/ui/components/button";
 import { PageContentWrapper } from "@/modules/ui/components/page-content-wrapper";
 import { PageHeader } from "@/modules/ui/components/page-header";
 import { getTranslate } from "@/tolgee/server";
-import { PlusIcon } from "lucide-react";
-import { Metadata } from "next";
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { TTemplateRole } from "@formbricks/types/templates";
 
 export const metadata: Metadata = {
   title: "Your Surveys",
@@ -25,17 +24,10 @@ interface SurveyTemplateProps {
   params: Promise<{
     environmentId: string;
   }>;
-  searchParams: Promise<{
-    role?: TTemplateRole;
-  }>;
 }
 
-export const SurveysPage = async ({
-  params: paramsProps,
-  searchParams: searchParamsProps,
-}: SurveyTemplateProps) => {
+export const SurveysPage = async ({ params: paramsProps }: SurveyTemplateProps) => {
   const publicDomain = getPublicDomain();
-  const searchParams = await searchParamsProps;
   const params = await paramsProps;
   const t = await getTranslate();
 
@@ -46,8 +38,6 @@ export const SurveysPage = async ({
   }
 
   const { session, isBilling, environment, isReadOnly } = await getEnvironmentAuth(params.environmentId);
-
-  const prefilledFilters = [project?.config.channel, project.config.industry, searchParams.role ?? null];
 
   if (isBilling) {
     return redirect(`/environments/${params.environmentId}/settings/billing`);
@@ -85,7 +75,6 @@ export const SurveysPage = async ({
         userId={session.user.id}
         environment={environment}
         project={projectWithRequiredProps}
-        prefilledFilters={prefilledFilters}
         isTemplatePage={false}
       />
     );

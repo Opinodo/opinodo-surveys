@@ -1,3 +1,14 @@
+import { CheckCheckIcon, MousePointerClickIcon, PhoneIcon } from "lucide-react";
+import React from "react";
+import { TResponseDataValue } from "@formbricks/types/responses";
+import {
+  TSurvey,
+  TSurveyMatrixQuestion,
+  TSurveyPictureSelectionQuestion,
+  TSurveyQuestion,
+  TSurveyQuestionTypeEnum,
+  TSurveyRatingQuestion,
+} from "@formbricks/types/surveys/types";
 import { cn } from "@/lib/cn";
 import { getLanguageCode, getLocalizedValue } from "@/lib/i18n/utils";
 import { getChoiceIdByValue } from "@/lib/response/utils";
@@ -11,19 +22,9 @@ import { PictureSelectionResponse } from "@/modules/ui/components/picture-select
 import { RankingResponse } from "@/modules/ui/components/ranking-response";
 import { RatingResponse } from "@/modules/ui/components/rating-response";
 import { ResponseBadges } from "@/modules/ui/components/response-badges";
-import { CheckCheckIcon, MousePointerClickIcon, PhoneIcon } from "lucide-react";
-import React from "react";
-import {
-  TSurvey,
-  TSurveyMatrixQuestion,
-  TSurveyPictureSelectionQuestion,
-  TSurveyQuestion,
-  TSurveyQuestionTypeEnum,
-  TSurveyRatingQuestion,
-} from "@formbricks/types/surveys/types";
 
 interface RenderResponseProps {
-  responseData: string | number | string[] | Record<string, string>;
+  responseData: TResponseDataValue;
   question: TSurveyQuestion;
   survey: TSurvey;
   language: string | null;

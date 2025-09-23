@@ -1,3 +1,5 @@
+import { NextRequest } from "next/server";
+import { TIntegrationNotionConfigData, TIntegrationNotionInput } from "@formbricks/types/integration/notion";
 import { responses } from "@/app/lib/api/response";
 import { withV1ApiWrapper } from "@/app/lib/api/with-api-logging";
 import {
@@ -9,8 +11,6 @@ import {
 } from "@/lib/constants";
 import { symmetricEncrypt } from "@/lib/crypto";
 import { createOrUpdateIntegration, getIntegrationByType } from "@/lib/integration/service";
-import { NextRequest } from "next/server";
-import { TIntegrationNotionConfigData, TIntegrationNotionInput } from "@formbricks/types/integration/notion";
 
 export const GET = withV1ApiWrapper({
   handler: async ({ req }: { req: NextRequest }) => {
@@ -86,13 +86,15 @@ export const GET = withV1ApiWrapper({
 
       if (result) {
         return {
-          response: Response.redirect(`${WEBAPP_URL}/environments/${environmentId}/integrations/notion`),
+          response: Response.redirect(
+            `${WEBAPP_URL}/environments/${environmentId}/project/integrations/notion`
+          ),
         };
       }
     } else if (error) {
       return {
         response: Response.redirect(
-          `${WEBAPP_URL}/environments/${environmentId}/integrations/notion?error=${error}`
+          `${WEBAPP_URL}/environments/${environmentId}/project/integrations/notion?error=${error}`
         ),
       };
     }

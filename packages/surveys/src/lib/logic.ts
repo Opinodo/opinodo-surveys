@@ -1,4 +1,3 @@
-import { getLocalizedValue } from "@/lib/i18n";
 import { TJsEnvironmentStateSurvey } from "@formbricks/types/js";
 import { TResponseData, TResponseVariables } from "@formbricks/types/responses";
 import {
@@ -10,6 +9,7 @@ import {
   TSurveyQuestionTypeEnum,
   TSurveyVariable,
 } from "@formbricks/types/surveys/types";
+import { getLocalizedValue } from "@/lib/i18n";
 
 const getVariableValue = (
   variables: TSurveyVariable[],
@@ -407,7 +407,7 @@ const evaluateSingleCondition = (
         return (
           Array.isArray(leftValue) &&
           Array.isArray(rightValue) &&
-          rightValue.some((v) => !leftValue.includes(v))
+          !rightValue.some((v) => leftValue.includes(v))
         );
       case "isAccepted":
         return leftValue === "accepted";

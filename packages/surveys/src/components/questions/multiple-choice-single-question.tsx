@@ -1,3 +1,6 @@
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { type TResponseData, type TResponseTtc } from "@formbricks/types/responses";
+import type { TSurveyMultipleChoiceQuestion, TSurveyQuestionId } from "@formbricks/types/surveys/types";
 import { BackButton } from "@/components/buttons/back-button";
 import { SubmitButton } from "@/components/buttons/submit-button";
 import { Headline } from "@/components/general/headline";
@@ -7,9 +10,6 @@ import { ScrollableContainer } from "@/components/wrappers/scrollable-container"
 import { getLocalizedValue } from "@/lib/i18n";
 import { getUpdatedTtc, useTtc } from "@/lib/ttc";
 import { cn, getShuffledChoicesIds } from "@/lib/utils";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { type TResponseData, type TResponseTtc } from "@formbricks/types/responses";
-import type { TSurveyMultipleChoiceQuestion, TSurveyQuestionId } from "@formbricks/types/surveys/types";
 
 interface MultipleChoiceSingleProps {
   question: TSurveyMultipleChoiceQuestion;
@@ -112,7 +112,7 @@ export function MultipleChoiceSingleQuestion({
           e.preventDefault();
           const updatedTtcObj = getUpdatedTtc(ttc, question.id, performance.now() - startTime);
           setTtc(updatedTtcObj);
-          onSubmit({ [question.id]: value ?? "" }, updatedTtcObj);
+          onSubmit({ [question.id]: value }, updatedTtcObj);
         }}
         className="fb-w-full">
         {isMediaAvailable ? <QuestionMedia imgUrl={question.imageUrl} videoUrl={question.videoUrl} /> : null}
@@ -208,9 +208,13 @@ export function MultipleChoiceSingleQuestion({
                       value={getLocalizedValue(otherOption.label, languageCode)}
                       className="fb-border-brand fb-text-brand fb-h-4 fb-w-4 fb-flex-shrink-0 fb-border focus:fb-ring-0 focus:fb-ring-offset-0"
                       aria-labelledby={`${otherOption.id}-label`}
-                      onChange={() => {
-                        setOtherSelected(!otherSelected);
-                        onChange({ [question.id]: "" });
+                      onClick={() => {
+                        if (otherSelected) {
+                          onChange({ [question.id]: undefined });
+                        } else {
+                          setOtherSelected(!otherSelected);
+                          onChange({ [question.id]: "" });
+                        }
                       }}
                       checked={otherSelected}
                     />
