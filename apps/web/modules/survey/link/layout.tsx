@@ -9,9 +9,5 @@ export const viewport: Viewport = {
 };
 
 export const LinkSurveyLayout = ({ children }) => {
-  return (
-    <>
-      <div className="h-dvh">{children}</div>
-    </>
-  );
+  return <div className="h-dvh">{children}</div>;
 };
