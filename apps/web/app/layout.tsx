@@ -3,9 +3,9 @@ import { IS_PRODUCTION, SENTRY_DSN, SENTRY_ENVIRONMENT, SENTRY_RELEASE } from "@
 import { TolgeeNextProvider } from "@/tolgee/client";
 import { getLocale } from "@/tolgee/language";
 import { getTolgee } from "@/tolgee/server";
-// import { GoogleTagManager } from "@next/third-parties/google";
 import { TolgeeStaticData } from "@tolgee/react";
 import { Metadata } from "next";
+import Script from "next/script";
 import React from "react";
 import "../modules/ui/globals.css";
 
@@ -25,8 +25,23 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <html lang={locale} translate="no">
-      {/*<GoogleTagManager gtmId={"GTM-PJ6M9K9P"} />*/}
+      <head>
+        <Script id="google-tag-manager" strategy="afterInteractive">
+          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-PJ6M9K9P');`}
+        </Script>
+      </head>
       <body className="flex h-dvh flex-col transition-all ease-in-out">
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-PJ6M9K9P"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}></iframe>
+        </noscript>
         <SentryProvider
           sentryDsn={SENTRY_DSN}
           sentryRelease={SENTRY_RELEASE}
