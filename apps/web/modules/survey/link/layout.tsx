@@ -1,4 +1,5 @@
 import { Viewport } from "next";
+import Script from "next/script";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -11,12 +12,12 @@ export const viewport: Viewport = {
 export const LinkSurveyLayout = ({ children }) => {
   return (
     <>
-      <head>
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1574672111746393"
-          crossOrigin="anonymous"></script>
-      </head>
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1574672111746393"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
       <div className="h-dvh">{children}</div>
     </>
   );
