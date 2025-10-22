@@ -112,7 +112,6 @@ export const ShareSurveyModal = ({
           isContactsEnabled,
           isFormbricksCloud,
         },
-        disabled: survey.singleUse?.enabled,
       },
       {
         id: ShareViaType.WEBSITE_EMBED,
@@ -123,7 +122,6 @@ export const ShareSurveyModal = ({
         description: t("environments.surveys.share.embed_on_website.description"),
         componentType: WebsiteEmbedTab,
         componentProps: { surveyUrl },
-        disabled: survey.singleUse?.enabled,
       },
       {
         id: ShareViaType.EMAIL,
@@ -134,7 +132,6 @@ export const ShareSurveyModal = ({
         description: t("environments.surveys.share.send_email.description"),
         componentType: EmailTab,
         componentProps: { surveyId: survey.id, email },
-        disabled: survey.singleUse?.enabled,
       },
       {
         id: ShareViaType.SOCIAL_MEDIA,
@@ -145,7 +142,6 @@ export const ShareSurveyModal = ({
         description: t("environments.surveys.share.social_media.description"),
         componentType: SocialMediaTab,
         componentProps: { surveyUrl, surveyTitle: survey.name },
-        disabled: survey.singleUse?.enabled,
       },
       {
         id: ShareViaType.QR_CODE,
@@ -156,7 +152,6 @@ export const ShareSurveyModal = ({
         description: t("environments.surveys.summary.qr_code_description"),
         componentType: QRCodeTab,
         componentProps: { surveyUrl },
-        disabled: survey.singleUse?.enabled,
       },
       {
         id: ShareViaType.DYNAMIC_POPUP,
