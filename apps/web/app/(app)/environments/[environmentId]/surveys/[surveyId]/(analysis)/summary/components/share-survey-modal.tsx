@@ -131,7 +131,7 @@ export const ShareSurveyModal = ({
         title: t("environments.surveys.share.send_email.nav_title"),
         description: t("environments.surveys.share.send_email.description"),
         componentType: EmailTab,
-        componentProps: { surveyId: survey.id, email },
+        componentProps: { surveyId: survey.id, email, survey, locale: user.locale },
       },
       {
         id: ShareViaType.SOCIAL_MEDIA,
