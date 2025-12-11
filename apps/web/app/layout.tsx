@@ -20,12 +20,24 @@ export const metadata: Metadata = {
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const locale = await getLocale();
   const tolgee = await getTolgee();
-  // serializable data that are passed to client components
   const staticData = await tolgee.loadRequired();
 
   return (
     <html lang={locale} translate="no">
       <head>
+        {/* Initialize googletag FIRST */}
+        <Script id="googletag-init" strategy="beforeInteractive">
+          {`window.googletag = window.googletag || { cmd: [] };`}
+        </Script>
+
+        {/* Load GPT library */}
+        <Script
+          src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+          strategy="afterInteractive"
+          async
+        />
+
+        {/* Then GTM */}
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
