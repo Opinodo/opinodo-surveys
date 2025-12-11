@@ -7,11 +7,21 @@ import { ScrollableContainer } from "@/components/wrappers/scrollable-container"
 import { getLocalizedValue } from "@/lib/i18n.ts";
 import { surveyTranslations } from "@/lib/surveyTranslations.ts";
 import { getUpdatedTtc, useTtc } from "@/lib/ttc";
-import { Adsense } from "@ctrl/react-adsense";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TResponseData } from "@formbricks/types/responses";
 import { TResponseTtc } from "@formbricks/types/responses";
 import { TSurveyAdQuestion } from "@formbricks/types/surveys/types";
+
+declare global {
+  interface Window {
+    googletag: {
+      cmd: Array<() => void>;
+      defineSlot: (adUnitPath: string, size: any, divId: string) => any;
+      display: (divId: string) => void;
+      pubads: () => any;
+    };
+  }
+}
 
 interface AdQuestionProps {
   question: TSurveyAdQuestion;
@@ -66,6 +76,23 @@ export const AdQuestion = ({
   const [languageKey] = useState<LanguageCode>(languageCode as LanguageCode);
   const translations = surveyTranslations[languageKey] || surveyTranslations.default;
 
+  useEffect(() => {
+    // Initialize googletag
+    window.googletag = window.googletag || { cmd: [] };
+
+    window.googletag.cmd.push(function () {
+      window.googletag
+        .defineSlot(
+          "/9505169/SURVEYS_ALL_MIDPAGE_INCONTENT_RESP",
+          ["fluid", [320, 100], [300, 250], [336, 280]],
+          "div-gpt-surveys-midpage"
+        )
+        .addService(window.googletag.pubads());
+
+      window.googletag.display("div-gpt-surveys-midpage");
+    });
+  }, []);
+
   return (
     <div key={question.id}>
       <ScrollableContainer>
@@ -74,14 +101,7 @@ export const AdQuestion = ({
           <Headline headline="Sponsored links" questionId={question.id} required={question.required} />
           <AdExplanation translations={translations} />
 
-          <Adsense
-            client="ca-pub-1574672111746393"
-            slot="3700116888"
-            format="auto"
-            responsive="true"
-            style={{ display: "block", height: "300px" }}
-          />
-          {/*<AdSensePlaceholder/>*/}
+          <div id="div-gpt-surveys-midpage" style={{ minWidth: "300px", minHeight: "100px" }}></div>
         </div>
       </ScrollableContainer>
       <div className="flex w-full justify-between px-6 py-4">
