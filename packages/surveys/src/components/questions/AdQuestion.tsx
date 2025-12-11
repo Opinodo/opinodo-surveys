@@ -19,6 +19,7 @@ declare global {
       defineSlot: (adUnitPath: string, size: any, divId: string) => any;
       display: (divId: string) => void;
       pubads: () => any;
+      enableServices: () => void;
     };
   }
 }
@@ -77,9 +78,19 @@ export const AdQuestion = ({
   const translations = surveyTranslations[languageKey] || surveyTranslations.default;
 
   useEffect(() => {
-    // Initialize googletag
-    window.googletag = window.googletag || { cmd: [] };
+    // Initialize googletag cmd array before script loads
+    window.googletag = window.googletag || ({} as any);
+    window.googletag.cmd = window.googletag.cmd || [];
 
+    // Load GPT library if not already loaded
+    if (!document.querySelector('script[src*="securepubads.g.doubleclick.net"]')) {
+      const script = document.createElement("script");
+      script.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
+      script.async = true;
+      document.head.appendChild(script);
+    }
+
+    // Queue the ad setup
     window.googletag.cmd.push(function () {
       window.googletag
         .defineSlot(
@@ -88,7 +99,12 @@ export const AdQuestion = ({
           "div-gpt-surveys-midpage"
         )
         .addService(window.googletag.pubads());
+      window.googletag.pubads().enableSingleRequest();
+      window.googletag.enableServices();
+    });
 
+    // Display the ad
+    window.googletag.cmd.push(function () {
       window.googletag.display("div-gpt-surveys-midpage");
     });
   }, []);
