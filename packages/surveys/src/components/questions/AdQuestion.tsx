@@ -78,38 +78,25 @@ export const AdQuestion = ({
   const translations = surveyTranslations[languageKey] || surveyTranslations.default;
 
   useEffect(() => {
-    // Initialize googletag with cmd array FIRST
-    window.googletag = window.googletag || { cmd: [] };
-    window.googletag.cmd = window.googletag.cmd || [];
+    // googletag is now initialized globally in layout.tsx
+    if (window.googletag && window.googletag.cmd) {
+      window.googletag.cmd.push(function () {
+        window.googletag
+          .defineSlot(
+            "/9505169/SURVEYS_ALL_MIDPAGE_INCONTENT_RESP",
+            ["fluid", [320, 100], [300, 250], [336, 280]],
+            "div-gpt-surveys-midpage"
+          )
+          ?.addService(window.googletag.pubads());
 
-    // Load GPT library if not already loaded
-    if (!document.querySelector('script[src*="securepubads.g.doubleclick.net"]')) {
-      const script = document.createElement("script");
-      script.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
-      script.async = true;
-      document.head.appendChild(script);
+        window.googletag.pubads().enableSingleRequest();
+        window.googletag.enableServices();
+      });
+
+      window.googletag.cmd.push(function () {
+        window.googletag.display("div-gpt-surveys-midpage");
+      });
     }
-
-    // Queue the ad setup
-    window.googletag.cmd.push(function () {
-      const slot = window.googletag.defineSlot(
-        "/9505169/SURVEYS_ALL_MIDPAGE_INCONTENT_RESP",
-        ["fluid", [320, 100], [300, 250], [336, 280]],
-        "div-gpt-surveys-midpage"
-      );
-
-      if (slot) {
-        slot.addService(window.googletag.pubads());
-      }
-
-      window.googletag.pubads().enableSingleRequest();
-      window.googletag.enableServices();
-    });
-
-    // Display the ad
-    window.googletag.cmd.push(function () {
-      window.googletag.display("div-gpt-surveys-midpage");
-    });
   }, []);
 
   return (
