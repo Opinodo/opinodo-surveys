@@ -37,6 +37,17 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
           async
         />
 
+        {/* Enable GPT services after library loads */}
+        <Script id="googletag-enable" strategy="afterInteractive">
+          {`
+            window.googletag = window.googletag || { cmd: [] };
+            window.googletag.cmd.push(function() {
+              window.googletag.pubads().enableSingleRequest();
+              window.googletag.enableServices();
+            });
+          `}
+        </Script>
+
         {/* Then GTM */}
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':

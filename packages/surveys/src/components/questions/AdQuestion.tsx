@@ -78,7 +78,6 @@ export const AdQuestion = ({
   const translations = surveyTranslations[languageKey] || surveyTranslations.default;
 
   useEffect(() => {
-    // googletag is now initialized globally in layout.tsx
     if (window.googletag && window.googletag.cmd) {
       window.googletag.cmd.push(function () {
         window.googletag
@@ -89,11 +88,6 @@ export const AdQuestion = ({
           )
           ?.addService(window.googletag.pubads());
 
-        window.googletag.pubads().enableSingleRequest();
-        window.googletag.enableServices();
-      });
-
-      window.googletag.cmd.push(function () {
         window.googletag.display("div-gpt-surveys-midpage");
       });
     }
