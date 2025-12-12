@@ -1,3 +1,4 @@
+google.com, pub-7280343251215778, DIRECT, f08c47fec0942fa0
 google.com, pub-4468771410062805, RESELLER
 google.com, pub-8172268348509349, RESELLER
 adform.com, 47, RESELLER
@@ -69,7 +70,4 @@ themediagrid.com, MLECO1, RESELLER
 adform.com, 2908, RESELLER
 onetag.com, 7dc195b3df0181c-OB, RESELLER
 managerdomain=concept.dk
-ownerdomain=monipoints.com
-
-
-
+ownerdomain=surveys.digiopinion.com
