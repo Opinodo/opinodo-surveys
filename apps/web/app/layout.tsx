@@ -24,7 +24,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <html lang={locale} translate="no">
-      <head>
+      <body className="flex h-dvh flex-col transition-all ease-in-out">
         {/* Initialize googletag FIRST */}
         <Script id="googletag-init" strategy="beforeInteractive">
           {`window.googletag = window.googletag || { cmd: [] };`}
@@ -56,8 +56,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','GTM-PJ6M9K9P');`}
         </Script>
-      </head>
-      <body className="flex h-dvh flex-col transition-all ease-in-out">
+
         <noscript>
           <iframe
             src="https://www.googletagmanager.com/ns.html?id=GTM-PJ6M9K9P"
@@ -65,6 +64,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             width="0"
             style={{ display: "none", visibility: "hidden" }}></iframe>
         </noscript>
+
         <SentryProvider
           sentryDsn={SENTRY_DSN}
           sentryRelease={SENTRY_RELEASE}
