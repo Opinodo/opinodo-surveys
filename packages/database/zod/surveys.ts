@@ -1,7 +1,10 @@
+/* eslint-disable import/no-relative-packages -- Need to import from parent package */
 import { SurveyStatus, SurveyType } from "@prisma/client";
 import { z } from "zod";
 import { extendZodWithOpenApi } from "zod-openapi";
 // eslint-disable-next-line import/no-relative-packages -- Need to import from parent package
+import { ZLogo } from "../../types/styling";
+import { ZSurveyBlocks } from "../../types/surveys/blocks";
 import {
   ZCountry,
   ZSurveyEnding,
@@ -76,7 +79,7 @@ const ZSurveyBase = z.object({
       timeToFinish: z.boolean(),
       showResponseCount: z.boolean(),
       headline: z.record(z.string()).optional(),
-      html: z.record(z.string()).optional(),
+      subheader: z.record(z.string()).optional(),
       fileUrl: z.string().optional(),
       buttonLabel: z.record(z.string()).optional(),
       videoUrl: z.string().optional(),
@@ -99,18 +102,12 @@ const ZSurveyBase = z.object({
   questions: z.array(ZSurveyQuestion).openapi({
     description: "The questions of the survey",
   }),
+  blocks: ZSurveyBlocks.default([]).openapi({
+    description: "The blocks of the survey",
+  }),
   endings: z.array(ZSurveyEnding).default([]).openapi({
     description: "The endings of the survey",
   }),
-  thankYouCard: z
-    .object({
-      enabled: z.boolean(),
-      message: z.string(),
-    })
-    .nullable()
-    .openapi({
-      description: "The thank you card of the survey (deprecated)",
-    }),
   hiddenFields: z
     .object({
       enabled: z.boolean(),
@@ -139,12 +136,6 @@ const ZSurveyBase = z.object({
   }),
   delay: z.number().openapi({
     description: "Delay before showing survey",
-  }),
-  runOnDate: z.date().nullable().openapi({
-    description: "Date to run the survey",
-  }),
-  closeOnDate: z.date().nullable().openapi({
-    description: "Date to close the survey",
   }),
   surveyClosedMessage: z
     .object({
@@ -186,6 +177,7 @@ const ZSurveyBase = z.object({
       background: ZSurveyStylingBackground.nullish(),
       hideProgressBar: z.boolean().nullish(),
       isLogoHidden: z.boolean().nullish(),
+      logo: ZLogo.nullish(),
     })
     .nullable()
     .openapi({
@@ -211,14 +203,6 @@ const ZSurveyBase = z.object({
   isBackButtonHidden: z.boolean().openapi({
     description: "Whether the back button is hidden",
   }),
-  verifyEmail: z
-    .object({
-      enabled: z.boolean(),
-      message: z.string(),
-    })
-    .openapi({
-      description: "Email verification configuration (deprecated)",
-    }),
   recaptcha: ZSurveyRecaptcha.openapi({
     description: "Google reCAPTCHA configuration",
   }),

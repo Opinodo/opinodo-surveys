@@ -1,19 +1,16 @@
+import { useEffect } from "preact/hooks";
+import { useTranslation } from "react-i18next";
+import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
+import { type TResponseData, type TResponseVariables } from "@formbricks/types/responses";
+import { type TSurveyEndScreenCard, type TSurveyRedirectUrlCard, type TSurveyAffiliateOfferCard } from "@formbricks/types/surveys/types";
 import { SubmitButton } from "@/components/buttons/submit-button";
+import { ElementMedia } from "@/components/general/element-media";
 import { Headline } from "@/components/general/headline";
 import { LoadingSpinner } from "@/components/general/loading-spinner";
-import { QuestionMedia } from "@/components/general/question-media";
 import { Subheader } from "@/components/general/subheader";
 import { ScrollableContainer } from "@/components/wrappers/scrollable-container";
 import { getLocalizedValue } from "@/lib/i18n";
 import { replaceRecallInfo } from "@/lib/recall";
-import { useEffect } from "preact/hooks";
-import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
-import { type TResponseData, type TResponseVariables } from "@formbricks/types/responses";
-import {
-  TSurveyAffiliateOfferCard,
-  type TSurveyEndScreenCard,
-  type TSurveyRedirectUrlCard,
-} from "@formbricks/types/surveys/types";
 
 interface EndingCardProps {
   survey: TJsEnvironmentStateSurvey;
@@ -27,6 +24,7 @@ interface EndingCardProps {
   variablesData: TResponseVariables;
   onOpenExternalURL?: (url: string) => void | Promise<void>;
   isPreviewMode: boolean;
+  fullSizeCards: boolean;
   panelistId: string | null;
 }
 
@@ -43,29 +41,31 @@ export function EndingCard({
   variablesData,
   onOpenExternalURL,
   isPreviewMode,
+  fullSizeCards,
 }: EndingCardProps) {
+  const { t } = useTranslation();
   const media =
     (endingCard.type === "endScreen" || endingCard.type === "affiliateOffer") &&
     (endingCard.imageUrl ?? endingCard.videoUrl) ? (
-      <QuestionMedia imgUrl={endingCard.imageUrl} videoUrl={endingCard.videoUrl} />
+      <ElementMedia imgUrl={endingCard.imageUrl} videoUrl={endingCard.videoUrl} />
     ) : null;
 
   const checkmark = (
-    <div className="fb-text-brand fb-flex fb-flex-col fb-items-center fb-justify-center">
+    <div className="text-brand flex flex-col items-center justify-center">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
         strokeWidth="1.5"
         stroke="currentColor"
-        className="fb-h-24 fb-w-24">
+        className="h-24 w-24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
           d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
-      <span className="fb-bg-brand fb-mb-[10px] fb-inline-block fb-h-1 fb-w-16 fb-rounded-[100%]" />
+      <span className="bg-brand mb-[10px] inline-block h-1 w-16 rounded-[100%]" />
     </div>
   );
 
@@ -164,8 +164,8 @@ export function EndingCard({
   };
 
   return (
-    <ScrollableContainer>
-      <div className="fb-text-center">
+    <ScrollableContainer fullSizeCards={fullSizeCards}>
+      <div className="text-center">
         {isResponseSendingFinished ? (
           <>
             {endingCard.type === "endScreen" && (
@@ -179,7 +179,7 @@ export function EndingCard({
                       responseData,
                       variablesData
                     )}
-                    questionId="EndingCard"
+                    elementId="EndingCard"
                   />
                   <Subheader
                     subheader={replaceRecallInfo(
@@ -187,10 +187,10 @@ export function EndingCard({
                       responseData,
                       variablesData
                     )}
-                    questionId="EndingCard"
+                    elementId="EndingCard"
                   />
                   {endingCard.buttonLabel ? (
-                    <div className="fb-mt-6 fb-flex fb-w-full fb-flex-col fb-items-center fb-justify-center fb-space-y-4">
+                    <div className="mt-6 flex w-full flex-col items-center justify-center space-y-4">
                       <SubmitButton
                         buttonLabel={replaceRecallInfo(
                           getLocalizedValue(endingCard.buttonLabel, languageCode),
@@ -212,13 +212,16 @@ export function EndingCard({
                   <div>
                     <Headline
                       alignTextCenter
-                      headline={"Respondents will not see this card"}
-                      questionId="EndingCard"
+                      headline={t("common.respondents_will_not_see_this_card")}
+                      elementId="EndingCard"
                     />
-                    <Subheader subheader={"They will be redirected immediately"} questionId="EndingCard" />
+                    <Subheader
+                      subheader={t("common.they_will_be_redirected_immediately")}
+                      elementId="EndingCard"
+                    />
                   </div>
                 ) : (
-                  <div className="fb-my-3">
+                  <div className="my-3">
                     <LoadingSpinner />
                   </div>
                 )}
@@ -264,10 +267,10 @@ export function EndingCard({
           </>
         ) : (
           <>
-            <div className="fb-my-3">
+            <div className="my-3">
               <LoadingSpinner />
             </div>
-            <h1 className="fb-text-brand">Sending responses...</h1>
+            <h1 className="text-brand">{t("common.sending_responses")}</h1>
           </>
         )}
       </div>

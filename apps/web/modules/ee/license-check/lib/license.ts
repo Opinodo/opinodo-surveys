@@ -1,18 +1,20 @@
 import "server-only";
-import { env } from "@/lib/env";
-import { hashString } from "@/lib/hash-string";
-import { createCacheKey } from "@/modules/cache/lib/cacheKeys";
-import { getCache } from "@/modules/cache/lib/service";
-import {
-  TEnterpriseLicenseDetails,
-  TEnterpriseLicenseFeatures,
-} from "@/modules/ee/license-check/types/enterprise-license";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import fetch from "node-fetch";
 import { cache as reactCache } from "react";
 import { z } from "zod";
+import { createCacheKey } from "@formbricks/cache";
 import { prisma } from "@formbricks/database";
 import { logger } from "@formbricks/logger";
+import { cache } from "@/lib/cache";
+import { E2E_TESTING } from "@/lib/constants";
+import { env } from "@/lib/env";
+import { hashString } from "@/lib/hash-string";
+import { getInstanceId } from "@/lib/instance";
+import {
+  TEnterpriseLicenseDetails,
+  TEnterpriseLicenseFeatures,
+} from "@/modules/ee/license-check/types/enterprise-license";
 
 // Configuration
 const CONFIG = {
@@ -53,6 +55,7 @@ const LicenseFeaturesSchema = z.object({
   auditLogs: z.boolean(),
   multiLanguageSurveys: z.boolean(),
   accessControl: z.boolean(),
+  quotas: z.boolean(),
 });
 
 const LicenseDetailsSchema = z.object({
@@ -115,6 +118,7 @@ const DEFAULT_FEATURES: TEnterpriseLicenseFeatures = {
   auditLogs: false,
   multiLanguageSurveys: false,
   accessControl: false,
+  quotas: false,
 };
 
 // Helper functions
@@ -144,16 +148,15 @@ const getPreviousResult = async (): Promise<TPreviousResult> => {
   }
 
   try {
-    const formbricksCache = await getCache();
-    const cachedData = await formbricksCache.get<TPreviousResult>(getCacheKeys().PREVIOUS_RESULT_CACHE_KEY);
-    if (cachedData) {
+    const result = await cache.get<TPreviousResult>(getCacheKeys().PREVIOUS_RESULT_CACHE_KEY);
+    if (result.ok && result.data) {
       return {
-        ...cachedData,
-        lastChecked: new Date(cachedData.lastChecked),
+        ...result.data,
+        lastChecked: new Date(result.data.lastChecked),
       };
     }
   } catch (error) {
-    logger.error("Failed to get previous result from cache", { error });
+    logger.error({ error }, "Failed to get previous result from cache");
   }
 
   return {
@@ -167,31 +170,39 @@ const setPreviousResult = async (previousResult: TPreviousResult) => {
   if (typeof window !== "undefined") return;
 
   try {
-    const formbricksCache = await getCache();
-    await formbricksCache.set(
+    const result = await cache.set(
       getCacheKeys().PREVIOUS_RESULT_CACHE_KEY,
       previousResult,
       CONFIG.CACHE.PREVIOUS_RESULT_TTL_MS
     );
+    if (!result.ok) {
+      logger.warn({ error: result.error }, "Failed to cache previous result");
+    }
   } catch (error) {
-    logger.error("Failed to set previous result in cache", { error });
+    logger.error({ error }, "Failed to set previous result in cache");
   }
 };
 
 // Monitoring functions
 const trackFallbackUsage = (level: FallbackLevel) => {
-  logger.info(`Using license fallback level: ${level}`, {
-    fallbackLevel: level,
-    timestamp: new Date().toISOString(),
-  });
+  logger.info(
+    {
+      fallbackLevel: level,
+      timestamp: new Date().toISOString(),
+    },
+    `Using license fallback level: ${level}`
+  );
 };
 
 const trackApiError = (error: LicenseApiError) => {
-  logger.error(`License API error: ${error.message}`, {
-    status: error.status,
-    code: error.code,
-    timestamp: new Date().toISOString(),
-  });
+  logger.error(
+    {
+      status: error.status,
+      code: error.code,
+      timestamp: new Date().toISOString(),
+    },
+    `License API error: ${error.message}`
+  );
 };
 
 // Validation functions
@@ -251,14 +262,23 @@ const fetchLicenseFromServerInternal = async (retryCount = 0): Promise<TEnterpri
     // first millisecond of next year => current year is fully included
     const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
 
-    const responseCount = await prisma.response.count({
-      where: {
-        createdAt: {
-          gte: startOfYear,
-          lt: startOfNextYear,
+    const [instanceId, responseCount] = await Promise.all([
+      // Skip instance ID during E2E tests to avoid license key conflicts
+      // as the instance ID changes with each test run
+      E2E_TESTING ? null : getInstanceId(),
+      prisma.response.count({
+        where: {
+          createdAt: {
+            gte: startOfYear,
+            lt: startOfNextYear,
+          },
         },
-      },
-    });
+      }),
+    ]);
+
+    // No organization exists, cannot perform license check
+    // (skip this check during E2E tests as we intentionally use null)
+    if (!E2E_TESTING && !instanceId) return null;
 
     const proxyUrl = env.HTTPS_PROXY ?? env.HTTP_PROXY;
     const agent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
@@ -266,11 +286,17 @@ const fetchLicenseFromServerInternal = async (retryCount = 0): Promise<TEnterpri
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), CONFIG.API.TIMEOUT_MS);
 
+    const payload: Record<string, unknown> = {
+      licenseKey: env.ENTERPRISE_LICENSE_KEY,
+      usage: { responseCount },
+    };
+
+    if (instanceId) {
+      payload.instanceId = instanceId;
+    }
+
     const res = await fetch(CONFIG.API.ENDPOINT, {
-      body: JSON.stringify({
-        licenseKey: env.ENTERPRISE_LICENSE_KEY,
-        usage: { responseCount },
-      }),
+      body: JSON.stringify(payload),
       headers: { "Content-Type": "application/json" },
       method: "POST",
       agent,
@@ -312,31 +338,13 @@ export const fetchLicense = async (): Promise<TEnterpriseLicenseDetails | null> 
     return null;
   }
 
-  try {
-    const formbricksCache = await getCache();
-    const cachedLicense = await formbricksCache.get<TEnterpriseLicenseDetails>(
-      getCacheKeys().FETCH_LICENSE_CACHE_KEY
-    );
-
-    if (cachedLicense) {
-      return cachedLicense;
-    }
-
-    const licenseDetails = await fetchLicenseFromServerInternal();
-
-    if (licenseDetails) {
-      await formbricksCache.set(
-        getCacheKeys().FETCH_LICENSE_CACHE_KEY,
-        licenseDetails,
-        CONFIG.CACHE.FETCH_LICENSE_TTL_MS
-      );
-    }
-    return licenseDetails;
-  } catch (error) {
-    logger.error("Failed to fetch license due to cache error", { error });
-    // Fallback to direct API call without cache
-    return fetchLicenseFromServerInternal();
-  }
+  return await cache.withCache(
+    async () => {
+      return await fetchLicenseFromServerInternal();
+    },
+    getCacheKeys().FETCH_LICENSE_CACHE_KEY,
+    CONFIG.CACHE.FETCH_LICENSE_TTL_MS
+  );
 };
 
 export const getEnterpriseLicense = reactCache(

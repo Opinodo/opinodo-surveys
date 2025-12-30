@@ -1,7 +1,15 @@
 "use client";
 
-import { extractRecallInfo } from "@/lib/utils/recall";
-import { findVariableUsedInLogic } from "@/modules/survey/editor/lib/utils";
+import { createId } from "@paralleldrive/cuid2";
+import { TrashIcon } from "lucide-react";
+import React, { useCallback } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { TSurveyQuota } from "@formbricks/types/quota";
+import { TSurvey, TSurveyVariable } from "@formbricks/types/surveys/types";
+import { findVariableUsedInLogic, isUsedInQuota, isUsedInRecall } from "@/modules/survey/editor/lib/utils";
+import { getElementsFromBlocks } from "@/modules/survey/lib/client-utils";
 import { Button } from "@/modules/ui/components/button";
 import { FormControl, FormField, FormItem, FormProvider } from "@/modules/ui/components/form";
 import { Input } from "@/modules/ui/components/input";
@@ -13,19 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/modules/ui/components/select";
-import { createId } from "@paralleldrive/cuid2";
-import { useTranslate } from "@tolgee/react";
-import { TrashIcon } from "lucide-react";
-import React, { useCallback } from "react";
-import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
-import { TSurvey, TSurveyVariable } from "@formbricks/types/surveys/types";
 
 interface SurveyVariablesCardItemProps {
   variable?: TSurveyVariable;
   localSurvey: TSurvey;
   setLocalSurvey: React.Dispatch<React.SetStateAction<TSurvey>>;
   mode: "create" | "edit";
+  quotas: TSurveyQuota[];
 }
 
 export const SurveyVariablesCardItem = ({
@@ -33,8 +35,9 @@ export const SurveyVariablesCardItem = ({
   localSurvey,
   setLocalSurvey,
   mode,
+  quotas,
 }: SurveyVariablesCardItemProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const form = useForm<TSurveyVariable>({
     defaultValues: variable ?? {
       id: createId(),
@@ -75,37 +78,63 @@ export const SurveyVariablesCardItem = ({
   // Removed auto-submit effect
 
   const onVariableDelete = (variableToDelete: TSurveyVariable) => {
-    const questions = [...localSurvey.questions];
-    const quesIdx = findVariableUsedInLogic(localSurvey, variableToDelete.id);
+    const elements = getElementsFromBlocks(localSurvey.blocks);
+    const elementIdx = findVariableUsedInLogic(localSurvey, variableToDelete.id);
 
-    if (quesIdx !== -1) {
+    if (elementIdx !== -1) {
       toast.error(
         t(
           "environments.surveys.edit.variable_is_used_in_logic_of_question_please_remove_it_from_logic_first",
           {
             variable: variableToDelete.name,
-            questionIndex: quesIdx + 1,
+            questionIndex: elementIdx + 1,
           }
         )
       );
       return;
     }
+    const recallElementIdx = isUsedInRecall(localSurvey, variableToDelete.id);
+    if (recallElementIdx === -2) {
+      toast.error(
+        t("environments.surveys.edit.variable_used_in_recall_welcome", { variable: variableToDelete.name })
+      );
+      return;
+    }
 
-    // remove recall references
-    questions.forEach((question) => {
-      for (const [languageCode, headline] of Object.entries(question.headline)) {
-        if (headline.includes(`recall:${variableToDelete.id}`)) {
-          const recallInfo = extractRecallInfo(headline);
-          if (recallInfo) {
-            question.headline[languageCode] = headline.replace(recallInfo, "");
-          }
-        }
-      }
-    });
+    if (recallElementIdx === elements.length) {
+      toast.error(
+        t("environments.surveys.edit.variable_used_in_recall_ending_card", {
+          variable: variableToDelete.name,
+        })
+      );
+      return;
+    }
+
+    if (recallElementIdx !== -1) {
+      toast.error(
+        t("environments.surveys.edit.variable_used_in_recall", {
+          variable: variableToDelete.name,
+          questionIndex: recallElementIdx + 1,
+        })
+      );
+      return;
+    }
+
+    const quotaIdx = quotas.findIndex((quota) => isUsedInQuota(quota, { variableId: variableToDelete.id }));
+
+    if (quotaIdx !== -1) {
+      toast.error(
+        t("environments.surveys.edit.variable_is_used_in_quota_please_remove_it_from_quota_first", {
+          variableName: variableToDelete.name,
+          quotaName: quotas[quotaIdx].name,
+        })
+      );
+      return;
+    }
 
     setLocalSurvey((prevSurvey) => {
       const updatedVariables = prevSurvey.variables.filter((v) => v.id !== variableToDelete.id);
-      return { ...prevSurvey, variables: updatedVariables, questions };
+      return { ...prevSurvey, variables: updatedVariables };
     });
   };
 
@@ -185,7 +214,7 @@ export const SurveyVariablesCardItem = ({
                       form.setValue("value", value === "number" ? 0 : "");
                       field.onChange(value);
                     }}>
-                    <SelectTrigger className="w-24">
+                    <SelectTrigger className="h-10 w-24">
                       <SelectValue placeholder={t("environments.surveys.edit.select_type")} />
                     </SelectTrigger>
                     <SelectContent>

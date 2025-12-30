@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/modules/ui/components/button";
 import {
   Command,
@@ -9,8 +11,6 @@ import {
   CommandList,
 } from "@/modules/ui/components/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/ui/components/popover";
-import { useTranslate } from "@tolgee/react";
-import { useEffect, useMemo } from "react";
 
 interface ITagsComboboxProps {
   tags: Tag[];
@@ -38,7 +38,7 @@ export const TagsCombobox = ({
   open,
   setOpen,
 }: ITagsComboboxProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const tagsToSearch = useMemo(
     () =>
       tags.filter((tag) => {
@@ -63,9 +63,7 @@ export const TagsCombobox = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="sm" aria-expanded={open}>
-          {t("environments.project.tags.add_tag")}
-        </Button>
+        <Button aria-expanded={open}>{t("environments.project.tags.add_tag")}</Button>
       </PopoverTrigger>
       <PopoverContent className="max-h-60 w-[200px] overflow-y-auto p-0">
         <Command
@@ -104,7 +102,7 @@ export const TagsCombobox = ({
               }}
             />
           </div>
-          <CommandList>
+          <CommandList className="border-0">
             <CommandGroup>
               {tagsToSearch?.map((tag) => {
                 return (

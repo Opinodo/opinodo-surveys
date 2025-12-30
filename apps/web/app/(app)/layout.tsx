@@ -1,13 +1,11 @@
-import { IntercomClientWrapper } from "@/app/intercom/IntercomClientWrapper";
-import { IS_POSTHOG_CONFIGURED, POSTHOG_API_HOST, POSTHOG_API_KEY } from "@/lib/constants";
+import { getServerSession } from "next-auth";
+import { ChatwootWidget } from "@/app/chatwoot/ChatwootWidget";
+import { CHATWOOT_BASE_URL, CHATWOOT_WEBSITE_TOKEN, IS_CHATWOOT_CONFIGURED } from "@/lib/constants";
 import { getUser } from "@/lib/user/service";
 import { authOptions } from "@/modules/auth/lib/authOptions";
 import { ClientLogout } from "@/modules/ui/components/client-logout";
 import { NoMobileOverlay } from "@/modules/ui/components/no-mobile-overlay";
-import { PHProvider, PostHogPageview } from "@/modules/ui/components/post-hog-client";
 import { ToasterClient } from "@/modules/ui/components/toaster-client";
-import { getServerSession } from "next-auth";
-import { Suspense } from "react";
 
 const AppLayout = async ({ children }) => {
   const session = await getServerSession(authOptions);
@@ -21,20 +19,17 @@ const AppLayout = async ({ children }) => {
   return (
     <>
       <NoMobileOverlay />
-      <Suspense>
-        <PostHogPageview
-          posthogEnabled={IS_POSTHOG_CONFIGURED}
-          postHogApiHost={POSTHOG_API_HOST}
-          postHogApiKey={POSTHOG_API_KEY}
+      {IS_CHATWOOT_CONFIGURED && (
+        <ChatwootWidget
+          userEmail={user?.email}
+          userName={user?.name}
+          userId={user?.id}
+          chatwootWebsiteToken={CHATWOOT_WEBSITE_TOKEN}
+          chatwootBaseUrl={CHATWOOT_BASE_URL}
         />
-      </Suspense>
-      <PHProvider posthogEnabled={IS_POSTHOG_CONFIGURED}>
-        <>
-          <IntercomClientWrapper user={user} />
-          <ToasterClient />
-          {children}
-        </>
-      </PHProvider>
+      )}
+      <ToasterClient />
+      {children}
     </>
   );
 };

@@ -1,16 +1,17 @@
 "use client";
 
 import { Language } from "@prisma/client";
-import { useTranslate } from "@tolgee/react";
-import type { TSurvey, TSurveyQuestionId } from "@formbricks/types/surveys/types";
+import { useTranslation } from "react-i18next";
+import type { TSurvey } from "@formbricks/types/surveys/types";
 import { TUserLocale } from "@formbricks/types/user";
+import { getElementsFromBlocks } from "@/modules/survey/lib/client-utils";
 import { LanguageToggle } from "./language-toggle";
 
 interface SecondaryLanguageSelectProps {
   projectLanguages: Language[];
   defaultLanguage: Language;
   setSelectedLanguageCode: (languageCode: string) => void;
-  setActiveQuestionId: (questionId: TSurveyQuestionId) => void;
+  setActiveElementId: (elementId: string) => void;
   localSurvey: TSurvey;
   updateSurveyLanguages: (language: Language) => void;
   locale: TUserLocale;
@@ -20,17 +21,19 @@ export function SecondaryLanguageSelect({
   projectLanguages,
   defaultLanguage,
   setSelectedLanguageCode,
-  setActiveQuestionId,
+  setActiveElementId,
   localSurvey,
   updateSurveyLanguages,
   locale,
 }: SecondaryLanguageSelectProps) {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const isLanguageToggled = (language: Language) => {
     return localSurvey.languages.some(
       (surveyLanguage) => surveyLanguage.language.code === language.code && surveyLanguage.enabled
     );
   };
+
+  const elements = getElementsFromBlocks(localSurvey.blocks);
 
   return (
     <div className="space-y-2">
@@ -46,7 +49,7 @@ export function SecondaryLanguageSelect({
             language={language}
             onEdit={() => {
               setSelectedLanguageCode(language.code);
-              setActiveQuestionId(localSurvey.questions[0]?.id);
+              setActiveElementId(elements[0]?.id);
             }}
             onToggle={() => {
               updateSurveyLanguages(language);

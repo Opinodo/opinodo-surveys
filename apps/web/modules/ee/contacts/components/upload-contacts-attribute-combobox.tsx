@@ -1,5 +1,8 @@
 "use client";
 
+import { ChevronDownIcon } from "lucide-react";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/modules/ui/components/button";
 import {
   Command,
@@ -9,8 +12,6 @@ import {
   CommandList,
 } from "@/modules/ui/components/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/ui/components/popover";
-import { useTranslate } from "@tolgee/react";
-import { useEffect } from "react";
 
 type Key = {
   label: string;
@@ -38,7 +39,7 @@ export const UploadContactsAttributeCombobox = ({
   setOpen,
   currentKey,
 }: ITagsComboboxProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   useEffect(() => {
     // reset search value and value when closing the combobox
     if (!open) {
@@ -50,16 +51,26 @@ export const UploadContactsAttributeCombobox = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {currentKey ? (
-          <Button variant="ghost" size="sm" className="border border-slate-300" aria-expanded={open}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="justify-between border border-slate-300"
+            aria-expanded={open}>
             {currentKey.label}
+            <ChevronDownIcon className="h-4 w-4 opacity-50" />
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" className="border border-slate-300" aria-expanded={open}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="justify-between border border-slate-300"
+            aria-expanded={open}>
             {t("environments.contacts.select_attribute")}
+            <ChevronDownIcon className="h-4 w-4 opacity-50" />
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="h-full w-[200px] overflow-y-auto p-0">
+      <PopoverContent className="h-full w-[200px] p-0">
         <Command
           filter={(value, search) => {
             if (value === "_create") {
@@ -92,7 +103,7 @@ export const UploadContactsAttributeCombobox = ({
               }}
             />
           </div>
-          <CommandList>
+          <CommandList className="max-h-[300px] overflow-y-auto border-0">
             <CommandGroup>
               {keys.map((tag) => {
                 return (

@@ -1,13 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
 import { TJsEnvironmentStateSurvey } from "@formbricks/types/js";
 import { TResponseData, TResponseVariables } from "@formbricks/types/responses";
-import {
-  TConditionGroup,
-  TSingleCondition,
-  TSurveyLogicAction,
-  TSurveyQuestionTypeEnum,
-  TSurveyVariable,
-} from "@formbricks/types/surveys/types";
+import { TSurveyBlockLogicAction } from "@formbricks/types/surveys/blocks";
+import { TSurveyElementTypeEnum } from "@formbricks/types/surveys/elements";
+import { TConditionGroup, TSingleCondition } from "@formbricks/types/surveys/logic";
+import { TSurveyVariable } from "@formbricks/types/surveys/types";
 import { evaluateLogic, isConditionGroup, performActions } from "./logic";
 
 // Mock the imported function
@@ -31,92 +28,99 @@ describe("Survey Logic", () => {
   const mockSurvey: TJsEnvironmentStateSurvey = {
     id: "survey1",
     name: "Test Survey",
-    questions: [
+    questions: [], // Deprecated - using blocks instead
+    blocks: [
       {
-        id: "q1",
-        type: TSurveyQuestionTypeEnum.OpenText,
-        headline: { default: "Question 1" },
-        subheader: { default: "Enter some text" },
-        required: true,
-        inputType: "text",
-        charLimit: { enabled: false },
-      },
-      {
-        id: "q2",
-        type: TSurveyQuestionTypeEnum.OpenText,
-        headline: { default: "Question 2" },
-        subheader: { default: "Enter a number" },
-        required: true,
-        inputType: "number",
-        charLimit: { enabled: false },
-      },
-      {
-        id: "q3",
-        type: TSurveyQuestionTypeEnum.MultipleChoiceSingle,
-        headline: { default: "Question 3" },
-        subheader: { default: "Select one option" },
-        required: true,
-        choices: [
-          { id: "opt1", label: { default: "Option 1", es: "Opción 1" } },
-          { id: "opt2", label: { default: "Option 2", es: "Opción 2" } },
-          { id: "other", label: { default: "Other", es: "Otro" } },
+        id: "block1",
+        name: "Block 1",
+        elements: [
+          {
+            id: "q1",
+            type: TSurveyElementTypeEnum.OpenText,
+            headline: { default: "Question 1" },
+            subheader: { default: "Enter some text" },
+            required: true,
+            inputType: "text",
+            charLimit: { enabled: false },
+          },
+          {
+            id: "q2",
+            type: TSurveyElementTypeEnum.OpenText,
+            headline: { default: "Question 2" },
+            subheader: { default: "Enter a number" },
+            required: true,
+            inputType: "number",
+            charLimit: { enabled: false },
+          },
+          {
+            id: "q3",
+            type: TSurveyElementTypeEnum.MultipleChoiceSingle,
+            headline: { default: "Question 3" },
+            subheader: { default: "Select one option" },
+            required: true,
+            choices: [
+              { id: "opt1", label: { default: "Option 1", es: "Opción 1" } },
+              { id: "opt2", label: { default: "Option 2", es: "Opción 2" } },
+              { id: "other", label: { default: "Other", es: "Otro" } },
+            ],
+          },
+          {
+            id: "q4",
+            type: TSurveyElementTypeEnum.MultipleChoiceMulti,
+            headline: { default: "Question 4" },
+            subheader: { default: "Select multiple options" },
+            required: true,
+            choices: [
+              { id: "opt1", label: { default: "Option 1", es: "Opción 1" } },
+              { id: "opt2", label: { default: "Option 2", es: "Opción 2" } },
+              { id: "opt3", label: { default: "Option 3", es: "Opción 3" } },
+            ],
+          },
+          {
+            id: "q5",
+            type: TSurveyElementTypeEnum.Date,
+            headline: { default: "Question 5" },
+            subheader: { default: "Select a date" },
+            required: true,
+            format: "d-M-y",
+          },
+          {
+            id: "q6",
+            type: TSurveyElementTypeEnum.FileUpload,
+            headline: { default: "Question 6" },
+            subheader: { default: "Upload a file" },
+            required: true,
+            allowMultipleFiles: true,
+          },
+          {
+            id: "q7",
+            type: TSurveyElementTypeEnum.PictureSelection,
+            headline: { default: "Question 7" },
+            subheader: { default: "Select pictures" },
+            required: true,
+            allowMulti: true,
+            choices: [
+              { id: "pic1", imageUrl: "url1" },
+              { id: "pic2", imageUrl: "url2" },
+            ],
+          },
+          {
+            id: "q8",
+            type: TSurveyElementTypeEnum.Matrix,
+            headline: { default: "Question 8" },
+            subheader: { default: "Matrix question" },
+            required: true,
+            rows: [
+              { id: "row1", label: { default: "Row 1", es: "Fila 1" } },
+              { id: "row2", label: { default: "Row 2", es: "Fila 2" } },
+            ],
+            columns: [
+              { id: "col1", label: { default: "Column 1", es: "Columna 1" } },
+              { id: "col2", label: { default: "Column 2", es: "Columna 2" } },
+            ],
+            shuffleOption: "none",
+          },
         ],
-      },
-      {
-        id: "q4",
-        type: TSurveyQuestionTypeEnum.MultipleChoiceMulti,
-        headline: { default: "Question 4" },
-        subheader: { default: "Select multiple options" },
-        required: true,
-        choices: [
-          { id: "opt1", label: { default: "Option 1", es: "Opción 1" } },
-          { id: "opt2", label: { default: "Option 2", es: "Opción 2" } },
-          { id: "opt3", label: { default: "Option 3", es: "Opción 3" } },
-        ],
-      },
-      {
-        id: "q5",
-        type: TSurveyQuestionTypeEnum.Date,
-        headline: { default: "Question 5" },
-        subheader: { default: "Select a date" },
-        required: true,
-        format: "d-M-y",
-      },
-      {
-        id: "q6",
-        type: TSurveyQuestionTypeEnum.FileUpload,
-        headline: { default: "Question 6" },
-        subheader: { default: "Upload a file" },
-        required: true,
-        allowMultipleFiles: true,
-      },
-      {
-        id: "q7",
-        type: TSurveyQuestionTypeEnum.PictureSelection,
-        headline: { default: "Question 7" },
-        subheader: { default: "Select pictures" },
-        required: true,
-        allowMulti: true,
-        choices: [
-          { id: "pic1", imageUrl: "url1" },
-          { id: "pic2", imageUrl: "url2" },
-        ],
-      },
-      {
-        id: "q8",
-        type: TSurveyQuestionTypeEnum.Matrix,
-        headline: { default: "Question 8" },
-        subheader: { default: "Matrix question" },
-        required: true,
-        rows: [
-          { id: "row1", label: { default: "Row 1", es: "Fila 1" } },
-          { id: "row2", label: { default: "Row 2", es: "Fila 2" } },
-        ],
-        columns: [
-          { id: "col1", label: { default: "Column 1", es: "Columna 1" } },
-          { id: "col2", label: { default: "Column 2", es: "Columna 2" } },
-        ],
-        shuffleOption: "none",
       },
     ],
     variables: mockVariables,
@@ -163,7 +167,7 @@ describe("Survey Logic", () => {
       const singleCondition: TSingleCondition = {
         id: "condition1",
         operator: "equals",
-        leftOperand: { type: "question", value: "q1" },
+        leftOperand: { type: "element", value: "q1" },
         rightOperand: { type: "static", value: "test" },
       };
       expect(isConditionGroup(singleCondition)).toBe(false);
@@ -196,13 +200,13 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "equals",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "test answer" },
           },
           {
             id: "condition2",
             operator: "equals",
-            leftOperand: { type: "question", value: "q2" },
+            leftOperand: { type: "element", value: "q2" },
             rightOperand: { type: "static", value: 42 },
           },
         ],
@@ -219,13 +223,13 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "equals",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "wrong answer" },
           },
           {
             id: "condition2",
             operator: "equals",
-            leftOperand: { type: "question", value: "q2" },
+            leftOperand: { type: "element", value: "q2" },
             rightOperand: { type: "static", value: 42 },
           },
         ],
@@ -242,7 +246,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "equals",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "test answer" },
           },
           {
@@ -252,7 +256,7 @@ describe("Survey Logic", () => {
               {
                 id: "condition2",
                 operator: "equals",
-                leftOperand: { type: "question", value: "q2" },
+                leftOperand: { type: "element", value: "q2" },
                 rightOperand: { type: "static", value: "wrong" },
               },
               {
@@ -277,13 +281,13 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "equals",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "test answer" },
           },
           {
             id: "condition2",
             operator: "equals",
-            leftOperand: { type: "question", value: "q2" },
+            leftOperand: { type: "element", value: "q2" },
             rightOperand: { type: "static", value: "wrong value" },
           },
         ],
@@ -300,13 +304,13 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "equals",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "wrong answer" },
           },
           {
             id: "condition2",
             operator: "equals",
-            leftOperand: { type: "question", value: "q2" },
+            leftOperand: { type: "element", value: "q2" },
             rightOperand: { type: "static", value: "wrong value" },
           },
         ],
@@ -364,10 +368,10 @@ describe("Survey Logic", () => {
     };
 
     test("performs jump action", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var1",
-          objective: "jumpToQuestion",
+          objective: "jumpToBlock",
           target: "q5",
         },
       ];
@@ -379,7 +383,7 @@ describe("Survey Logic", () => {
     });
 
     test("performs require answer action", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var1",
           objective: "requireAnswer",
@@ -394,7 +398,7 @@ describe("Survey Logic", () => {
     });
 
     test("performs calculate action - add", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
           objective: "calculate",
@@ -409,7 +413,7 @@ describe("Survey Logic", () => {
     });
 
     test("performs calculate action - subtract", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
           objective: "calculate",
@@ -424,7 +428,7 @@ describe("Survey Logic", () => {
     });
 
     test("performs calculate action - multiply", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
           objective: "calculate",
@@ -439,7 +443,7 @@ describe("Survey Logic", () => {
     });
 
     test("performs calculate action - divide", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
           objective: "calculate",
@@ -454,7 +458,7 @@ describe("Survey Logic", () => {
     });
 
     test("handles divide by zero", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
           objective: "calculate",
@@ -469,7 +473,7 @@ describe("Survey Logic", () => {
     });
 
     test("performs calculate action - assign", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
           objective: "calculate",
@@ -484,7 +488,7 @@ describe("Survey Logic", () => {
     });
 
     test("performs calculate action - concat", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var1",
           objective: "calculate",
@@ -499,13 +503,13 @@ describe("Survey Logic", () => {
     });
 
     test("performs calculate action with question value", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
           objective: "calculate",
           variableId: "var2",
           operator: "add",
-          value: { type: "question", value: "q2" },
+          value: { type: "element", value: "q2" },
         },
       ];
 
@@ -514,7 +518,7 @@ describe("Survey Logic", () => {
     });
 
     test("performs calculate action with variable value", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
           objective: "calculate",
@@ -529,7 +533,7 @@ describe("Survey Logic", () => {
     });
 
     test("performs multiple actions in order", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
           objective: "calculate",
@@ -544,7 +548,7 @@ describe("Survey Logic", () => {
         },
         {
           id: "var2",
-          objective: "jumpToQuestion",
+          objective: "jumpToBlock",
           target: "q5",
         },
       ];
@@ -556,15 +560,15 @@ describe("Survey Logic", () => {
     });
 
     test("takes first jump target when multiple jump actions exist", () => {
-      const actions: TSurveyLogicAction[] = [
+      const actions: TSurveyBlockLogicAction[] = [
         {
           id: "var2",
-          objective: "jumpToQuestion",
+          objective: "jumpToBlock",
           target: "q2",
         },
         {
           id: "var2",
-          objective: "jumpToQuestion",
+          objective: "jumpToBlock",
           target: "q3",
         },
       ];
@@ -606,7 +610,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "contains",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "test" },
           },
         ],
@@ -620,7 +624,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "doesNotContain",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "invalid" },
           },
         ],
@@ -636,7 +640,7 @@ describe("Survey Logic", () => {
           {
             id: "condition3",
             operator: "startsWith",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "test" },
           },
         ],
@@ -652,7 +656,7 @@ describe("Survey Logic", () => {
           {
             id: "condition4",
             operator: "doesNotStartWith",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "invalid" },
           },
         ],
@@ -668,7 +672,7 @@ describe("Survey Logic", () => {
           {
             id: "condition5",
             operator: "endsWith",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "answer" },
           },
         ],
@@ -682,7 +686,7 @@ describe("Survey Logic", () => {
           {
             id: "condition6",
             operator: "doesNotEndWith",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "invalid" },
           },
         ],
@@ -701,7 +705,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "isGreaterThan",
-            leftOperand: { type: "question", value: "q2" },
+            leftOperand: { type: "element", value: "q2" },
             rightOperand: { type: "static", value: "30" },
           },
         ],
@@ -717,7 +721,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "isLessThan",
-            leftOperand: { type: "question", value: "q2" },
+            leftOperand: { type: "element", value: "q2" },
             rightOperand: { type: "static", value: "50" },
           },
         ],
@@ -731,7 +735,7 @@ describe("Survey Logic", () => {
           {
             id: "condition3",
             operator: "isGreaterThanOrEqual",
-            leftOperand: { type: "question", value: "q2" },
+            leftOperand: { type: "element", value: "q2" },
             rightOperand: { type: "static", value: "42" },
           },
         ],
@@ -747,7 +751,7 @@ describe("Survey Logic", () => {
           {
             id: "condition4",
             operator: "isLessThanOrEqual",
-            leftOperand: { type: "question", value: "q2" },
+            leftOperand: { type: "element", value: "q2" },
             rightOperand: { type: "static", value: "42" },
           },
         ],
@@ -766,7 +770,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "isAfter",
-            leftOperand: { type: "question", value: "q5" },
+            leftOperand: { type: "element", value: "q5" },
             rightOperand: { type: "static", value: "2022-12-31" },
           },
         ],
@@ -780,7 +784,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "isBefore",
-            leftOperand: { type: "question", value: "q5" },
+            leftOperand: { type: "element", value: "q5" },
             rightOperand: { type: "static", value: "2023-01-02" },
           },
         ],
@@ -794,7 +798,7 @@ describe("Survey Logic", () => {
           {
             id: "condition3",
             operator: "equals",
-            leftOperand: { type: "question", value: "q5" },
+            leftOperand: { type: "element", value: "q5" },
             rightOperand: { type: "static", value: "2023-01-01" },
           },
         ],
@@ -813,7 +817,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "includesAllOf",
-            leftOperand: { type: "question", value: "q4" },
+            leftOperand: { type: "element", value: "q4" },
             rightOperand: { type: "static", value: ["opt1", "opt2"] },
           },
         ],
@@ -829,7 +833,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "includesOneOf",
-            leftOperand: { type: "question", value: "q4" },
+            leftOperand: { type: "element", value: "q4" },
             rightOperand: { type: "static", value: ["opt1", "Invalid Option"] },
           },
         ],
@@ -845,7 +849,7 @@ describe("Survey Logic", () => {
           {
             id: "condition3",
             operator: "doesNotIncludeAllOf",
-            leftOperand: { type: "question", value: "q4" },
+            leftOperand: { type: "element", value: "q4" },
             rightOperand: { type: "static", value: ["Invalid 1", "Invalid 2"] },
           },
         ],
@@ -861,7 +865,7 @@ describe("Survey Logic", () => {
           {
             id: "condition4",
             operator: "doesNotIncludeOneOf",
-            leftOperand: { type: "question", value: "q4" },
+            leftOperand: { type: "element", value: "q4" },
             rightOperand: { type: "static", value: ["opt3", "Invalid Option"] },
           },
         ],
@@ -880,7 +884,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "isSubmitted",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
           },
         ],
       };
@@ -895,7 +899,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "isSkipped",
-            leftOperand: { type: "question", value: "emptyField" },
+            leftOperand: { type: "element", value: "emptyField" },
           },
         ],
       };
@@ -910,11 +914,91 @@ describe("Survey Logic", () => {
           {
             id: "condition3",
             operator: "isBooked",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
           },
         ],
       };
       expect(evaluateLogic(mockSurvey, mockData, mockVariablesData, isBookedCondition, "default")).toBe(true);
+    });
+
+    test("evaluates isClicked and isNotClicked operators for CTA elements", () => {
+      // Create a survey with a CTA element
+      const ctaSurvey: TJsEnvironmentStateSurvey = {
+        ...mockSurvey,
+        blocks: [
+          ...mockSurvey.blocks,
+          {
+            id: "ctaBlock",
+            name: "CTA Block",
+            elements: [
+              {
+                id: "ctaQuestion",
+                type: TSurveyElementTypeEnum.CTA,
+                headline: { default: "CTA Question" },
+                subheader: { default: "Click the button" },
+                required: false,
+                buttonExternal: true,
+                buttonUrl: "https://example.com",
+                ctaButtonLabel: { default: "Click Me" },
+              },
+            ],
+          },
+        ],
+      };
+
+      // Test isClicked with "clicked" response
+      const clickedData: TResponseData = {
+        ctaQuestion: "clicked",
+      };
+      const isClickedCondition: TConditionGroup = {
+        id: "group1",
+        connector: "and",
+        conditions: [
+          {
+            id: "condition1",
+            operator: "isClicked",
+            leftOperand: { type: "element", value: "ctaQuestion" },
+          },
+        ],
+      };
+      expect(evaluateLogic(ctaSurvey, clickedData, mockVariablesData, isClickedCondition, "default")).toBe(
+        true
+      );
+
+      // Test isClicked with "skipped" response (should be false)
+      const skippedData: TResponseData = {
+        ctaQuestion: "skipped",
+      };
+      expect(evaluateLogic(ctaSurvey, skippedData, mockVariablesData, isClickedCondition, "default")).toBe(
+        false
+      );
+
+      // Test isNotClicked with "clicked" response (should be false)
+      const isNotClickedCondition: TConditionGroup = {
+        id: "group2",
+        connector: "and",
+        conditions: [
+          {
+            id: "condition2",
+            operator: "isNotClicked",
+            leftOperand: { type: "element", value: "ctaQuestion" },
+          },
+        ],
+      };
+      expect(evaluateLogic(ctaSurvey, clickedData, mockVariablesData, isNotClickedCondition, "default")).toBe(
+        false
+      );
+
+      // Test isNotClicked with "skipped" response (should be true)
+      expect(evaluateLogic(ctaSurvey, skippedData, mockVariablesData, isNotClickedCondition, "default")).toBe(
+        true
+      );
+
+      // Test isNotClicked with undefined response (should be true)
+      const undefinedData: TResponseData = {};
+      expect(
+        evaluateLogic(ctaSurvey, undefinedData, mockVariablesData, isNotClickedCondition, "default")
+      ).toBe(true);
     });
 
     test("evaluates matrix questions", () => {
@@ -926,7 +1010,7 @@ describe("Survey Logic", () => {
             id: "condition1",
             operator: "equals",
             leftOperand: {
-              type: "question",
+              type: "element",
               value: "q8",
               meta: { row: "0" },
             },
@@ -945,7 +1029,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "isSubmitted",
-            leftOperand: { type: "question", value: "q6" },
+            leftOperand: { type: "element", value: "q6" },
           },
         ],
       };
@@ -960,7 +1044,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "isSkipped",
-            leftOperand: { type: "question", value: "skippedUpload" },
+            leftOperand: { type: "element", value: "skippedUpload" },
           },
         ],
       };
@@ -981,7 +1065,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "isPartiallySubmitted",
-            leftOperand: { type: "question", value: "q8" },
+            leftOperand: { type: "element", value: "q8" },
           },
         ],
       };
@@ -1006,7 +1090,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "isCompletelySubmitted",
-            leftOperand: { type: "question", value: "q8" },
+            leftOperand: { type: "element", value: "q8" },
           },
         ],
       };
@@ -1031,7 +1115,7 @@ describe("Survey Logic", () => {
             id: "condition1",
             // @ts-ignore - intentionally using invalid operator for test
             operator: "invalidOperator",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "test" },
           },
         ],
@@ -1046,7 +1130,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "equals",
-            leftOperand: { type: "question", value: "nonExistentId" },
+            leftOperand: { type: "element", value: "nonExistentId" },
             rightOperand: { type: "static", value: "test" },
           },
         ],
@@ -1089,7 +1173,7 @@ describe("Survey Logic", () => {
             id: "condition1",
             operator: "equals",
             leftOperand: {
-              type: "question",
+              type: "element",
               value: "q8",
               meta: { row: "invalid-row" },
             },
@@ -1109,7 +1193,7 @@ describe("Survey Logic", () => {
             id: "condition1",
             operator: "equals",
             leftOperand: {
-              type: "question",
+              type: "element",
               value: "q8",
               meta: { row: "99" }, // Invalid row index
             },
@@ -1133,7 +1217,7 @@ describe("Survey Logic", () => {
             id: "condition1",
             operator: "isEmpty",
             leftOperand: {
-              type: "question",
+              type: "element",
               value: "q8",
               meta: { row: "0" },
             },
@@ -1153,7 +1237,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "doesNotEqual",
-            leftOperand: { type: "question", value: "q7" },
+            leftOperand: { type: "element", value: "q7" },
             rightOperand: { type: "static", value: "option2" },
           },
         ],
@@ -1176,8 +1260,8 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "equals",
-            leftOperand: { type: "question", value: "dateQ1" },
-            rightOperand: { type: "question", value: "dateQ2" },
+            leftOperand: { type: "element", value: "dateQ1" },
+            rightOperand: { type: "element", value: "dateQ2" },
           },
         ],
       };
@@ -1185,21 +1269,27 @@ describe("Survey Logic", () => {
       // Mock survey with date questions
       const dateSurvey: TJsEnvironmentStateSurvey = {
         ...mockSurvey,
-        questions: [
-          ...mockSurvey.questions,
+        blocks: [
+          ...mockSurvey.blocks,
           {
-            id: "dateQ1",
-            type: TSurveyQuestionTypeEnum.Date,
-            headline: { default: "Date Question 1" },
-            required: true,
-            format: "d-M-y",
-          },
-          {
-            id: "dateQ2",
-            type: TSurveyQuestionTypeEnum.Date,
-            headline: { default: "Date Question 2" },
-            required: true,
-            format: "d-M-y",
+            id: "dateBlock",
+            name: "Date Block",
+            elements: [
+              {
+                id: "dateQ1",
+                type: TSurveyElementTypeEnum.Date,
+                headline: { default: "Date Question 1" },
+                required: true,
+                format: "d-M-y",
+              },
+              {
+                id: "dateQ2",
+                type: TSurveyElementTypeEnum.Date,
+                headline: { default: "Date Question 2" },
+                required: true,
+                format: "d-M-y",
+              },
+            ],
           },
         ],
       };
@@ -1216,8 +1306,8 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "doesNotEqual",
-            leftOperand: { type: "question", value: "dateQ1" },
-            rightOperand: { type: "question", value: "dateQ2" },
+            leftOperand: { type: "element", value: "dateQ1" },
+            rightOperand: { type: "element", value: "dateQ2" },
           },
         ],
       };
@@ -1235,16 +1325,22 @@ describe("Survey Logic", () => {
 
       const multiSurvey: TJsEnvironmentStateSurvey = {
         ...mockSurvey,
-        questions: [
-          ...mockSurvey.questions,
+        blocks: [
+          ...mockSurvey.blocks,
           {
-            id: "multiQ",
-            type: TSurveyQuestionTypeEnum.MultipleChoiceMulti,
-            headline: { default: "Multiple Choice" },
-            required: true,
-            choices: [
-              { id: "opt1", label: { default: "Option 1" } },
-              { id: "opt2", label: { default: "Option 2" } },
+            id: "multiBlock",
+            name: "Multi Choice Block",
+            elements: [
+              {
+                id: "multiQ",
+                type: TSurveyElementTypeEnum.MultipleChoiceMulti,
+                headline: { default: "Multiple Choice" },
+                required: true,
+                choices: [
+                  { id: "opt1", label: { default: "Option 1" } },
+                  { id: "opt2", label: { default: "Option 2" } },
+                ],
+              },
             ],
           },
         ],
@@ -1258,7 +1354,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "equals",
-            leftOperand: { type: "question", value: "multiValue" },
+            leftOperand: { type: "element", value: "multiValue" },
             rightOperand: { type: "static", value: "option1" },
           },
         ],
@@ -1275,8 +1371,8 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "equals",
-            leftOperand: { type: "question", value: "q1" },
-            rightOperand: { type: "question", value: "multiQ" },
+            leftOperand: { type: "element", value: "q1" },
+            rightOperand: { type: "element", value: "multiQ" },
           },
         ],
       };
@@ -1297,7 +1393,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "isEmpty",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
           },
         ],
       };
@@ -1313,7 +1409,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "isNotEmpty",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
           },
         ],
       };
@@ -1330,7 +1426,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "isAnyOf",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: ["wrong answer", "test answer", "another answer"] },
           },
         ],
@@ -1345,7 +1441,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "isAnyOf",
-            leftOperand: { type: "question", value: "q1" },
+            leftOperand: { type: "element", value: "q1" },
             rightOperand: { type: "static", value: "test answer" },
           },
         ],
@@ -1358,17 +1454,23 @@ describe("Survey Logic", () => {
     test("getLeftOperandValue with edge cases", () => {
       const specialSurvey: TJsEnvironmentStateSurvey = {
         ...mockSurvey,
-        questions: [
-          ...mockSurvey.questions,
+        blocks: [
+          ...mockSurvey.blocks,
           {
-            id: "multiChoiceWithOther",
-            type: TSurveyQuestionTypeEnum.MultipleChoiceSingle,
-            headline: { default: "Multiple Choice With Other" },
-            required: true,
-            choices: [
-              { id: "opt1", label: { default: "Option 1" } },
-              { id: "opt2", label: { default: "Option 2" } },
-              { id: "other", label: { default: "Other" } },
+            id: "specialBlock",
+            name: "Special Block",
+            elements: [
+              {
+                id: "multiChoiceWithOther",
+                type: TSurveyElementTypeEnum.MultipleChoiceSingle,
+                headline: { default: "Multiple Choice With Other" },
+                required: true,
+                choices: [
+                  { id: "opt1", label: { default: "Option 1" } },
+                  { id: "opt2", label: { default: "Option 2" } },
+                  { id: "other", label: { default: "Other" } },
+                ],
+              },
             ],
           },
         ],
@@ -1381,7 +1483,7 @@ describe("Survey Logic", () => {
           {
             id: "condition1",
             operator: "equals",
-            leftOperand: { type: "question", value: "multiChoiceWithOther" },
+            leftOperand: { type: "element", value: "multiChoiceWithOther" },
             rightOperand: { type: "static", value: "Custom Option" },
           },
         ],
@@ -1402,7 +1504,7 @@ describe("Survey Logic", () => {
           {
             id: "condition2",
             operator: "equals",
-            leftOperand: { type: "question", value: "multiChoiceWithOther" },
+            leftOperand: { type: "element", value: "multiChoiceWithOther" },
             rightOperand: { type: "static", value: "opt1" },
           },
         ],

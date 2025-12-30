@@ -1,17 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/cn";
-import { deleteContactAction } from "@/modules/ee/contacts/actions";
-import { Button } from "@/modules/ui/components/button";
-import {
-  DataTableHeader,
-  DataTableSettingsModal,
-  DataTableToolbar,
-} from "@/modules/ui/components/data-table";
-import { getCommonPinningStyles } from "@/modules/ui/components/data-table/lib/utils";
-import { SearchBar } from "@/modules/ui/components/search-bar";
-import { Skeleton } from "@/modules/ui/components/skeleton";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/modules/ui/components/table";
 import {
   DndContext,
   type DragEndEvent,
@@ -26,9 +14,21 @@ import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { VisibilityState, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/cn";
+import { deleteContactAction } from "@/modules/ee/contacts/actions";
+import { Button } from "@/modules/ui/components/button";
+import {
+  DataTableHeader,
+  DataTableSettingsModal,
+  DataTableToolbar,
+} from "@/modules/ui/components/data-table";
+import { getCommonPinningStyles } from "@/modules/ui/components/data-table/lib/utils";
+import { SearchBar } from "@/modules/ui/components/search-bar";
+import { Skeleton } from "@/modules/ui/components/skeleton";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/modules/ui/components/table";
 import { TContactTableData } from "../types/contact";
 import { generateContactTableColumns } from "./contact-table-column";
 
@@ -42,6 +42,7 @@ interface ContactsTableProps {
   searchValue: string;
   setSearchValue: (value: string) => void;
   isReadOnly: boolean;
+  isQuotasAllowed: boolean;
 }
 
 export const ContactsTable = ({
@@ -54,6 +55,7 @@ export const ContactsTable = ({
   searchValue,
   setSearchValue,
   isReadOnly,
+  isQuotasAllowed,
 }: ContactsTableProps) => {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
@@ -61,7 +63,7 @@ export const ContactsTable = ({
   const [isExpanded, setIsExpanded] = useState<boolean | null>(null);
   const [rowSelection, setRowSelection] = useState({});
   const router = useRouter();
-  const { t } = useTranslate();
+  const { t } = useTranslation();
 
   const [parent] = useAutoAnimate();
 
@@ -237,6 +239,7 @@ export const ContactsTable = ({
           updateRowList={updateContactList}
           type="contact"
           deleteAction={deleteContact}
+          isQuotasAllowed={isQuotasAllowed}
         />
         <div className="w-full overflow-x-auto rounded-xl border border-slate-200">
           <Table className="w-full" style={{ tableLayout: "fixed" }}>
@@ -271,7 +274,7 @@ export const ContactsTable = ({
                       }}
                       style={cell.column.id === "select" ? getCommonPinningStyles(cell.column) : {}}
                       className={cn(
-                        "border-slate-200 bg-white shadow-none group-hover:bg-slate-100",
+                        "border-slate-200 bg-white px-4 py-2 shadow-none group-hover:bg-slate-100",
                         row.getIsSelected() && "bg-slate-100",
                         {
                           "border-r": !cell.column.getIsLastColumn(),
@@ -279,7 +282,7 @@ export const ContactsTable = ({
                         }
                       )}>
                       <div
-                        className={cn("flex flex-1 items-center truncate", isExpanded ? "h-full" : "h-10")}>
+                        className={cn("flex flex-1 items-center truncate", isExpanded ? "h-10" : "h-full")}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </div>
                     </TableCell>
@@ -297,7 +300,7 @@ export const ContactsTable = ({
           </Table>
         </div>
 
-        {data && hasMore && data.length > 0 && (
+        {data && hasMore && data.length > 0 && isDataLoaded && (
           <div className="mt-4 flex justify-center">
             <Button onClick={fetchNextPage}>{t("common.load_more")}</Button>
           </div>

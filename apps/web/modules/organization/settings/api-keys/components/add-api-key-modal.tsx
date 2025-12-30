@@ -1,6 +1,12 @@
 "use client";
 
-import { getOrganizationAccessKeyDisplayName } from "@/modules/organization/settings/api-keys/lib/utils";
+import { ApiKeyPermission } from "@prisma/client";
+import { ChevronDownIcon, Trash2Icon } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { TOrganizationAccess } from "@formbricks/types/api-key";
 import { TOrganizationProject } from "@/modules/organization/settings/api-keys/types/api-keys";
 import { Alert, AlertTitle } from "@/modules/ui/components/alert";
 import { Button } from "@/modules/ui/components/button";
@@ -21,13 +27,6 @@ import {
 import { Input } from "@/modules/ui/components/input";
 import { Label } from "@/modules/ui/components/label";
 import { Switch } from "@/modules/ui/components/switch";
-import { ApiKeyPermission } from "@prisma/client";
-import { useTranslate } from "@tolgee/react";
-import { ChevronDownIcon, Trash2Icon } from "lucide-react";
-import { Fragment, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "react-hot-toast";
-import { TOrganizationAccess } from "@formbricks/types/api-key";
 
 interface AddApiKeyModalProps {
   open: boolean;
@@ -67,7 +66,7 @@ export const AddApiKeyModal = ({
   projects,
   isCreatingAPIKey,
 }: AddApiKeyModalProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const { register, getValues, handleSubmit, reset, watch } = useForm<{ label: string }>();
   const apiKeyLabel = watch("label");
   const defaultOrganizationAccess: TOrganizationAccess = {
@@ -80,22 +79,23 @@ export const AddApiKeyModal = ({
   const [selectedOrganizationAccess, setSelectedOrganizationAccess] =
     useState<TOrganizationAccess>(defaultOrganizationAccess);
 
-  const getInitialPermissions = (): PermissionRecord[] => {
+  const getInitialPermissions = () => {
     if (projects.length > 0 && projects[0].environments.length > 0) {
-      return [
-        {
+      return {
+        "permission-0": {
           projectId: projects[0].id,
           environmentId: projects[0].environments[0].id,
           permission: ApiKeyPermission.read,
           projectName: projects[0].name,
           environmentType: projects[0].environments[0].type,
         },
-      ];
+      };
     }
-    return [];
+    return {} as Record<string, PermissionRecord>;
   };
 
-  const [selectedPermissions, setSelectedPermissions] = useState<PermissionRecord[]>([]);
+  // Initialize with one permission by default
+  const [selectedPermissions, setSelectedPermissions] = useState<Record<string, PermissionRecord>>({});
 
   const projectOptions: ProjectOption[] = projects.map((project) => ({
     id: project.id,
@@ -103,54 +103,58 @@ export const AddApiKeyModal = ({
   }));
 
   const removePermission = (index: number) => {
-    const updatedPermissions = [...selectedPermissions];
-    updatedPermissions.splice(index, 1);
+    const updatedPermissions = { ...selectedPermissions };
+    delete updatedPermissions[`permission-${index}`];
     setSelectedPermissions(updatedPermissions);
   };
 
   const addPermission = () => {
-    const initialPermissions = getInitialPermissions();
-    if (initialPermissions.length > 0) {
-      setSelectedPermissions([...selectedPermissions, initialPermissions[0]]);
+    const newIndex = Object.keys(selectedPermissions).length;
+    const initialPermission = getInitialPermissions()["permission-0"];
+    if (initialPermission) {
+      setSelectedPermissions({
+        ...selectedPermissions,
+        [`permission-${newIndex}`]: initialPermission,
+      });
     }
   };
 
-  const updatePermission = (index: number, field: string, value: string) => {
-    const updatedPermissions = [...selectedPermissions];
-    const project = projects.find((p) => p.id === updatedPermissions[index].projectId);
+  const updatePermission = (key: string, field: string, value: string) => {
+    const project = projects.find((p) => p.id === selectedPermissions[key].projectId);
     const environment = project?.environments.find((env) => env.id === value);
 
-    updatedPermissions[index] = {
-      ...updatedPermissions[index],
-      [field]: value,
-      ...(field === "environmentId" && environment ? { environmentType: environment.type } : {}),
-    };
-
-    setSelectedPermissions(updatedPermissions);
+    setSelectedPermissions({
+      ...selectedPermissions,
+      [key]: {
+        ...selectedPermissions[key],
+        [field]: value,
+        ...(field === "environmentId" && environment ? { environmentType: environment.type } : {}),
+      },
+    });
   };
 
   // Update environment when project changes
-  const updateProjectAndEnvironment = (index: number, projectId: string) => {
+  const updateProjectAndEnvironment = (key: string, projectId: string) => {
     const project = projects.find((p) => p.id === projectId);
     if (project && project.environments.length > 0) {
       const environment = project.environments[0];
-      const updatedPermissions = [...selectedPermissions];
-
-      updatedPermissions[index] = {
-        ...updatedPermissions[index],
-        projectId,
-        environmentId: environment.id,
-        projectName: project.name,
-        environmentType: environment.type,
-      };
-
-      setSelectedPermissions(updatedPermissions);
+      setSelectedPermissions({
+        ...selectedPermissions,
+        [key]: {
+          ...selectedPermissions[key],
+          projectId,
+          environmentId: environment.id,
+          projectName: project.name,
+          environmentType: environment.type,
+        },
+      });
     }
   };
 
   const checkForDuplicatePermissions = () => {
-    const uniquePermissions = new Set(selectedPermissions.map((p) => `${p.projectId}-${p.environmentId}`));
-    return uniquePermissions.size !== selectedPermissions.length;
+    const permissions = Object.values(selectedPermissions);
+    const uniquePermissions = new Set(permissions.map((p) => `${p.projectId}-${p.environmentId}`));
+    return uniquePermissions.size !== permissions.length;
   };
 
   const submitAPIKey = async () => {
@@ -162,7 +166,7 @@ export const AddApiKeyModal = ({
     }
 
     // Convert permissions to the format expected by the API
-    const environmentPermissions = selectedPermissions.map((permission) => ({
+    const environmentPermissions = Object.values(selectedPermissions).map((permission) => ({
       environmentId: permission.environmentId,
       permission: permission.permission,
     }));
@@ -174,7 +178,7 @@ export const AddApiKeyModal = ({
     });
 
     reset();
-    setSelectedPermissions([]);
+    setSelectedPermissions({});
     setSelectedOrganizationAccess(defaultOrganizationAccess);
   };
 
@@ -191,7 +195,7 @@ export const AddApiKeyModal = ({
     }
 
     // Check if at least one project permission is set or one organization access toggle is ON
-    const hasProjectAccess = selectedPermissions.length > 0;
+    const hasProjectAccess = Object.keys(selectedPermissions).length > 0;
 
     const hasOrganizationAccess = Object.values(selectedOrganizationAccess).some((accessGroup) =>
       Object.values(accessGroup).some((value) => value === true)
@@ -215,10 +219,10 @@ export const AddApiKeyModal = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("environments.project.api_keys.add_api_key")}</DialogTitle>
+          <DialogTitle className="px-1">{t("environments.project.api_keys.add_api_key")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(submitAPIKey)} className="contents">
-          <DialogBody className="space-y-4 overflow-y-auto py-4">
+          <DialogBody className="space-y-4 overflow-y-auto px-1 py-4">
             <div className="space-y-2">
               <Label>{t("environments.project.api_keys.api_key_label")}</Label>
               <Input
@@ -230,9 +234,13 @@ export const AddApiKeyModal = ({
             <div className="space-y-2">
               <Label>{t("environments.project.api_keys.project_access")}</Label>
               <div className="space-y-2">
-                {selectedPermissions.map((permission, index) => {
+                {/* Permission rows */}
+                {Object.keys(selectedPermissions).map((key) => {
+                  const permissionIndex = parseInt(key.split("-")[1]);
+                  const permission = selectedPermissions[key];
                   return (
-                    <div key={index + permission.projectId} className="flex items-center gap-2">
+                    <div key={key} className="flex items-center gap-2">
+                      {/* Project dropdown */}
                       <div className="w-1/3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -252,7 +260,7 @@ export const AddApiKeyModal = ({
                               <DropdownMenuItem
                                 key={option.id}
                                 onClick={() => {
-                                  updateProjectAndEnvironment(index, option.id);
+                                  updateProjectAndEnvironment(key, option.id);
                                 }}>
                                 {option.name}
                               </DropdownMenuItem>
@@ -260,6 +268,8 @@ export const AddApiKeyModal = ({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
+
+                      {/* Environment dropdown */}
                       <div className="w-1/3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -281,7 +291,7 @@ export const AddApiKeyModal = ({
                               <DropdownMenuItem
                                 key={env.id}
                                 onClick={() => {
-                                  updatePermission(index, "environmentId", env.id);
+                                  updatePermission(key, "environmentId", env.id);
                                 }}>
                                 {env.type}
                               </DropdownMenuItem>
@@ -289,6 +299,8 @@ export const AddApiKeyModal = ({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
+
+                      {/* Permission level dropdown */}
                       <div className="w-1/3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -310,7 +322,7 @@ export const AddApiKeyModal = ({
                               <DropdownMenuItem
                                 key={option}
                                 onClick={() => {
-                                  updatePermission(index, "permission", option);
+                                  updatePermission(key, "permission", option);
                                 }}>
                                 {option}
                               </DropdownMenuItem>
@@ -318,16 +330,16 @@ export const AddApiKeyModal = ({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                      <button
-                        type="button"
-                        className="p-2"
-                        onClick={() => removePermission(index)}
-                        aria-label={t("environments.project.api_keys.delete_permission")}>
+
+                      {/* Delete button */}
+                      <button type="button" className="p-2" onClick={() => removePermission(permissionIndex)}>
                         <Trash2Icon className={"h-5 w-5 text-slate-500 hover:text-red-500"} />
                       </button>
                     </div>
                   );
                 })}
+
+                {/* Add permission button */}
                 <Button type="button" variant="outline" onClick={addPermission}>
                   <span className="mr-2">+</span> {t("environments.settings.api_keys.add_permission")}
                 </Button>
@@ -335,43 +347,31 @@ export const AddApiKeyModal = ({
             </div>
 
             <div className="space-y-4">
-              <div>
-                <Label>{t("environments.project.api_keys.organization_access")}</Label>
-                <p className="text-sm text-slate-500">
-                  {t("environments.project.api_keys.organization_access_description")}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <div className="grid grid-cols-[auto_100px_100px] gap-4">
-                  <div></div>
-                  <span className="flex items-center justify-center text-sm font-medium">Read</span>
-                  <span className="flex items-center justify-center text-sm font-medium">Write</span>
-
-                  {Object.keys(selectedOrganizationAccess).map((key) => (
-                    <Fragment key={key}>
-                      <div className="py-1 text-sm">{getOrganizationAccessKeyDisplayName(key, t)}</div>
-                      <div className="flex items-center justify-center py-1">
-                        <Switch
-                          data-testid={`organization-access-${key}-read`}
-                          checked={selectedOrganizationAccess[key].read}
-                          onCheckedChange={(newVal) =>
-                            setSelectedOrganizationAccessValue(key, "read", newVal)
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center justify-center py-1">
-                        <Switch
-                          data-testid={`organization-access-${key}-write`}
-                          checked={selectedOrganizationAccess[key].write}
-                          onCheckedChange={(newVal) =>
-                            setSelectedOrganizationAccessValue(key, "write", newVal)
-                          }
-                        />
-                      </div>
-                    </Fragment>
-                  ))}
+              <Label>{t("environments.project.api_keys.organization_access")}</Label>
+              {Object.keys(selectedOrganizationAccess).map((key) => (
+                <div key={key} className="mt-2 flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <Label>Read</Label>
+                    <Switch
+                      data-testid={`organization-access-${key}-read`}
+                      checked={selectedOrganizationAccess[key].read || selectedOrganizationAccess[key].write}
+                      onCheckedChange={(newVal) => setSelectedOrganizationAccessValue(key, "read", newVal)}
+                      disabled={selectedOrganizationAccess[key].write}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label>Write</Label>
+                    <Switch
+                      data-testid={`organization-access-${key}-write`}
+                      checked={selectedOrganizationAccess[key].write}
+                      onCheckedChange={(newVal) => setSelectedOrganizationAccessValue(key, "write", newVal)}
+                    />
+                  </div>
                 </div>
-              </div>
+              ))}
+              <p className="text-sm text-slate-500">
+                {t("environments.project.api_keys.organization_access_description")}
+              </p>
             </div>
             <Alert variant="warning">
               <AlertTitle>{t("environments.project.api_keys.api_key_security_warning")}</AlertTitle>
@@ -384,7 +384,7 @@ export const AddApiKeyModal = ({
               onClick={() => {
                 setOpen(false);
                 reset();
-                setSelectedPermissions([]);
+                setSelectedPermissions({});
               }}>
               {t("common.cancel")}
             </Button>

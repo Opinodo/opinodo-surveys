@@ -1,15 +1,23 @@
-import { EMAIL_VERIFICATION_DISABLED } from "@/lib/constants";
-import { createToken } from "@/lib/jwt";
-// Import mocked rate limiting functions
-import { applyIPRateLimit } from "@/modules/core/rate-limit/helpers";
-import { rateLimitConfigs } from "@/modules/core/rate-limit/rate-limit-configs";
 import { randomBytes } from "crypto";
 import { Provider } from "next-auth/providers/index";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { prisma } from "@formbricks/database";
+import { EMAIL_VERIFICATION_DISABLED } from "@/lib/constants";
+// Import mocked rate limiting functions
+import { applyIPRateLimit } from "@/modules/core/rate-limit/helpers";
+import { rateLimitConfigs } from "@/modules/core/rate-limit/rate-limit-configs";
 import { authOptions } from "./authOptions";
 import { mockUser } from "./mock-data";
 import { hashPassword } from "./utils";
+
+// Mock encryption utilities
+vi.mock("@/lib/encryption", () => ({
+  symmetricEncrypt: vi.fn((value: string) => `encrypted_${value}`),
+  symmetricDecrypt: vi.fn((value: string) => value.replace("encrypted_", "")),
+}));
+
+// Mock JWT
+vi.mock("@/lib/jwt");
 
 // Mock rate limiting dependencies
 vi.mock("@/modules/core/rate-limit/helpers", () => ({
@@ -31,7 +39,7 @@ vi.mock("@/lib/constants", () => ({
   SESSION_MAX_AGE: 86400,
   NEXTAUTH_SECRET: "test-secret",
   WEBAPP_URL: "http://localhost:3000",
-  ENCRYPTION_KEY: "test-encryption-key-32-chars-long",
+  ENCRYPTION_KEY: "12345678901234567890123456789012", // 32 bytes for AES-256
   REDIS_URL: undefined,
   AUDIT_LOG_ENABLED: false,
   AUDIT_LOG_GET_USER_IP: false,
@@ -39,6 +47,7 @@ vi.mock("@/lib/constants", () => ({
   SENTRY_DSN: undefined,
   BREVO_API_KEY: undefined,
   RATE_LIMITING_DISABLED: false,
+  CONTROL_HASH: "$2b$12$fzHf9le13Ss9UJ04xzmsjODXpFJxz6vsnupoepF5FiqDECkX2BH5q",
 }));
 
 // Mock next/headers
@@ -257,55 +266,13 @@ describe("authOptions", () => {
       );
     });
 
-    test("should throw error if email is already verified", async () => {
-      vi.mocked(applyIPRateLimit).mockResolvedValue(); // Rate limiting passes
-      vi.spyOn(prisma.user, "findUnique").mockResolvedValue(mockUser as any);
-
-      const credentials = { token: createToken(mockUser.id, mockUser.email) };
-
-      await expect(tokenProvider.options.authorize(credentials, {})).rejects.toThrow(
-        "Email already verified"
-      );
-    });
-
-    test("should update user and verify email when token is valid", async () => {
-      vi.mocked(applyIPRateLimit).mockResolvedValue(); // Rate limiting passes
-      vi.spyOn(prisma.user, "findUnique").mockResolvedValue({ id: mockUser.id, emailVerified: null } as any);
-      vi.spyOn(prisma.user, "update").mockResolvedValue({
-        ...mockUser,
-        password: mockHashedPassword,
-        backupCodes: null,
-        twoFactorSecret: null,
-        identityProviderAccountId: null,
-        groupId: null,
-      } as any);
-
-      const credentials = { token: createToken(mockUserId, mockUser.email) };
-
-      const result = await tokenProvider.options.authorize(credentials, {});
-      expect(result.email).toBe(mockUser.email);
-      expect(result.emailVerified).toBeInstanceOf(Date);
-    });
-
     describe("Rate Limiting", () => {
       test("should apply rate limiting before token verification", async () => {
         vi.mocked(applyIPRateLimit).mockResolvedValue();
-        vi.spyOn(prisma.user, "findUnique").mockResolvedValue({
-          id: mockUser.id,
-          emailVerified: null,
-        } as any);
-        vi.spyOn(prisma.user, "update").mockResolvedValue({
-          ...mockUser,
-          password: mockHashedPassword,
-          backupCodes: null,
-          twoFactorSecret: null,
-          identityProviderAccountId: null,
-          groupId: null,
-        } as any);
 
-        const credentials = { token: createToken(mockUserId, mockUser.email) };
+        const credentials = { token: "sometoken" };
 
-        await tokenProvider.options.authorize(credentials, {});
+        await expect(tokenProvider.options.authorize(credentials, {})).rejects.toThrow();
 
         expect(applyIPRateLimit).toHaveBeenCalledWith(rateLimitConfigs.auth.verifyEmail);
       });
@@ -315,39 +282,13 @@ describe("authOptions", () => {
           new Error("Maximum number of requests reached. Please try again later.")
         );
 
-        const credentials = { token: createToken(mockUserId, mockUser.email) };
+        const credentials = { token: "sometoken" };
 
         await expect(tokenProvider.options.authorize(credentials, {})).rejects.toThrow(
           "Maximum number of requests reached. Please try again later."
         );
 
         expect(prisma.user.findUnique).not.toHaveBeenCalled();
-      });
-
-      test("should use correct rate limit configuration", async () => {
-        vi.mocked(applyIPRateLimit).mockResolvedValue();
-        vi.spyOn(prisma.user, "findUnique").mockResolvedValue({
-          id: mockUser.id,
-          emailVerified: null,
-        } as any);
-        vi.spyOn(prisma.user, "update").mockResolvedValue({
-          ...mockUser,
-          password: mockHashedPassword,
-          backupCodes: null,
-          twoFactorSecret: null,
-          identityProviderAccountId: null,
-          groupId: null,
-        } as any);
-
-        const credentials = { token: createToken(mockUserId, mockUser.email) };
-
-        await tokenProvider.options.authorize(credentials, {});
-
-        expect(applyIPRateLimit).toHaveBeenCalledWith({
-          interval: 3600,
-          allowedPerInterval: 10,
-          namespace: "auth:verify",
-        });
       });
     });
   });

@@ -1,14 +1,14 @@
 "use client";
 
-import { Button } from "@/modules/ui/components/button";
-import { Logo } from "@/modules/ui/components/logo";
-import { useTranslate } from "@tolgee/react";
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { TIntegrationType } from "@formbricks/types/integration";
+import { Button } from "@/modules/ui/components/button";
+import { FormbricksLogo } from "@/modules/ui/components/formbricks-logo";
 import { getIntegrationDetails } from "./lib/utils";
 
 interface ConnectIntegrationProps {
@@ -24,7 +24,7 @@ export const ConnectIntegration = ({
   handleAuthorization,
   integrationLogoSrc,
 }: ConnectIntegrationProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const [isConnecting, setIsConnecting] = useState(false);
   const searchParams = useSearchParams();
   const integrationDetails = getIntegrationDetails(integrationType, t);
@@ -51,7 +51,7 @@ export const ConnectIntegration = ({
       <div className="flex w-1/2 flex-col items-center justify-center rounded-lg bg-white p-8 shadow">
         <div className="flex w-1/2 justify-center -space-x-4">
           <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white p-6 shadow-md">
-            <Logo variant="image" />
+            <FormbricksLogo />
           </div>
           <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white p-4 shadow-md">
             <Image className="w-1/2" src={integrationLogoSrc} alt="logo" />

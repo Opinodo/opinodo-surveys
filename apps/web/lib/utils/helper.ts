@@ -1,14 +1,14 @@
+import { ResourceNotFoundError } from "@formbricks/types/errors";
 import {
   getActionClass,
   getApiKey,
   getContact,
-  getDocument,
   getEnvironment,
-  getInsight,
   getIntegration,
   getInvite,
   getLanguage,
   getProject,
+  getQuota,
   getResponse,
   getSegment,
   getSurvey,
@@ -16,7 +16,6 @@ import {
   getTeam,
   getWebhook,
 } from "@/lib/utils/services";
-import { ResourceNotFoundError } from "@formbricks/types/errors";
 
 export const getFormattedErrorMessage = (result): string => {
   let message = "";
@@ -175,22 +174,10 @@ export const getOrganizationIdFromTeamId = async (teamId: string) => {
   return team.organizationId;
 };
 
-export const getOrganizationIdFromInsightId = async (insightId: string) => {
-  const insight = await getInsight(insightId);
-  if (!insight) {
-    throw new ResourceNotFoundError("insight", insightId);
-  }
+export const getOrganizationIdFromQuotaId = async (quotaId: string) => {
+  const quota = await getQuota(quotaId);
 
-  return await getOrganizationIdFromEnvironmentId(insight.environmentId);
-};
-
-export const getOrganizationIdFromDocumentId = async (documentId: string) => {
-  const document = await getDocument(documentId);
-  if (!document) {
-    throw new ResourceNotFoundError("document", documentId);
-  }
-
-  return await getOrganizationIdFromEnvironmentId(document.environmentId);
+  return await getOrganizationIdFromSurveyId(quota.surveyId);
 };
 
 // project id helpers
@@ -210,15 +197,6 @@ export const getProjectIdFromSurveyId = async (surveyId: string) => {
   }
 
   return await getProjectIdFromEnvironmentId(survey.environmentId);
-};
-
-export const getProjectIdFromInsightId = async (insightId: string) => {
-  const insight = await getInsight(insightId);
-  if (!insight) {
-    throw new ResourceNotFoundError("insight", insightId);
-  }
-
-  return await getProjectIdFromEnvironmentId(insight.environmentId);
 };
 
 export const getProjectIdFromSegmentId = async (segmentId: string) => {
@@ -275,15 +253,6 @@ export const getProductIdFromContactId = async (contactId: string) => {
   return await getProjectIdFromEnvironmentId(contact.environmentId);
 };
 
-export const getProjectIdFromDocumentId = async (documentId: string) => {
-  const document = await getDocument(documentId);
-  if (!document) {
-    throw new ResourceNotFoundError("document", documentId);
-  }
-
-  return await getProjectIdFromEnvironmentId(document.environmentId);
-};
-
 export const getProjectIdFromIntegrationId = async (integrationId: string) => {
   const integration = await getIntegration(integrationId);
   if (!integration) {
@@ -300,6 +269,12 @@ export const getProjectIdFromWebhookId = async (webhookId: string) => {
   }
 
   return await getProjectIdFromEnvironmentId(webhook.environmentId);
+};
+
+export const getProjectIdFromQuotaId = async (quotaId: string) => {
+  const quota = await getQuota(quotaId);
+
+  return await getProjectIdFromSurveyId(quota.surveyId);
 };
 
 // environment id helpers
@@ -319,15 +294,6 @@ export const getEnvironmentIdFromResponseId = async (responseId: string) => {
   }
 
   return await getEnvironmentIdFromSurveyId(response.surveyId);
-};
-
-export const getEnvironmentIdFromInsightId = async (insightId: string) => {
-  const insight = await getInsight(insightId);
-  if (!insight) {
-    throw new ResourceNotFoundError("insight", insightId);
-  }
-
-  return insight.environmentId;
 };
 
 export const getEnvironmentIdFromSegmentId = async (segmentId: string) => {

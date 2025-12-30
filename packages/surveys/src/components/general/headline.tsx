@@ -1,28 +1,52 @@
-import { type TSurveyQuestionId } from "@formbricks/types/surveys/types";
+import DOMPurify from "isomorphic-dompurify";
+import { useTranslation } from "react-i18next";
+import { isValidHTML, stripInlineStyles } from "@/lib/html-utils";
 
 interface HeadlineProps {
   headline: string;
-  questionId: TSurveyQuestionId;
+  elementId: string;
   required?: boolean;
   alignTextCenter?: boolean;
 }
-export function Headline({ headline, questionId, required = true, alignTextCenter = false }: HeadlineProps) {
+
+export function Headline({ headline, elementId, required = true, alignTextCenter = false }: HeadlineProps) {
+  const { t } = useTranslation();
+  const isQuestionCard = elementId !== "EndingCard" && elementId !== "welcomeCard";
+  // Strip inline styles BEFORE parsing to avoid CSP violations
+  const strippedHeadline = stripInlineStyles(headline);
+  const isHeadlineHtml = isValidHTML(strippedHeadline);
+  const safeHtml =
+    isHeadlineHtml && strippedHeadline
+      ? DOMPurify.sanitize(strippedHeadline, {
+          ADD_ATTR: ["target"],
+          FORBID_ATTR: ["style"], // Additional safeguard to remove any remaining inline styles
+        })
+      : "";
+
   return (
-    <label htmlFor={questionId} className="fb-text-heading fb-mb-[3px] fb-flex fb-flex-col">
-      {!required && (
+    <label htmlFor={elementId} className="text-heading mb-[3px] flex flex-col">
+      {required && isQuestionCard && (
         <span
-          className="fb-text-xs fb-opacity-60 fb-font-normal fb-leading-6 fb-mb-[3px]"
+          className="mb-[3px] text-xs leading-6 font-normal opacity-60"
           tabIndex={-1}
           data-testid="fb__surveys__headline-optional-text-test">
-          Optional
+          {t("common.required")}
         </span>
       )}
       <div
-        className={`fb-flex fb-items-center ${alignTextCenter ? "fb-justify-center" : "fb-justify-between"}`}
+        className={`flex items-center ${alignTextCenter ? "justify-center" : "justify-between"}`}
         dir="auto">
-        <p data-testid="fb__surveys__headline-text-test" className="fb-text-base fb-font-semibold">
-          {headline}
-        </p>
+        {isHeadlineHtml ? (
+          <div
+            data-testid="fb__surveys__headline-text-test"
+            className="htmlbody text-base"
+            dangerouslySetInnerHTML={{ __html: safeHtml }}
+          />
+        ) : (
+          <p data-testid="fb__surveys__headline-text-test" className="text-base font-semibold">
+            {headline}
+          </p>
+        )}
       </div>
     </label>
   );

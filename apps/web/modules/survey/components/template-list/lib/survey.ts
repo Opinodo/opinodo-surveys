@@ -1,17 +1,16 @@
-import {
-  getOrganizationByEnvironmentId,
-  subscribeOrganizationMembersToSurveyResponses,
-} from "@/lib/organization/service";
-import { capturePosthogEnvironmentEvent } from "@/lib/posthogServer";
-import { checkForInvalidImagesInQuestions } from "@/lib/survey/utils";
-import { TriggerUpdate } from "@/modules/survey/editor/types/survey-trigger";
-import { getActionClasses } from "@/modules/survey/lib/action-class";
-import { selectSurvey } from "@/modules/survey/lib/survey";
 import { ActionClass, Prisma } from "@prisma/client";
 import { prisma } from "@formbricks/database";
 import { logger } from "@formbricks/logger";
 import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TSurvey, TSurveyCreateInput } from "@formbricks/types/surveys/types";
+import {
+  getOrganizationByEnvironmentId,
+  subscribeOrganizationMembersToSurveyResponses,
+} from "@/lib/organization/service";
+import { validateMediaAndPrepareBlocks } from "@/lib/survey/utils";
+import { TriggerUpdate } from "@/modules/survey/editor/types/survey-trigger";
+import { getActionClasses } from "@/modules/survey/lib/action-class";
+import { selectSurvey } from "@/modules/survey/lib/survey";
 
 export const createSurvey = async (
   environmentId: string,
@@ -63,7 +62,10 @@ export const createSurvey = async (
       delete data.followUps;
     }
 
-    if (data.questions) checkForInvalidImagesInQuestions(data.questions);
+    // Validate and prepare blocks
+    if (data.blocks && data.blocks.length > 0) {
+      data.blocks = validateMediaAndPrepareBlocks(data.blocks);
+    }
 
     const survey = await prisma.survey.create({
       data: {
@@ -121,11 +123,6 @@ export const createSurvey = async (
     if (createdBy) {
       await subscribeOrganizationMembersToSurveyResponses(survey.id, createdBy, organization.id);
     }
-
-    await capturePosthogEnvironmentEvent(survey.environmentId, "survey created", {
-      surveyId: survey.id,
-      surveyType: survey.type,
-    });
 
     return transformedSurvey;
   } catch (error) {

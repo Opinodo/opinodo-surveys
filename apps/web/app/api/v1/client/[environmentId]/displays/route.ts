@@ -1,12 +1,11 @@
-import { responses } from "@/app/lib/api/response";
-import { transformErrorToDetails } from "@/app/lib/api/validator";
-import { withV1ApiWrapper } from "@/app/lib/api/with-api-logging";
-import { capturePosthogEnvironmentEvent } from "@/lib/posthogServer";
-import { getIsContactsEnabled } from "@/modules/ee/license-check/lib/utils";
 import { NextRequest } from "next/server";
 import { logger } from "@formbricks/logger";
 import { ZDisplayCreateInput } from "@formbricks/types/displays";
 import { ResourceNotFoundError } from "@formbricks/types/errors";
+import { responses } from "@/app/lib/api/response";
+import { transformErrorToDetails } from "@/app/lib/api/validator";
+import { withV1ApiWrapper } from "@/app/lib/api/with-api-logging";
+import { getIsContactsEnabled } from "@/modules/ee/license-check/lib/utils";
 import { createDisplay } from "./lib/display";
 
 interface Context {
@@ -59,7 +58,6 @@ export const POST = withV1ApiWrapper({
     try {
       const response = await createDisplay(inputValidation.data);
 
-      await capturePosthogEnvironmentEvent(inputValidation.data.environmentId, "display created");
       return {
         response: responses.successResponse(response, true),
       };

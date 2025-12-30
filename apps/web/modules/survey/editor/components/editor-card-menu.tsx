@@ -1,11 +1,21 @@
 "use client";
 
+import { createId } from "@paralleldrive/cuid2";
+import { Project } from "@prisma/client";
+import { ArrowDownIcon, ArrowRightIcon, ArrowUpIcon, CopyIcon, EllipsisIcon, TrashIcon, LanguagesIcon } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { TI18nString } from "@formbricks/types/i18n";
+import { TSurveyBlockLogic } from "@formbricks/types/surveys/blocks";
+import { TSurveyElement, TSurveyElementTypeEnum } from "@formbricks/types/surveys/elements";
+import { TSurvey, TSurveyEndScreenCard, TSurveyRedirectUrlCard, TSurveyAffiliateOfferCard } from "@formbricks/types/surveys/types";
+import { getElementsFromBlocks } from "@/modules/survey/lib/client-utils";
 import {
-  getCXQuestionNameMap,
-  getQuestionDefaults,
-  getQuestionIconMap,
-  getQuestionNameMap,
-} from "@/modules/survey/lib/questions";
+  getCXElementNameMap,
+  getElementDefaults,
+  getElementIconMap,
+  getElementNameMap,
+} from "@/modules/survey/lib/elements";
 import { Button } from "@/modules/ui/components/button";
 import { ConfirmationModal } from "@/modules/ui/components/confirmation-modal";
 import {
@@ -18,32 +28,29 @@ import {
   DropdownMenuTrigger,
 } from "@/modules/ui/components/dropdown-menu";
 import { TooltipRenderer } from "@/modules/ui/components/tooltip";
-import { createId } from "@paralleldrive/cuid2";
-import { Project } from "@prisma/client";
-import { useTranslate } from "@tolgee/react";
-import { ArrowDownIcon, ArrowUpIcon, CopyIcon, EllipsisIcon, LanguagesIcon, TrashIcon } from "lucide-react";
-import { useState } from "react";
-import {
-  TSurvey,
-  TSurveyAffiliateOfferCard,
-  TSurveyEndScreenCard,
-  TSurveyQuestion,
-  TSurveyQuestionTypeEnum,
-  TSurveyRedirectUrlCard,
-} from "@formbricks/types/surveys/types";
+
+type EditorCardMenuSurveyElement = TSurveyElement & {
+  logic?: TSurveyBlockLogic[];
+  buttonLabel?: TI18nString;
+  backButtonLabel?: TI18nString;
+};
 
 interface EditorCardMenuProps {
   survey: TSurvey;
   cardIdx: number;
   lastCard: boolean;
+  blockId?: string;
+  elementIdx?: number; // Index of element within its block
   duplicateCard: (cardIdx: number) => void;
   deleteCard: (cardIdx: number) => void;
   translateCard: (cardIdx: number) => void;
   moveCard: (cardIdx: number, up: boolean) => void;
-  card: TSurveyQuestion | TSurveyEndScreenCard | TSurveyRedirectUrlCard | TSurveyAffiliateOfferCard;
+  card: EditorCardMenuSurveyElement | TSurveyEndScreenCard | TSurveyRedirectUrlCard | TSurveyAffiliateOfferCard;
   updateCard: (cardIdx: number, updatedAttributes: any) => void;
-  addCard: (question: any, index?: number) => void;
-  cardType: "question" | "ending";
+  addCard: (element: any, index?: number) => void;
+  addCardToBlock?: (element: TSurveyElement, blockId: string, afterElementIdx: number) => void;
+  moveElementToBlock?: (elementId: string, targetBlockId: string) => void;
+  cardType: "element" | "ending";
   project?: Project;
   isCxMode?: boolean;
 }
@@ -52,6 +59,8 @@ export const EditorCardMenu = ({
   survey,
   cardIdx,
   lastCard,
+  blockId,
+  elementIdx,
   duplicateCard,
   deleteCard,
   translateCard,
@@ -60,11 +69,13 @@ export const EditorCardMenu = ({
   card,
   updateCard,
   addCard,
+  addCardToBlock,
+  moveElementToBlock,
   cardType,
   isCxMode = false,
 }: EditorCardMenuProps) => {
-  const { t } = useTranslate();
-  const QUESTIONS_ICON_MAP = getQuestionIconMap(t);
+  const { t } = useTranslation();
+  const ELEMENTS_ICON_MAP = getElementIconMap(t);
   const [logicWarningModal, setLogicWarningModal] = useState(false);
   const [changeToType, setChangeToType] = useState(() => {
     if (card.type !== "endScreen" && card.type !== "redirectToUrl" && card.type !== "affiliateOffer") {
@@ -73,35 +84,33 @@ export const EditorCardMenu = ({
 
     return undefined;
   });
+
+  const elements = getElementsFromBlocks(survey.blocks);
   const isDeleteDisabled =
-    cardType === "question"
-      ? survey.questions.length === 1
-      : survey.type === "link" && survey.endings.length === 1;
+    cardType === "element" ? elements.length === 1 : survey.type === "link" && survey.endings.length === 1;
 
   const isTranslateDisabled = survey.languages.length <= 1;
 
-  const availableQuestionTypes = isCxMode ? getCXQuestionNameMap(t) : getQuestionNameMap(t);
+  const availableElementTypes = isCxMode ? getCXElementNameMap(t) : getElementNameMap(t);
 
-  const changeQuestionType = (type?: TSurveyQuestionTypeEnum) => {
+  const changeElementType = (type?: TSurveyElementTypeEnum) => {
     if (!type) return;
 
     const { headline, required, subheader, imageUrl, videoUrl, buttonLabel, backButtonLabel } =
-      card as TSurveyQuestion;
+      card as EditorCardMenuSurveyElement;
 
-    const questionDefaults = getQuestionDefaults(type, project, t);
+    const elementDefaults = getElementDefaults(type, project, t);
 
     if (
-      (type === TSurveyQuestionTypeEnum.MultipleChoiceSingle &&
-        card.type === TSurveyQuestionTypeEnum.MultipleChoiceMulti) ||
-      (type === TSurveyQuestionTypeEnum.MultipleChoiceMulti &&
-        card.type === TSurveyQuestionTypeEnum.MultipleChoiceSingle) ||
-      (type === TSurveyQuestionTypeEnum.MultipleChoiceMulti &&
-        card.type === TSurveyQuestionTypeEnum.Ranking) ||
-      (type === TSurveyQuestionTypeEnum.Ranking &&
-        card.type === TSurveyQuestionTypeEnum.MultipleChoiceMulti) ||
-      (type === TSurveyQuestionTypeEnum.MultipleChoiceSingle &&
-        card.type === TSurveyQuestionTypeEnum.Ranking) ||
-      (type === TSurveyQuestionTypeEnum.Ranking && card.type === TSurveyQuestionTypeEnum.MultipleChoiceSingle)
+      (type === TSurveyElementTypeEnum.MultipleChoiceSingle &&
+        card.type === TSurveyElementTypeEnum.MultipleChoiceMulti) ||
+      (type === TSurveyElementTypeEnum.MultipleChoiceMulti &&
+        card.type === TSurveyElementTypeEnum.MultipleChoiceSingle) ||
+      (type === TSurveyElementTypeEnum.MultipleChoiceMulti && card.type === TSurveyElementTypeEnum.Ranking) ||
+      (type === TSurveyElementTypeEnum.Ranking && card.type === TSurveyElementTypeEnum.MultipleChoiceMulti) ||
+      (type === TSurveyElementTypeEnum.MultipleChoiceSingle &&
+        card.type === TSurveyElementTypeEnum.Ranking) ||
+      (type === TSurveyElementTypeEnum.Ranking && card.type === TSurveyElementTypeEnum.MultipleChoiceSingle)
     ) {
       updateCard(cardIdx, {
         choices: card.choices,
@@ -113,11 +122,11 @@ export const EditorCardMenu = ({
     }
 
     updateCard(cardIdx, {
-      ...questionDefaults,
+      ...elementDefaults,
       type,
       headline,
       subheader,
-      required,
+      required: type === TSurveyElementTypeEnum.CTA ? false : required,
       imageUrl,
       videoUrl,
       buttonLabel,
@@ -126,18 +135,23 @@ export const EditorCardMenu = ({
     });
   };
 
-  const addQuestionCardBelow = (type: TSurveyQuestionTypeEnum) => {
-    const questionDefaults = getQuestionDefaults(type, project, t);
+  const addElementCardBelow = (type: TSurveyElementTypeEnum) => {
+    const elementDefaults = getElementDefaults(type, project, t);
 
-    addCard(
-      {
-        ...questionDefaults,
-        type,
-        id: createId(),
-        required: true,
-      },
-      cardIdx + 1
-    );
+    const newElement = {
+      ...elementDefaults,
+      type,
+      id: createId(),
+      required: type === TSurveyElementTypeEnum.CTA ? false : true,
+    };
+
+    // Add element to block or as new block
+    if (addCardToBlock && blockId && elementIdx !== undefined) {
+      // Pass blockId and element index within the block
+      addCardToBlock(newElement as TSurveyElement, blockId, elementIdx);
+    } else {
+      addCard(newElement, cardIdx + 1);
+    }
 
     const section = document.getElementById(`${card.id}`);
     section?.scrollIntoView({ behavior: "smooth", block: "end", inline: "end" });
@@ -148,7 +162,7 @@ export const EditorCardMenu = ({
   };
 
   const onConfirm = () => {
-    changeQuestionType(changeToType);
+    changeElementType(changeToType);
     setLogicWarningModal(false);
   };
 
@@ -198,7 +212,9 @@ export const EditorCardMenu = ({
           <ArrowDownIcon />
         </Button>
       </TooltipRenderer>
-      <TooltipRenderer tooltipContent={t("common.duplicate")} triggerClass="disabled:border-none">
+      <TooltipRenderer
+        tooltipContent={t("environments.surveys.edit.duplicate_question")}
+        triggerClass="disabled:border-none">
         <Button
           variant="ghost"
           size="icon"
@@ -231,7 +247,7 @@ export const EditorCardMenu = ({
 
         <DropdownMenuContent>
           <div className="flex flex-col">
-            {cardType === "question" && (
+            {cardType === "element" && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
                   className="cursor-pointer text-sm text-slate-600 hover:text-slate-700"
@@ -240,21 +256,21 @@ export const EditorCardMenu = ({
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="ml-2">
-                  {Object.entries(availableQuestionTypes).map(([type, name]) => {
+                  {Object.entries(availableElementTypes).map(([type, name]) => {
                     if (type === card.type) return null;
                     return (
                       <DropdownMenuItem
                         key={type}
                         onClick={() => {
-                          setChangeToType(type as TSurveyQuestionTypeEnum);
-                          if ((card as TSurveyQuestion).logic) {
+                          setChangeToType(type as TSurveyElementTypeEnum);
+                          if ((card as EditorCardMenuSurveyElement).logic) {
                             setLogicWarningModal(true);
                             return;
                           }
 
-                          changeQuestionType(type as TSurveyQuestionTypeEnum);
+                          changeElementType(type as TSurveyElementTypeEnum);
                         }}
-                        icon={QUESTIONS_ICON_MAP[type as TSurveyQuestionTypeEnum]}>
+                        icon={ELEMENTS_ICON_MAP[type as TSurveyElementTypeEnum]}>
                         <span className="ml-2">{name}</span>
                       </DropdownMenuItem>
                     );
@@ -273,26 +289,54 @@ export const EditorCardMenu = ({
               </DropdownMenuItem>
             )}
 
-            {cardType === "question" && (
+            {cardType === "element" && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="cursor-pointer" onClick={(e) => e.preventDefault()}>
                   {t("environments.surveys.edit.add_question_below")}
                 </DropdownMenuSubTrigger>
 
                 <DropdownMenuSubContent className="ml-2">
-                  {Object.entries(availableQuestionTypes).map(([type, name]) => {
+                  {Object.entries(availableElementTypes).map(([type, name]) => {
                     return (
                       <DropdownMenuItem
                         key={type}
                         className="min-h-8"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (cardType === "question") {
-                            addQuestionCardBelow(type as TSurveyQuestionTypeEnum);
+                          if (cardType === "element") {
+                            addElementCardBelow(type as TSurveyElementTypeEnum);
                           }
                         }}>
-                        {QUESTIONS_ICON_MAP[type as TSurveyQuestionTypeEnum]}
+                        {ELEMENTS_ICON_MAP[type as TSurveyElementTypeEnum]}
                         <span className="ml-2">{name}</span>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            )}
+            {cardType === "element" && moveElementToBlock && survey.blocks.length > 1 && (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer" onClick={(e) => e.preventDefault()}>
+                  {t("environments.surveys.edit.move_question_to_block")}
+                </DropdownMenuSubTrigger>
+
+                <DropdownMenuSubContent className="ml-2">
+                  {survey.blocks.map((block) => {
+                    // Don't show current block in the list
+                    if (block.id === blockId) return null;
+
+                    const blockName = block.name;
+                    return (
+                      <DropdownMenuItem
+                        key={block.id}
+                        className="min-h-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveElementToBlock(card.id, block.id);
+                        }}
+                        icon={<ArrowRightIcon className="h-4 w-4" />}>
+                        <span className="ml-2">{blockName}</span>
                       </DropdownMenuItem>
                     );
                   })}

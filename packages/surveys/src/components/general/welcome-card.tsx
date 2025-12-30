@@ -1,18 +1,19 @@
+import { useEffect } from "preact/hooks";
+import { useTranslation } from "react-i18next";
+import { type TI18nString } from "@formbricks/types/i18n";
+import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
+import { type TResponseData, type TResponseTtc, type TResponseVariables } from "@formbricks/types/responses";
 import { SubmitButton } from "@/components/buttons/submit-button";
 import { ScrollableContainer } from "@/components/wrappers/scrollable-container";
 import { getLocalizedValue } from "@/lib/i18n";
 import { replaceRecallInfo } from "@/lib/recall";
-import { calculateElementIdx } from "@/lib/utils";
-import { useEffect } from "preact/hooks";
-import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
-import { type TResponseData, type TResponseTtc, type TResponseVariables } from "@formbricks/types/responses";
-import { type TI18nString } from "@formbricks/types/surveys/types";
+import { calculateElementIdx, getElementsFromSurveyBlocks } from "@/lib/utils";
 import { Headline } from "./headline";
-import { HtmlBody } from "./html-body";
+import { Subheader } from "./subheader";
 
 interface WelcomeCardProps {
   headline?: TI18nString;
-  html?: TI18nString;
+  subheader?: TI18nString;
   fileUrl?: string;
   buttonLabel?: TI18nString;
   onSubmit: (data: TResponseData, ttc: TResponseTtc) => void;
@@ -23,11 +24,13 @@ interface WelcomeCardProps {
   isCurrent: boolean;
   responseData: TResponseData;
   variablesData: TResponseVariables;
+  fullSizeCards: boolean;
+  isPreviewMode?: boolean;
 }
 
 function TimerIcon() {
   return (
-    <div className="fb-mr-1">
+    <div className="mr-1">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="16"
@@ -44,14 +47,14 @@ function TimerIcon() {
 
 function UsersIcon() {
   return (
-    <div className="fb-mr-1">
+    <div className="mr-1">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
         strokeWidth="1.5"
         stroke="currentColor"
-        className="fb-h-4 fb-w-4">
+        className="h-4 w-4">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -64,7 +67,7 @@ function UsersIcon() {
 
 export function WelcomeCard({
   headline,
-  html,
+  subheader,
   fileUrl,
   buttonLabel,
   onSubmit,
@@ -75,18 +78,23 @@ export function WelcomeCard({
   isCurrent,
   responseData,
   variablesData,
+  fullSizeCards,
+  isPreviewMode = false,
 }: WelcomeCardProps) {
+  const { t } = useTranslation();
+
   const calculateTimeToComplete = () => {
-    let totalCards = survey.questions.length;
+    const questions = getElementsFromSurveyBlocks(survey.blocks);
+    let totalCards = questions.length;
     if (survey.endings.length > 0) totalCards += 1;
     let idx = calculateElementIdx(survey, 0, totalCards);
     if (idx === 0.5) {
       idx = 1;
     }
-    const timeInSeconds = (survey.questions.length / idx) * 15; //15 seconds per question.
+    const timeInSeconds = (questions.length / idx) * 15; //15 seconds per question.
     if (timeInSeconds > 360) {
       // If it's more than 6 minutes
-      return "6+ minutes";
+      return t("common.x_plus_minutes", { count: 6 });
     }
     // Calculate minutes, if there are any seconds left, add a minute
     const minutes = Math.floor(timeInSeconds / 60);
@@ -96,13 +104,13 @@ export function WelcomeCard({
       // If there are any seconds left, we'll need to round up to the next minute
       if (minutes === 0) {
         // If less than 1 minute, return 'less than 1 minute'
-        return "less than 1 minute";
+        return t("common.less_than_x_minutes", { count: 1 });
       }
       // If more than 1 minute, return 'less than X minutes', where X is minutes + 1
-      return `less than ${(minutes + 1).toString()} minutes`;
+      return t("common.less_than_x_minutes", { count: minutes + 1 });
     }
     // If there are no remaining seconds, just return the number of minutes
-    return `${minutes.toString()} minutes`;
+    return t("common.x_minutes", { count: minutes });
   };
 
   const timeToFinish = survey.welcomeCard.timeToFinish;
@@ -119,7 +127,8 @@ export function WelcomeCard({
       }
     };
 
-    if (isCurrent && survey.type === "link") {
+    // Only attach listener when current, link type, and NOT in preview mode
+    if (isCurrent && survey.type === "link" && !isPreviewMode) {
       document.addEventListener("keydown", handleEnter);
     } else {
       document.removeEventListener("keydown", handleEnter);
@@ -128,23 +137,30 @@ export function WelcomeCard({
     return () => {
       document.removeEventListener("keydown", handleEnter);
     };
-  }, [isCurrent]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only want to run this effect when isCurrent or isPreviewMode changes
+  }, [isCurrent, isPreviewMode]);
 
   return (
-    <ScrollableContainer>
+    <ScrollableContainer fullSizeCards={fullSizeCards}>
       <div>
         {fileUrl ? (
-          <img src={fileUrl} className="fb-mb-8 fb-max-h-96 fb-w-1/4 fb-object-contain" alt="Company Logo" />
+          <img src={fileUrl} className="mb-8 max-h-96 w-1/4 object-contain" alt={t("common.company_logo")} />
         ) : null}
 
         <Headline
           headline={replaceRecallInfo(getLocalizedValue(headline, languageCode), responseData, variablesData)}
-          questionId="welcomeCard"
+          elementId="welcomeCard"
         />
-        <HtmlBody
-          htmlString={replaceRecallInfo(getLocalizedValue(html, languageCode), responseData, variablesData)}
+        <Subheader
+          subheader={replaceRecallInfo(
+            getLocalizedValue(subheader, languageCode),
+            responseData,
+            variablesData
+          )}
+          elementId="welcomeCard"
         />
-        <div className="fb-mt-4 fb-flex fb-w-full">
+        <div className="mt-4 flex gap-4 pt-4">
           <SubmitButton
             buttonLabel={getLocalizedValue(buttonLabel, languageCode)}
             isLastQuestion={false}
@@ -156,28 +172,38 @@ export function WelcomeCard({
         </div>
 
         {timeToFinish && !showResponseCount ? (
-          <div className="fb-items-center fb-text-subheading fb-my-4 fb-flex">
+          <div
+            className="text-subheading my-4 flex items-center"
+            data-testid="fb__surveys__welcome-card__time-display">
             <TimerIcon />
-            <p className="fb-pt-1 fb-text-xs">
-              <span> Takes {calculateTimeToComplete()} </span>
+            <p className="pt-1 text-xs">
+              <span>
+                {t("common.takes")} {calculateTimeToComplete()}{" "}
+              </span>
             </p>
           </div>
         ) : null}
         {showResponseCount && !timeToFinish && responseCount && responseCount > 3 ? (
-          <div className="fb-items-center fb-text-subheading fb-my-4 fb-flex">
+          <div className="text-subheading my-4 flex items-center">
             <UsersIcon />
-            <p className="fb-pt-1 fb-text-xs">
-              <span data-testid="fb__surveys__welcome-card__response-count">{`${responseCount.toString()} people responded`}</span>
+            <p className="pt-1 text-xs">
+              <span data-testid="fb__surveys__welcome-card__response-count">
+                {t("common.people_responded", { count: responseCount })}
+              </span>
             </p>
           </div>
         ) : null}
         {timeToFinish && showResponseCount ? (
-          <div className="fb-items-center fb-text-subheading fb-my-4 fb-flex">
+          <div className="text-subheading my-4 flex items-center">
             <TimerIcon />
-            <p className="fb-pt-1 fb-text-xs" data-testid="fb__surveys__welcome-card__info-text-test">
-              <span> Takes {calculateTimeToComplete()} </span>
+            <p className="pt-1 text-xs" data-testid="fb__surveys__welcome-card__info-text-test">
+              <span>
+                {t("common.takes")} {calculateTimeToComplete()}{" "}
+              </span>
               <span data-testid="fb__surveys__welcome-card__response-count">
-                {responseCount && responseCount > 3 ? `⋅ ${responseCount.toString()} people responded` : ""}
+                {responseCount && responseCount > 3
+                  ? `⋅ ${t("common.people_responded", { count: responseCount })}`
+                  : ""}
               </span>
             </p>
           </div>

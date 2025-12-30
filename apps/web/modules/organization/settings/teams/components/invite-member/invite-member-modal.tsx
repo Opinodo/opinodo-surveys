@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { TOrganizationRole } from "@formbricks/types/memberships";
 import { TOrganizationTeam } from "@/modules/ee/teams/team-list/types/team";
 import {
   Dialog,
@@ -10,9 +13,6 @@ import {
   DialogTitle,
 } from "@/modules/ui/components/dialog";
 import { TabToggle } from "@/modules/ui/components/tab-toggle";
-import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
-import { TOrganizationRole } from "@formbricks/types/memberships";
 import { BulkInviteTab } from "./bulk-invite-tab";
 import { IndividualInviteTab } from "./individual-invite-tab";
 
@@ -25,6 +25,10 @@ interface InviteMemberModalProps {
   isFormbricksCloud: boolean;
   environmentId: string;
   membershipRole?: TOrganizationRole;
+  isStorageConfigured: boolean;
+  isOwnerOrManager: boolean;
+  isTeamAdmin: boolean;
+  userAdminTeamIds?: string[];
 }
 
 export const InviteMemberModal = ({
@@ -36,10 +40,21 @@ export const InviteMemberModal = ({
   isFormbricksCloud,
   environmentId,
   membershipRole,
+  isStorageConfigured,
+  isOwnerOrManager,
+  isTeamAdmin,
+  userAdminTeamIds,
 }: InviteMemberModalProps) => {
   const [type, setType] = useState<"individual" | "bulk">("individual");
 
-  const { t } = useTranslate();
+  const { t } = useTranslation();
+
+  const showTeamAdminRestrictions = !isOwnerOrManager && isTeamAdmin;
+
+  const filteredTeams =
+    showTeamAdminRestrictions && userAdminTeamIds
+      ? teams.filter((t) => userAdminTeamIds.includes(t.id))
+      : teams;
 
   const tabs = {
     individual: (
@@ -49,8 +64,9 @@ export const InviteMemberModal = ({
         onSubmit={onSubmit}
         isAccessControlAllowed={isAccessControlAllowed}
         isFormbricksCloud={isFormbricksCloud}
-        teams={teams}
+        teams={filteredTeams}
         membershipRole={membershipRole}
+        showTeamAdminRestrictions={showTeamAdminRestrictions}
       />
     ),
     bulk: (
@@ -59,6 +75,7 @@ export const InviteMemberModal = ({
         onSubmit={onSubmit}
         isAccessControlAllowed={isAccessControlAllowed}
         isFormbricksCloud={isFormbricksCloud}
+        isStorageConfigured={isStorageConfigured}
       />
     ),
   };
@@ -72,16 +89,18 @@ export const InviteMemberModal = ({
         </DialogHeader>
 
         <DialogBody className="flex flex-col gap-6" unconstrained>
-          <TabToggle
-            id="type"
-            options={[
-              { value: "individual", label: t("environments.settings.teams.individual") },
-              { value: "bulk", label: t("environments.settings.teams.bulk_invite") },
-            ]}
-            onChange={(inviteType) => setType(inviteType)}
-            defaultSelected={type}
-          />
-          {tabs[type]}
+          {!showTeamAdminRestrictions && (
+            <TabToggle
+              id="type"
+              options={[
+                { value: "individual", label: t("environments.settings.teams.individual") },
+                { value: "bulk", label: t("environments.settings.teams.bulk_invite") },
+              ]}
+              onChange={(inviteType) => setType(inviteType)}
+              defaultSelected={type}
+            />
+          )}
+          {showTeamAdminRestrictions ? tabs.individual : tabs[type]}
         </DialogBody>
       </DialogContent>
     </Dialog>

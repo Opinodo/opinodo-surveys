@@ -1,37 +1,37 @@
 "use client";
 
+import type { Environment, Project } from "@prisma/client";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TTemplate } from "@formbricks/types/templates";
 import { customSurveyTemplate } from "@/app/lib/templates";
 import { TemplateList } from "@/modules/survey/components/template-list";
 import { MenuBar } from "@/modules/survey/templates/components/menu-bar";
 import { PreviewSurvey } from "@/modules/ui/components/preview-survey";
 import { SearchBar } from "@/modules/ui/components/search-bar";
-import { Project } from "@prisma/client";
-import { Environment } from "@prisma/client";
-import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
-import type { TProjectConfigChannel, TProjectConfigIndustry } from "@formbricks/types/project";
-import type { TTemplate, TTemplateRole } from "@formbricks/types/templates";
 import { getMinimalSurvey } from "../lib/minimal-survey";
 
 type TemplateContainerWithPreviewProps = {
   project: Project;
   environment: Pick<Environment, "id" | "appSetupCompleted">;
   userId: string;
-  prefilledFilters: (TProjectConfigChannel | TProjectConfigIndustry | TTemplateRole | null)[];
   isTemplatePage?: boolean;
+  publicDomain: string;
 };
 
 export const TemplateContainerWithPreview = ({
   project,
   environment,
   userId,
-  prefilledFilters,
   isTemplatePage = true,
+  publicDomain,
 }: TemplateContainerWithPreviewProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const initialTemplate = customSurveyTemplate(t);
   const [activeTemplate, setActiveTemplate] = useState<TTemplate>(initialTemplate);
-  const [activeQuestionId, setActiveQuestionId] = useState<string>(initialTemplate.preset.questions[0].id);
+  const [activeElementId, setActiveElementId] = useState<string>(
+    initialTemplate.preset.blocks[0]?.elements[0]?.id || ""
+  );
   const [templateSearch, setTemplateSearch] = useState<string | null>(null);
 
   return (
@@ -60,21 +60,21 @@ export const TemplateContainerWithPreview = ({
             userId={userId}
             templateSearch={templateSearch ?? ""}
             onTemplateClick={(template) => {
-              setActiveQuestionId(template.preset.questions[0].id);
+              setActiveElementId(template.preset.blocks[0]?.elements[0]?.id || "");
               setActiveTemplate(template);
             }}
-            prefilledFilters={prefilledFilters}
           />
         </div>
         <aside className="group hidden flex-1 flex-shrink-0 items-center justify-center overflow-hidden border-l border-slate-100 bg-slate-50 md:flex md:flex-col">
           {activeTemplate && (
             <PreviewSurvey
               survey={{ ...getMinimalSurvey(t), ...activeTemplate.preset }}
-              questionId={activeQuestionId}
+              elementId={activeElementId}
               project={project}
               environment={environment}
               languageCode={"default"}
               isSpamProtectionAllowed={false} // setting it to false as this is a template
+              publicDomain={publicDomain}
             />
           )}
         </aside>

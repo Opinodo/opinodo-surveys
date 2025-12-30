@@ -1,7 +1,6 @@
-import { mockSurveyLanguages } from "@/lib/survey/__mock__/survey.mock";
+import { TSurveyCTAElement, TSurveyElementTypeEnum } from "@formbricks/types/surveys/elements";
 import {
   TSurvey,
-  TSurveyCTAQuestion,
   TSurveyCalQuestion,
   TSurveyConsentQuestion,
   TSurveyDateQuestion,
@@ -15,6 +14,7 @@ import {
   TSurveyRatingQuestion,
   TSurveyWelcomeCard,
 } from "@formbricks/types/surveys/types";
+import { mockSurveyLanguages } from "@/lib/survey/__mock__/survey.mock";
 
 export const mockWelcomeCard: TSurveyWelcomeCard = {
   html: {
@@ -173,20 +173,17 @@ export const mockNpsQuestion: TSurveyNPSQuestion = {
   isColorCodingEnabled: false,
 };
 
-export const mockCtaQuestion: TSurveyCTAQuestion = {
+export const mockCtaQuestion: TSurveyCTAElement = {
   required: true,
   headline: {
     default: "You are one of our power users!",
   },
-  buttonLabel: {
+  ctaButtonLabel: {
     default: "Book interview",
   },
-  buttonExternal: false,
-  dismissButtonLabel: {
-    default: "Skip",
-  },
+  buttonExternal: true,
   id: "gwn15urom4ffnhfimwbz3vgc",
-  type: TSurveyQuestionTypeEnum.CTA,
+  type: TSurveyElementTypeEnum.CTA,
   isDraft: true,
 };
 
@@ -306,8 +303,6 @@ export const mockSurvey: TSurvey = {
   recontactDays: null,
   displayLimit: null,
   autoClose: null,
-  runOnDate: null,
-  closeOnDate: null,
   delay: 0,
   displayPercentage: null,
   autoComplete: null,
@@ -453,15 +448,13 @@ export const mockLegacyNpsQuestion = {
 export const mockTranslatedCtaQuestion = {
   ...mockCtaQuestion,
   headline: { default: "You are one of our power users!", de: "" },
-  buttonLabel: { default: "Book interview", de: "" },
-  dismissButtonLabel: { default: "Skip", de: "" },
+  ctaButtonLabel: { default: "Book interview", de: "" },
 };
 
 export const mockLegacyCtaQuestion = {
   ...mockCtaQuestion,
   headline: "You are one of our power users!",
-  buttonLabel: "Book interview",
-  dismissButtonLabel: "Skip",
+  ctaButtonLabel: "Book interview",
 };
 
 export const mockTranslatedConsentQuestion = {
@@ -516,11 +509,3 @@ export const mockTranslatedEndings = [
     buttonLabel: { default: "Create your own Survey", de: "" },
   },
 ];
-
-export const mockLegacyThankYouCard = {
-  buttonLink: "https://digiopinion.com",
-  enabled: true,
-  headline: "Thank you!",
-  subheader: "We appreciate your feedback.",
-  buttonLabel: "Create your own Survey",
-};

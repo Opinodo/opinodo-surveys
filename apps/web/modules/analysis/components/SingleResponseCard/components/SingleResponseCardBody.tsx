@@ -1,21 +1,24 @@
 "use client";
 
+import { CheckCircle2Icon } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { TResponseWithQuotas } from "@formbricks/types/responses";
+import { TSurvey } from "@formbricks/types/surveys/types";
+import { getTextContent } from "@formbricks/types/surveys/validation";
 import { getLocalizedValue } from "@/lib/i18n/utils";
 import { parseRecallInfo } from "@/lib/utils/recall";
-import { useTranslate } from "@tolgee/react";
-import { CheckCircle2Icon } from "lucide-react";
-import { TResponse } from "@formbricks/types/responses";
-import { TSurvey } from "@formbricks/types/surveys/types";
+import { ResponseCardQuotas } from "@/modules/ee/quotas/components/single-response-card-quotas";
+import { getElementsFromBlocks } from "@/modules/survey/lib/client-utils";
 import { isValidValue } from "../util";
+import { ElementSkip } from "./ElementSkip";
 import { HiddenFields } from "./HiddenFields";
-import { QuestionSkip } from "./QuestionSkip";
 import { RenderResponse } from "./RenderResponse";
 import { ResponseVariables } from "./ResponseVariables";
 import { VerifiedEmail } from "./VerifiedEmail";
 
 interface SingleResponseCardBodyProps {
   survey: TSurvey;
-  response: TResponse;
+  response: TResponseWithQuotas;
   skippedQuestions: string[][];
 }
 
@@ -24,8 +27,9 @@ export const SingleResponseCardBody = ({
   response,
   skippedQuestions,
 }: SingleResponseCardBodyProps) => {
-  const isFirstQuestionAnswered = response.data[survey.questions[0].id] ? true : false;
-  const { t } = useTranslate();
+  const elements = getElementsFromBlocks(survey.blocks);
+  const isFirstElementAnswered = elements[0] ? !!response.data[elements[0].id] : false;
+  const { t } = useTranslation();
   const formatTextWithSlashes = (text: string) => {
     // Updated regex to match content between #/ and \#
     const regex = /#\/(.*?)\\#/g;
@@ -50,11 +54,11 @@ export const SingleResponseCardBody = ({
   return (
     <div className="p-6">
       {survey.welcomeCard.enabled && (
-        <QuestionSkip
-          skippedQuestions={[]}
-          questions={survey.questions}
+        <ElementSkip
+          skippedElements={[]}
+          elements={elements}
           status={"welcomeCard"}
-          isFirstQuestionAnswered={isFirstQuestionAnswered}
+          isFirstElementAnswered={isFirstElementAnswered}
           responseData={response.data}
         />
       )}
@@ -62,7 +66,7 @@ export const SingleResponseCardBody = ({
         {survey.isVerifyEmailEnabled && response.data["verifiedEmail"] && (
           <VerifiedEmail responseData={response.data} />
         )}
-        {survey.questions.map((question) => {
+        {elements.map((question) => {
           const skipped = skippedQuestions.find((skippedQuestionElement) =>
             skippedQuestionElement.includes(question.id)
           );
@@ -76,19 +80,21 @@ export const SingleResponseCardBody = ({
             <div key={`${question.id}`}>
               {isValidValue(response.data[question.id]) ? (
                 <div>
-                  <p className="mb-1 text-sm text-slate-500">
+                  <p className="mb-1 text-sm font-semibold text-slate-600">
                     {formatTextWithSlashes(
-                      parseRecallInfo(
-                        getLocalizedValue(question.headline, "default"),
-                        response.data,
-                        response.variables,
-                        true
+                      getTextContent(
+                        parseRecallInfo(
+                          getLocalizedValue(question.headline, "default"),
+                          response.data,
+                          response.variables,
+                          true
+                        )
                       )
                     )}
                   </p>
                   <div dir="auto">
                     <RenderResponse
-                      question={question}
+                      element={question}
                       survey={survey}
                       responseData={response.data[question.id]}
                       language={response.language}
@@ -97,9 +103,9 @@ export const SingleResponseCardBody = ({
                   </div>
                 </div>
               ) : (
-                <QuestionSkip
-                  skippedQuestions={skipped}
-                  questions={survey.questions}
+                <ElementSkip
+                  skippedElements={skipped}
+                  elements={elements}
                   responseData={response.data}
                   status={
                     response.finished ||
@@ -117,9 +123,12 @@ export const SingleResponseCardBody = ({
       {survey.variables.length > 0 && (
         <ResponseVariables variables={survey.variables} variablesData={response.variables} />
       )}
-      {survey.hiddenFields.enabled && survey.hiddenFields.fieldIds && (
+      {survey.hiddenFields.fieldIds && (
         <HiddenFields hiddenFields={survey.hiddenFields} responseData={response.data} />
       )}
+
+      <ResponseCardQuotas quotas={response.quotas} />
+
       {response.finished && (
         <div className="mt-4 flex items-center">
           <CheckCircle2Icon className="h-6 w-6 text-slate-400" />

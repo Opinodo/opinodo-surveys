@@ -25,9 +25,9 @@ RUN corepack prepare pnpm@9.15.9 --activate
 # Install necessary build tools and compilers
 RUN apk update && apk add --no-cache cmake g++ gcc jq make openssl-dev python3
 
-# Set hardcoded environment variables for build time
-ENV DATABASE_URL="postgresql://placeholder:for@build:5432/gets_overwritten_at_runtime?schema=public"
-ENV ENCRYPTION_KEY="placeholder_for_build_key_of_64_chars_get_overwritten_at_runtime"
+# Copy the secrets handling script
+COPY apps/web/scripts/docker/read-secrets.sh /tmp/read-secrets.sh
+RUN chmod +x /tmp/read-secrets.sh
 
 # Increase Node.js memory limit as a regular build argument
 ARG NODE_OPTIONS="--max_old_space_size=8192"
@@ -36,6 +36,10 @@ ENV NODE_OPTIONS=${NODE_OPTIONS}
 # Target architecture - automatically provided by Docker in multi-platform builds
 # but needs explicit declaration for some build systems (like Depot)
 ARG TARGETARCH
+
+# Base path for the application (optional)
+ARG BASE_PATH=""
+ENV BASE_PATH=${BASE_PATH}
 
 # Set the working directory
 WORKDIR /app
@@ -54,8 +58,16 @@ RUN touch apps/web/.env
 # Install the dependencies
 RUN pnpm install --ignore-scripts
 
-# Build the project
-RUN NODE_OPTIONS="--max_old_space_size=4096" pnpm build --filter=@formbricks/web...
+# Build the database package first
+RUN pnpm build --filter=@formbricks/database
+
+# Build the project using our secret reader script
+# This mounts the secrets only during this build step without storing them in layers
+RUN --mount=type=secret,id=database_url \
+    --mount=type=secret,id=encryption_key \
+    --mount=type=secret,id=redis_url \
+    --mount=type=secret,id=sentry_auth_token \
+    /tmp/read-secrets.sh pnpm build --filter=@formbricks/web...
 
 # Extract Prisma version
 RUN jq -r '.devDependencies.prisma' packages/database/package.json > /prisma_version.txt
@@ -65,8 +77,8 @@ RUN jq -r '.devDependencies.prisma' packages/database/package.json > /prisma_ver
 #
 FROM base AS runner
 
-RUN npm install --ignore-scripts -g corepack@latest
-RUN corepack enable
+RUN npm install --ignore-scripts -g corepack@latest && \
+    corepack enable
 
 RUN apk add --no-cache curl \
     && apk add --no-cache supercronic \
@@ -95,20 +107,8 @@ RUN chown -R nextjs:nextjs ./apps/web/public && chmod -R 755 ./apps/web/public
 COPY --from=installer /app/packages/database/schema.prisma ./packages/database/schema.prisma
 RUN chown nextjs:nextjs ./packages/database/schema.prisma && chmod 644 ./packages/database/schema.prisma
 
-COPY --from=installer /app/packages/database/package.json ./packages/database/package.json
-RUN chown nextjs:nextjs ./packages/database/package.json && chmod 644 ./packages/database/package.json
-
-COPY --from=installer /app/packages/database/migration ./packages/database/migration
-RUN chown -R nextjs:nextjs ./packages/database/migration && chmod -R 755 ./packages/database/migration
-
-COPY --from=installer /app/packages/database/src ./packages/database/src
-RUN chown -R nextjs:nextjs ./packages/database/src && chmod -R 755 ./packages/database/src
-
-COPY --from=installer /app/packages/database/node_modules ./packages/database/node_modules
-RUN chown -R nextjs:nextjs ./packages/database/node_modules && chmod -R 755 ./packages/database/node_modules
-
-COPY --from=installer /app/packages/logger/dist ./packages/database/node_modules/@formbricks/logger/dist
-RUN chown -R nextjs:nextjs ./packages/database/node_modules/@formbricks/logger/dist && chmod -R 755 ./packages/database/node_modules/@formbricks/logger/dist
+COPY --from=installer /app/packages/database/dist ./packages/database/dist
+RUN chown -R nextjs:nextjs ./packages/database/dist && chmod -R 755 ./packages/database/dist
 
 COPY --from=installer /app/node_modules/@prisma/client ./node_modules/@prisma/client
 RUN chown -R nextjs:nextjs ./node_modules/@prisma/client && chmod -R 755 ./node_modules/@prisma/client
@@ -119,9 +119,6 @@ RUN chown -R nextjs:nextjs ./node_modules/.prisma && chmod -R 755 ./node_modules
 COPY --from=installer /prisma_version.txt .
 RUN chown nextjs:nextjs ./prisma_version.txt && chmod 644 ./prisma_version.txt
 
-COPY /docker/cronjobs /app/docker/cronjobs
-RUN chmod -R 755 /app/docker/cronjobs
-
 COPY --from=installer /app/node_modules/@paralleldrive/cuid2 ./node_modules/@paralleldrive/cuid2
 RUN chmod -R 755 ./node_modules/@paralleldrive/cuid2
 
@@ -131,21 +128,23 @@ RUN chmod -R 755 ./node_modules/@noble/hashes
 COPY --from=installer /app/node_modules/zod ./node_modules/zod
 RUN chmod -R 755 ./node_modules/zod
 
-RUN npm install --ignore-scripts -g tsx typescript pino-pretty
-RUN npm install -g prisma
+RUN npm install -g prisma@6
+
+# Create a startup script to handle the conditional logic
+COPY --from=installer /app/apps/web/scripts/docker/next-start.sh /home/nextjs/start.sh
+RUN chown nextjs:nextjs /home/nextjs/start.sh && chmod +x /home/nextjs/start.sh
 
 EXPOSE 3000
-ENV HOSTNAME "0.0.0.0"
-ENV NODE_ENV="production"
+ENV HOSTNAME="0.0.0.0"
 USER nextjs
 
-# Prepare volume for uploads
-RUN mkdir -p /home/nextjs/apps/web/uploads/
-VOLUME /home/nextjs/apps/web/uploads/
+# Prepare pnpm as the nextjs user to ensure it's available at runtime
+# Prepare volumes for uploads and SAML connections
+RUN corepack prepare pnpm@9.15.9 --activate && \
+    mkdir -p /home/nextjs/apps/web/uploads/ && \
+    mkdir -p /home/nextjs/apps/web/saml-connection
 
-# Prepare volume for SAML preloaded connection
-RUN mkdir -p /home/nextjs/apps/web/saml-connection
+VOLUME /home/nextjs/apps/web/uploads/
 VOLUME /home/nextjs/apps/web/saml-connection
 
-# Run the application without migrations
-CMD supercronic -quiet /app/docker/cronjobs & exec node apps/web/server.js
+CMD ["/home/nextjs/start.sh"]

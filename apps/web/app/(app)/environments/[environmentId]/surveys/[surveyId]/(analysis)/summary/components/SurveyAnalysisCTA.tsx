@@ -1,5 +1,14 @@
 "use client";
 
+import { BellRing, Eye, ListRestart, SquarePenIcon } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { TEnvironment } from "@formbricks/types/environment";
+import { TSegment } from "@formbricks/types/segment";
+import { TSurvey } from "@formbricks/types/surveys/types";
+import { TUser } from "@formbricks/types/user";
 import { useEnvironment } from "@/app/(app)/environments/[environmentId]/context/environment-context";
 import { SuccessMessage } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/components/SuccessMessage";
 import { ShareSurveyModal } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/components/share-survey-modal";
@@ -11,15 +20,6 @@ import { copySurveyToOtherEnvironmentAction } from "@/modules/survey/list/action
 import { Button } from "@/modules/ui/components/button";
 import { ConfirmationModal } from "@/modules/ui/components/confirmation-modal";
 import { IconBar } from "@/modules/ui/components/iconbar";
-import { useTranslate } from "@tolgee/react";
-import { BellRing, Eye, ListRestart, SquarePenIcon } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { TEnvironment } from "@formbricks/types/environment";
-import { TSegment } from "@formbricks/types/segment";
-import { TSurvey } from "@formbricks/types/surveys/types";
-import { TUser } from "@formbricks/types/user";
 import { resetSurveyAction } from "../actions";
 
 interface SurveyAnalysisCTAProps {
@@ -29,10 +29,10 @@ interface SurveyAnalysisCTAProps {
   user: TUser;
   publicDomain: string;
   responseCount: number;
-  displayCount: number;
   segments: TSegment[];
   isContactsEnabled: boolean;
   isFormbricksCloud: boolean;
+  isStorageConfigured: boolean;
 }
 
 interface ModalState {
@@ -47,12 +47,12 @@ export const SurveyAnalysisCTA = ({
   user,
   publicDomain,
   responseCount,
-  displayCount,
   segments,
   isContactsEnabled,
   isFormbricksCloud,
+  isStorageConfigured,
 }: SurveyAnalysisCTAProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -67,7 +67,7 @@ export const SurveyAnalysisCTA = ({
   const { organizationId, project } = useEnvironment();
   const { refreshSingleUseId } = useSingleUseId(survey, isReadOnly);
 
-  const widgetSetupCompleted = survey.type === "app" && environment.appSetupCompleted;
+  const appSetupCompleted = survey.type === "app" && environment.appSetupCompleted;
 
   useEffect(() => {
     setModalState((prev) => ({
@@ -94,7 +94,6 @@ export const SurveyAnalysisCTA = ({
   const duplicateSurveyAndRoute = async (surveyId: string) => {
     setLoading(true);
     const duplicatedSurveyResponse = await copySurveyToOtherEnvironmentAction({
-      environmentId: environment.id,
       surveyId: surveyId,
       targetEnvironmentId: environment.id,
     });
@@ -168,7 +167,7 @@ export const SurveyAnalysisCTA = ({
       icon: ListRestart,
       tooltip: t("environments.surveys.summary.reset_survey"),
       onClick: () => setIsResetModalOpen(true),
-      isVisible: !isReadOnly && (responseCount > 0 || displayCount > 0),
+      isVisible: !isReadOnly,
     },
     {
       icon: SquarePenIcon,
@@ -184,7 +183,7 @@ export const SurveyAnalysisCTA = ({
 
   return (
     <div className="hidden justify-end gap-x-1.5 sm:flex">
-      {!isReadOnly && (widgetSetupCompleted || survey.type === "link") && survey.status !== "draft" && (
+      {!isReadOnly && (appSetupCompleted || survey.type === "link") && survey.status !== "draft" && (
         <SurveyStatusDropdown environment={environment} survey={survey} />
       )}
 
@@ -213,6 +212,7 @@ export const SurveyAnalysisCTA = ({
           isContactsEnabled={isContactsEnabled}
           isFormbricksCloud={isFormbricksCloud}
           isReadOnly={isReadOnly}
+          isStorageConfigured={isStorageConfigured}
         />
       )}
       <SuccessMessage environment={environment} survey={survey} />

@@ -1,5 +1,5 @@
-import { ZRateLimitConfig } from "@/modules/core/rate-limit/types/rate-limit";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import { ZRateLimitConfig } from "@/modules/core/rate-limit/types/rate-limit";
 import { applyRateLimit } from "./helpers";
 import { checkRateLimit } from "./rate-limit";
 import { rateLimitConfigs } from "./rate-limit-configs";
@@ -7,7 +7,7 @@ import { rateLimitConfigs } from "./rate-limit-configs";
 const { mockEval, mockRedisClient, mockGetRedisClient } = vi.hoisted(() => {
   const _mockEval = vi.fn();
   const _mockRedisClient = { eval: _mockEval } as any;
-  const _mockGetRedisClient = vi.fn().mockReturnValue(_mockRedisClient);
+  const _mockGetRedisClient = vi.fn().mockResolvedValue(_mockRedisClient);
   return { mockEval: _mockEval, mockRedisClient: _mockRedisClient, mockGetRedisClient: _mockGetRedisClient };
 });
 
@@ -18,8 +18,10 @@ vi.mock("@/lib/constants", () => ({
   SENTRY_DSN: "https://test@sentry.io/test",
 }));
 
-vi.mock("@/modules/cache/redis", () => ({
-  getRedisClient: mockGetRedisClient,
+vi.mock("@/lib/cache", () => ({
+  cache: {
+    getRedisClient: mockGetRedisClient,
+  },
 }));
 
 vi.mock("@formbricks/logger", () => ({
@@ -35,7 +37,7 @@ vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
 }));
 
-vi.mock("@/modules/cache/lib/cacheKeys", () => ({
+vi.mock("@formbricks/cache", () => ({
   createCacheKey: {
     rateLimit: {
       core: vi.fn(
@@ -48,8 +50,8 @@ vi.mock("@/modules/cache/lib/cacheKeys", () => ({
 describe("rateLimitConfigs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset the mock to return our mock client
-    mockGetRedisClient.mockReturnValue(mockRedisClient);
+    // Reset the mock to return our mock client (async)
+    mockGetRedisClient.mockResolvedValue(mockRedisClient);
   });
 
   describe("Configuration Structure", () => {
@@ -132,6 +134,8 @@ describe("rateLimitConfigs", () => {
         { config: rateLimitConfigs.api.client, identifier: "client-api-key" },
         { config: rateLimitConfigs.api.syncUserIdentification, identifier: "sync-user-id" },
         { config: rateLimitConfigs.actions.emailUpdate, identifier: "user-profile" },
+        { config: rateLimitConfigs.storage.upload, identifier: "storage-upload" },
+        { config: rateLimitConfigs.storage.delete, identifier: "storage-delete" },
       ];
 
       for (const { config, identifier } of testCases) {
@@ -174,6 +178,24 @@ describe("rateLimitConfigs", () => {
       if (exceededResult.ok) {
         expect(exceededResult.data.allowed).toBe(false);
       }
+    });
+
+    test("should properly configure storage upload rate limit", async () => {
+      const config = rateLimitConfigs.storage.upload;
+
+      // Verify configuration values
+      expect(config.interval).toBe(60); // 1 minute
+      expect(config.allowedPerInterval).toBe(5); // 5 requests per minute
+      expect(config.namespace).toBe("storage:upload");
+    });
+
+    test("should properly configure storage delete rate limit", async () => {
+      const config = rateLimitConfigs.storage.delete;
+
+      // Verify configuration values
+      expect(config.interval).toBe(60); // 1 minute
+      expect(config.allowedPerInterval).toBe(5); // 5 requests per minute
+      expect(config.namespace).toBe("storage:delete");
     });
   });
 });

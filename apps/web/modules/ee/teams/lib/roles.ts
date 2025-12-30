@@ -1,13 +1,13 @@
 import "server-only";
-import { validateInputs } from "@/lib/utils/validate";
-import { TTeamPermission } from "@/modules/ee/teams/project-teams/types/team";
-import { TTeamRole } from "@/modules/ee/teams/team-list/types/team";
 import { Prisma } from "@prisma/client";
 import { cache as reactCache } from "react";
 import { prisma } from "@formbricks/database";
 import { logger } from "@formbricks/logger";
 import { ZId, ZString } from "@formbricks/types/common";
 import { DatabaseError, UnknownError } from "@formbricks/types/errors";
+import { validateInputs } from "@/lib/utils/validate";
+import { TTeamPermission } from "@/modules/ee/teams/project-teams/types/team";
+import { TTeamRole } from "@/modules/ee/teams/team-list/types/team";
 
 export const getProjectPermissionByUserId = reactCache(
   async (userId: string, projectId: string): Promise<TTeamPermission | null> => {
@@ -74,6 +74,34 @@ export const getTeamRoleByTeamIdUserId = reactCache(
       }
 
       return teamUser.role;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new DatabaseError(error.message);
+      }
+
+      throw error;
+    }
+  }
+);
+
+export const getTeamsWhereUserIsAdmin = reactCache(
+  async (userId: string, organizationId: string): Promise<string[]> => {
+    validateInputs([userId, ZId], [organizationId, ZId]);
+    try {
+      const adminTeams = await prisma.teamUser.findMany({
+        where: {
+          userId,
+          role: "admin",
+          team: {
+            organizationId,
+          },
+        },
+        select: {
+          teamId: true,
+        },
+      });
+
+      return adminTeams.map((at) => at.teamId);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         throw new DatabaseError(error.message);

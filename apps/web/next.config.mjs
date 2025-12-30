@@ -16,8 +16,7 @@ const getHostname = (url) => {
 
 const nextConfig = {
   assetPrefix: process.env.ASSET_PREFIX_URL || undefined,
-  cacheHandler: require.resolve("./cache-handler.js"),
-  cacheMaxMemorySize: 0, // disable default in-memory caching
+  basePath: process.env.BASE_PATH || undefined,
   output: "standalone",
   poweredByHeader: false,
   productionBrowserSourceMaps: true,
@@ -28,6 +27,12 @@ const nextConfig = {
   experimental: {},
   transpilePackages: ["@formbricks/database"],
   images: {
+    // Optimize image processing to reduce CPU time and prevent timeouts
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920], // Removed 3840 to avoid processing huge images
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // Standard sizes for smaller images
+    formats: ["image/webp"], // WebP is faster to process and smaller than JPEG/PNG
+    minimumCacheTTL: 60, // Cache optimized images for at least 60 seconds
+    dangerouslyAllowSVG: true, // Allow SVG images
     remotePatterns: [
       {
         protocol: "https",
@@ -72,10 +77,6 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "images.unsplash.com",
-      },
-      {
-        protocol: "https",
-        hostname: "api-iam.eu.intercom.io",
       },
     ],
   },
@@ -403,7 +404,7 @@ const nextConfig = {
     ];
   },
   env: {
-    NEXTAUTH_URL: process.env.WEBAPP_URL,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL, // TODO: Remove this once we have a proper solution for the base path
   },
 };
 
@@ -440,5 +441,8 @@ const sentryOptions = {
 // Always enable Sentry plugin to inject Debug IDs
 // Runtime Sentry reporting still depends on DSN being set via environment variables
 const exportConfig = process.env.SENTRY_AUTH_TOKEN ? withSentryConfig(nextConfig, sentryOptions) : nextConfig;
+
+console.log("BASE PATH", nextConfig.basePath);
+
 
 export default exportConfig;

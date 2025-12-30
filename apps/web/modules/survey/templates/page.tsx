@@ -1,24 +1,17 @@
+import { redirect } from "next/navigation";
+import { getPublicDomain } from "@/lib/getPublicUrl";
+import { getTranslate } from "@/lingodotdev/server";
 import { getEnvironmentAuth } from "@/modules/environments/lib/utils";
 import { getProjectWithTeamIdsByEnvironmentId } from "@/modules/survey/lib/project";
-import { getTranslate } from "@/tolgee/server";
-import { redirect } from "next/navigation";
-import { TProjectConfigChannel, TProjectConfigIndustry } from "@formbricks/types/project";
-import { TTemplateRole } from "@formbricks/types/templates";
 import { TemplateContainerWithPreview } from "./components/template-container";
 
 interface SurveyTemplateProps {
   params: Promise<{
     environmentId: string;
   }>;
-  searchParams: Promise<{
-    channel?: TProjectConfigChannel;
-    industry?: TProjectConfigIndustry;
-    role?: TTemplateRole;
-  }>;
 }
 
 export const SurveyTemplatesPage = async (props: SurveyTemplateProps) => {
-  const searchParams = await props.searchParams;
   const t = await getTranslate();
   const params = await props.params;
   const environmentId = params.environmentId;
@@ -35,14 +28,14 @@ export const SurveyTemplatesPage = async (props: SurveyTemplateProps) => {
     return redirect(`/environments/${environment.id}/surveys`);
   }
 
-  const prefilledFilters = [project.config.channel, project.config.industry, searchParams.role ?? null];
+  const publicDomain = getPublicDomain();
 
   return (
     <TemplateContainerWithPreview
       userId={session.user.id}
       environment={environment}
       project={project}
-      prefilledFilters={prefilledFilters}
+      publicDomain={publicDomain}
     />
   );
 };

@@ -1,13 +1,21 @@
 "use client";
 
+import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { ChevronDown, ChevronUp, Plus, TrashIcon } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { TI18nString } from "@formbricks/types/i18n";
+import { TSurveyElementTypeEnum } from "@formbricks/types/surveys/elements";
+import { TSurvey } from "@formbricks/types/surveys/types";
 import {
   SelectedFilterValue,
   TResponseStatus,
   useResponseFilter,
-} from "@/app/(app)/environments/[environmentId]/components/ResponseFilterContext";
+} from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/components/response-filter-context";
 import { getSurveyFilterDataAction } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/actions";
-import { QuestionFilterComboBox } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/components/QuestionFilterComboBox";
-import { generateQuestionAndFilterOptions } from "@/app/lib/surveys/surveys";
+import { ElementFilterComboBox } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/components/ElementFilterComboBox";
+import { generateElementAndFilterOptions } from "@/app/lib/surveys/surveys";
+import { getLocalizedValue } from "@/lib/i18n/utils";
 import { Button } from "@/modules/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/ui/components/popover";
 import {
@@ -17,31 +25,66 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/modules/ui/components/select";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { useTranslate } from "@tolgee/react";
-import { ChevronDown, ChevronUp, Plus, TrashIcon } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { TSurvey, TSurveyQuestionTypeEnum } from "@formbricks/types/surveys/types";
-import { OptionsType, QuestionOption, QuestionsComboBox } from "./QuestionsComboBox";
+import { ElementOption, ElementsComboBox, OptionsType } from "./ElementsComboBox";
 
-export type QuestionFilterOptions = {
-  type: TSurveyQuestionTypeEnum | "Attributes" | "Tags" | "Languages";
-  filterOptions: string[];
-  filterComboBoxOptions: string[];
+export type ElementFilterOptions = {
+  type:
+    | TSurveyElementTypeEnum
+    | "Attributes"
+    | "Tags"
+    | "Languages"
+    | "Quotas"
+    | "Hidden Fields"
+    | "Meta"
+    | OptionsType.OTHERS;
+  filterOptions: (string | TI18nString)[];
+  filterComboBoxOptions: (string | TI18nString)[];
   id: string;
 };
+
+interface PopoverTriggerButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  isOpen: boolean;
+  children: React.ReactNode;
+}
+
+export const PopoverTriggerButton = React.forwardRef<HTMLButtonElement, PopoverTriggerButtonProps>(
+  ({ isOpen, children, ...props }, ref) => (
+    <button
+      ref={ref}
+      type="button"
+      {...props}
+      className="flex min-w-[8rem] cursor-pointer items-center justify-between rounded-md border border-slate-300 bg-white p-2 hover:border-slate-400">
+      <span className="text-sm text-slate-700">{children}</span>
+      <div className="ml-3">
+        {isOpen ? (
+          <ChevronUp className="ml-2 h-4 w-4 opacity-50" />
+        ) : (
+          <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+        )}
+      </div>
+    </button>
+  )
+);
+
+PopoverTriggerButton.displayName = "PopoverTriggerButton";
 
 interface ResponseFilterProps {
   survey: TSurvey;
 }
 
 export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const [parent] = useAutoAnimate();
 
   const { selectedFilter, setSelectedFilter, selectedOptions, setSelectedOptions } = useResponseFilter();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [filterValue, setFilterValue] = useState<SelectedFilterValue>(selectedFilter);
+
+  const getDefaultFilterValue = (option?: ElementFilterOptions): string | undefined => {
+    if (!option || option.filterOptions.length === 0) return undefined;
+    const firstOption = option.filterOptions[0];
+    return typeof firstOption === "object" ? getLocalizedValue(firstOption, "default") : firstOption;
+  };
 
   useEffect(() => {
     // Fetch the initial data for the filter and load it into the state
@@ -51,42 +94,44 @@ export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
 
         if (!surveyFilterData?.data) return;
 
-        const { attributes, meta, environmentTags, hiddenFields } = surveyFilterData.data;
-        const { questionFilterOptions, questionOptions } = generateQuestionAndFilterOptions(
+        const { attributes, meta, environmentTags, hiddenFields, quotas } = surveyFilterData.data;
+        const { elementFilterOptions, elementOptions } = generateElementAndFilterOptions(
           survey,
           environmentTags,
           attributes,
           meta,
-          hiddenFields
+          hiddenFields,
+          quotas
         );
-        setSelectedOptions({ questionFilterOptions, questionOptions });
+        setSelectedOptions({ elementFilterOptions: elementFilterOptions, elementOptions: elementOptions });
       }
     };
 
     handleInitialData();
   }, [isOpen, setSelectedOptions, survey]);
 
-  const handleOnChangeQuestionComboBoxValue = (value: QuestionOption, index: number) => {
-    if (filterValue.filter[index].questionType) {
+  const handleOnChangeElementComboBoxValue = (value: ElementOption, index: number) => {
+    const matchingFilterOption = selectedOptions.elementFilterOptions.find(
+      (q) => q.type === value.type || q.type === value.elementType
+    );
+    const defaultFilterValue = getDefaultFilterValue(matchingFilterOption);
+
+    if (filterValue.filter[index].elementType) {
       // Create a new array and copy existing values from SelectedFilter
       filterValue.filter[index] = {
-        questionType: value,
+        elementType: value,
         filterType: {
           filterComboBoxValue: undefined,
-          filterValue: selectedOptions.questionFilterOptions.find(
-            (q) => q.type === value.type || q.type === value.questionType
-          )?.filterOptions[0],
+          filterValue: defaultFilterValue,
         },
       };
       setFilterValue({ filter: [...filterValue.filter], responseStatus: filterValue.responseStatus });
     } else {
       // Update the existing value at the specified index
-      filterValue.filter[index].questionType = value;
+      filterValue.filter[index].elementType = value;
       filterValue.filter[index].filterType = {
         filterComboBoxValue: undefined,
-        filterValue: selectedOptions.questionFilterOptions.find(
-          (q) => q.type === value.type || q.type === value.questionType
-        )?.filterOptions[0],
+        filterValue: defaultFilterValue,
       };
       setFilterValue({ ...filterValue });
     }
@@ -96,8 +141,8 @@ export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
   const clearItem = () => {
     setFilterValue({
       filter: filterValue.filter.filter((s) => {
-        // keep the filter if questionType is selected and filterComboBoxValue is selected
-        return s.questionType.hasOwnProperty("label") && s.filterType.filterComboBoxValue?.length;
+        // keep the filter if elementType is selected and filterComboBoxValue is selected
+        return s.elementType.hasOwnProperty("label") && s.filterType.filterComboBoxValue?.length;
       }),
       responseStatus: filterValue.responseStatus,
     });
@@ -107,7 +152,6 @@ export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
   useEffect(() => {
     if (!isOpen) {
       clearItem();
-      handleApplyFilters();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -118,7 +162,7 @@ export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
       filter: [
         ...filterValue.filter,
         {
-          questionType: {},
+          elementType: {},
           filterType: { filterComboBoxValue: undefined, filterValue: undefined },
         },
       ],
@@ -126,8 +170,9 @@ export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
   };
 
   const handleClearAllFilters = () => {
-    setFilterValue((filterValue) => ({ ...filterValue, filter: [], responseStatus: "all" }));
-    setSelectedFilter((selectedFilters) => ({ ...selectedFilters, filter: [], responseStatus: "all" }));
+    const clearedFilters = { filter: [], responseStatus: "all" as const };
+    setFilterValue(clearedFilters);
+    setSelectedFilter(clearedFilters);
     setIsOpen(false);
   };
 
@@ -169,10 +214,10 @@ export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
   };
 
   // remove the filter which has already been selected
-  const questionComboBoxOptions = selectedOptions.questionOptions.map((q) => {
+  const elementComboBoxOptions = selectedOptions.elementOptions.map((q) => {
     return {
       ...q,
-      option: q.option.filter((o) => !filterValue.filter.some((f) => f?.questionType?.id === o?.id)),
+      option: q.option.filter((o) => !filterValue.filter.some((f) => f?.elementType?.id === o?.id)),
     };
   });
 
@@ -183,9 +228,6 @@ export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
   };
 
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      handleApplyFilters();
-    }
     setIsOpen(open);
   };
 
@@ -193,38 +235,30 @@ export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
     setFilterValue(selectedFilter);
   }, [selectedFilter]);
 
+  const activeFilterCount = filterValue.filter.length + (filterValue.responseStatus === "all" ? 0 : 1);
+
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
-      <PopoverTrigger className="flex min-w-[8rem] items-center justify-between rounded border border-slate-200 bg-white p-3 text-sm text-slate-600 hover:border-slate-300 sm:min-w-[11rem] sm:px-6 sm:py-3">
-        <span>
-          Filter <b>{filterValue.filter.length > 0 && `(${filterValue.filter.length})`}</b>
-        </span>
-        <div className="ml-3">
-          {isOpen ? (
-            <ChevronUp className="ml-2 h-4 w-4 opacity-50" />
-          ) : (
-            <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-          )}
-        </div>
+      <PopoverTrigger asChild>
+        <PopoverTriggerButton isOpen={isOpen}>
+          Filter <b>{activeFilterCount > 0 && `(${activeFilterCount})`}</b>
+        </PopoverTriggerButton>
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-[300px] border-slate-200 bg-slate-100 p-6 sm:w-[400px] md:w-[750px] lg:w-[1000px]"
+        className="w-[300px] rounded-lg border-slate-200 p-6 sm:w-[400px] md:w-[750px] lg:w-[1000px]"
         onOpenAutoFocus={(event) => event.preventDefault()}>
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-2">
-          <p className="text-slate800 hidden text-lg font-semibold sm:block">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-2">
+          <p className="font-semibold text-slate-800">
             {t("environments.surveys.summary.show_all_responses_that_match")}
-          </p>
-          <p className="block text-base text-slate-500 sm:hidden">
-            {t("environments.surveys.summary.show_all_responses_where")}
           </p>
           <div className="flex items-center space-x-2">
             <Select
+              value={filterValue.responseStatus ?? "all"}
               onValueChange={(val) => {
                 handleResponseStatusChange(val as TResponseStatus);
-              }}
-              defaultValue={filterValue.responseStatus}>
-              <SelectTrigger className="w-full bg-white">
+              }}>
+              <SelectTrigger className="w-full bg-white text-slate-700">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent position="popper">
@@ -246,73 +280,76 @@ export const ResponseFilter = ({ survey }: ResponseFilterProps) => {
               <div className="flex w-full flex-wrap gap-3 md:flex-nowrap">
                 <div
                   className="grid w-full grid-cols-1 items-center gap-3 md:grid-cols-2"
-                  key={`${s.questionType.id}-${i}-${s.questionType.label}`}>
-                  <QuestionsComboBox
-                    key={`${s.questionType.label}-${i}-${s.questionType.id}`}
-                    options={questionComboBoxOptions}
-                    selected={s.questionType}
-                    onChangeValue={(value) => handleOnChangeQuestionComboBoxValue(value, i)}
+                  key={`${s.elementType.id}-${i}-${s.elementType.label}`}>
+                  <ElementsComboBox
+                    key={`${s.elementType.label}-${i}-${s.elementType.id}`}
+                    options={elementComboBoxOptions}
+                    selected={s.elementType}
+                    onChangeValue={(value) => handleOnChangeElementComboBoxValue(value, i)}
                   />
-                  <QuestionFilterComboBox
-                    key={`${s.questionType.id}-${i}`}
+                  <ElementFilterComboBox
+                    key={`${s.elementType.id}-${i}`}
                     filterOptions={
-                      selectedOptions.questionFilterOptions.find(
+                      selectedOptions.elementFilterOptions.find(
                         (q) =>
-                          (q.type === s.questionType.questionType || q.type === s.questionType.type) &&
-                          q.id === s.questionType.id
+                          (q.type === s.elementType.elementType || q.type === s.elementType.type) &&
+                          q.id === s.elementType.id
                       )?.filterOptions
                     }
                     filterComboBoxOptions={
-                      selectedOptions.questionFilterOptions.find(
+                      selectedOptions.elementFilterOptions.find(
                         (q) =>
-                          (q.type === s.questionType.questionType || q.type === s.questionType.type) &&
-                          q.id === s.questionType.id
+                          (q.type === s.elementType.elementType || q.type === s.elementType.type) &&
+                          q.id === s.elementType.id
                       )?.filterComboBoxOptions
                     }
                     filterValue={filterValue.filter[i].filterType.filterValue}
                     filterComboBoxValue={filterValue.filter[i].filterType.filterComboBoxValue}
                     type={
-                      s?.questionType?.type === OptionsType.QUESTIONS
-                        ? s?.questionType?.questionType
-                        : s?.questionType?.type
+                      s?.elementType?.type === OptionsType.ELEMENTS
+                        ? s?.elementType?.elementType
+                        : s?.elementType?.type
                     }
-                    fieldId={s?.questionType?.id}
+                    fieldId={s?.elementType?.id}
                     handleRemoveMultiSelect={(value) => handleRemoveMultiSelect(value, i)}
                     onChangeFilterComboBoxValue={(value) => handleOnChangeFilterComboBoxValue(value, i)}
                     onChangeFilterValue={(value) => handleOnChangeFilterValue(value, i)}
-                    disabled={!s?.questionType?.label}
+                    disabled={!s?.elementType?.label}
                   />
                 </div>
                 <div className="flex w-full items-center justify-end gap-1 md:w-auto">
-                  <p className="block font-light text-slate-500 md:hidden">Delete</p>
-                  <TrashIcon
-                    className="w-4 cursor-pointer text-slate-500 md:text-black"
+                  <Button
+                    variant="secondary"
+                    size="icon"
                     onClick={() => handleDeleteFilter(i)}
-                  />
+                    aria-label={t("common.delete")}>
+                    <TrashIcon />
+                  </Button>
                 </div>
               </div>
               {i !== filterValue.filter.length - 1 && (
-                <div className="my-6 flex items-center">
-                  <p className="mr-6 text-base text-slate-600">And</p>
+                <div className="my-4 flex items-center">
+                  <p className="mr-4 font-semibold text-slate-800">and</p>
                   <hr className="w-full text-slate-600" />
                 </div>
               )}
             </React.Fragment>
           ))}
         </div>
-        <div className="mt-8 flex items-center justify-between">
-          <Button size="sm" variant="secondary" onClick={handleAddNewFilter}>
-            {t("common.add_filter")}
-            <Plus width={18} height={18} className="ml-2" />
-          </Button>
+        <div className="mt-6 flex items-center justify-between">
           <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={handleAddNewFilter}>
+              {t("common.add_filter")}
+              <Plus />
+            </Button>
             <Button size="sm" onClick={handleApplyFilters}>
               {t("common.apply_filters")}
             </Button>
-            <Button size="sm" variant="ghost" onClick={handleClearAllFilters}>
-              {t("common.clear_all")}
-            </Button>
           </div>
+          <Button size="sm" variant="destructive" onClick={handleClearAllFilters}>
+            {t("common.clear_all")}
+            <TrashIcon />
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

@@ -1,14 +1,17 @@
+import { TResponse, TResponseDataValue } from "@formbricks/types/responses";
+import { TSurveyElement, TSurveyElementTypeEnum } from "@formbricks/types/surveys/elements";
+import { TSurvey } from "@formbricks/types/surveys/types";
+import { getTextContent } from "@formbricks/types/surveys/validation";
 import { parseRecallInfo } from "@/lib/utils/recall";
-import { TResponse } from "@formbricks/types/responses";
-import { TSurvey, TSurveyQuestion, TSurveyQuestionType } from "@formbricks/types/surveys/types";
+import { getElementsFromBlocks } from "@/modules/survey/lib/client-utils";
 import { getLanguageCode, getLocalizedValue } from "./i18n/utils";
 
 // function to convert response value of type string | number | string[] or Record<string, string> to string | string[]
 export const convertResponseValue = (
-  answer: string | number | string[] | Record<string, string>,
-  question: TSurveyQuestion
+  answer: TResponseDataValue,
+  element: TSurveyElement
 ): string | string[] => {
-  switch (question.type) {
+  switch (element.type) {
     case "ranking":
     case "fileUpload":
       if (typeof answer === "string") {
@@ -17,11 +20,11 @@ export const convertResponseValue = (
 
     case "pictureSelection":
       if (typeof answer === "string") {
-        const imageUrl = question.choices.find((choice) => choice.id === answer)?.imageUrl;
+        const imageUrl = element.choices.find((choice) => choice.id === answer)?.imageUrl;
         return imageUrl ? [imageUrl] : [];
       } else if (Array.isArray(answer)) {
         return answer
-          .map((answerId) => question.choices.find((choice) => choice.id === answerId)?.imageUrl)
+          .map((answerId) => element.choices.find((choice) => choice.id === answerId)?.imageUrl)
           .filter((url): url is string => url !== undefined);
       } else return [];
 
@@ -30,36 +33,35 @@ export const convertResponseValue = (
   }
 };
 
-export const getQuestionResponseMapping = (
+export const getElementResponseMapping = (
   survey: TSurvey,
   response: TResponse
-): { question: string; response: string | string[]; type: TSurveyQuestionType }[] => {
-  const questionResponseMapping: {
-    question: string;
+): { element: string; response: string | string[]; type: TSurveyElementTypeEnum }[] => {
+  const elementResponseMapping: {
+    element: string;
     response: string | string[];
-    type: TSurveyQuestionType;
+    type: TSurveyElementTypeEnum;
   }[] = [];
   const responseLanguageCode = getLanguageCode(survey.languages, response.language);
 
-  for (const question of survey.questions) {
-    const answer = response.data[question.id];
+  const elements = getElementsFromBlocks(survey.blocks);
 
-    questionResponseMapping.push({
-      question: parseRecallInfo(
-        getLocalizedValue(question.headline, responseLanguageCode ?? "default"),
-        response.data
+  for (const element of elements) {
+    const answer = response.data[element.id];
+
+    elementResponseMapping.push({
+      element: getTextContent(
+        parseRecallInfo(getLocalizedValue(element.headline, responseLanguageCode ?? "default"), response.data)
       ),
-      response: convertResponseValue(answer, question),
-      type: question.type,
+      response: convertResponseValue(answer, element),
+      type: element.type,
     });
   }
 
-  return questionResponseMapping;
+  return elementResponseMapping;
 };
 
-export const processResponseData = (
-  responseData: string | number | string[] | Record<string, string>
-): string => {
+export const processResponseData = (responseData: TResponseDataValue): string => {
   switch (typeof responseData) {
     case "string":
       return responseData;

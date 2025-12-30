@@ -1,12 +1,12 @@
 "use client";
 
-import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import { debounce } from "lodash";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
 import { TEnvironment } from "@formbricks/types/environment";
+import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import { getContactsAction } from "../actions";
 import { TContactTableData, TContactWithAttributes } from "../types/contact";
 
@@ -22,6 +22,7 @@ interface ContactDataViewProps {
   itemsPerPage: number;
   isReadOnly: boolean;
   hasMore: boolean;
+  isQuotasAllowed: boolean;
 }
 
 export const ContactDataView = ({
@@ -31,6 +32,7 @@ export const ContactDataView = ({
   isReadOnly,
   hasMore: initialHasMore,
   initialContacts,
+  isQuotasAllowed,
 }: ContactDataViewProps) => {
   const [contacts, setContacts] = useState<TContactWithAttributes[]>([...initialContacts]);
   const [hasMore, setHasMore] = useState<boolean>(initialHasMore);
@@ -144,6 +146,7 @@ export const ContactDataView = ({
       searchValue={searchValue}
       setSearchValue={setSearchValue}
       isReadOnly={isReadOnly}
+      isQuotasAllowed={isQuotasAllowed}
     />
   );
 };

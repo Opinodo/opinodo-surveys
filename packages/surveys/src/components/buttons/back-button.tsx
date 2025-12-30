@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 interface BackButtonProps {
@@ -7,16 +8,17 @@ interface BackButtonProps {
 }
 
 export function BackButton({ onClick, backButtonLabel, tabIndex = 2 }: BackButtonProps) {
+  const { t } = useTranslation();
   return (
     <button
       dir="auto"
       tabIndex={tabIndex}
       type="button"
       className={cn(
-        "fb-mb-1 hover:fb-bg-input-bg fb-text-heading focus:fb-ring-focus fb-rounded-custom fb-flex fb-items-center fb-px-3 fb-py-3 fb-text-base fb-font-medium fb-leading-4 focus:fb-outline-none focus:fb-ring-2 focus:fb-ring-offset-2"
+        "hover:bg-input-bg text-heading focus:ring-focus rounded-custom mb-1 flex items-center px-3 py-3 text-base leading-4 font-medium focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
       )}
       onClick={onClick}>
-      {backButtonLabel || "Back"}
+      {backButtonLabel || t("common.back")}
     </button>
   );
 }

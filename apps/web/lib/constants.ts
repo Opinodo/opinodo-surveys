@@ -19,8 +19,7 @@ export const ENCRYPTION_KEY = env.ENCRYPTION_KEY;
 // Other
 export const CRON_SECRET = env.CRON_SECRET;
 export const DEFAULT_BRAND_COLOR = "#64748b";
-export const FB_LOGO_URL =
-  "https://s3.eu-central-1.amazonaws.com/listmonk-formbricks/Formbricks-Light-transparent.png";
+export const FB_LOGO_URL = `${WEBAPP_URL}/logo-transparent.png`;
 export const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
 
 export const PRIVACY_URL = env.PRIVACY_URL;
@@ -113,19 +112,11 @@ export const S3_REGION = env.S3_REGION;
 export const S3_ENDPOINT_URL = env.S3_ENDPOINT_URL;
 export const S3_BUCKET_NAME = env.S3_BUCKET_NAME;
 export const S3_FORCE_PATH_STYLE = env.S3_FORCE_PATH_STYLE === "1";
-export const UPLOADS_DIR = env.UPLOADS_DIR ?? "./uploads";
-export const MAX_SIZES = {
+export const MAX_FILE_UPLOAD_SIZES = {
   standard: 1024 * 1024 * 10, // 10MB
   big: 1024 * 1024 * 1024, // 1GB
 } as const;
-
-// Function to check if the necessary S3 configuration is set up
-export const isS3Configured = () => {
-  // This function checks if the S3 bucket name environment variable is defined.
-  // The AWS SDK automatically resolves credentials through a chain,
-  // so we do not need to explicitly check for AWS credentials like access key, secret key, or region.
-  return !!S3_BUCKET_NAME;
-};
+export const IS_STORAGE_CONFIGURED = Boolean(S3_BUCKET_NAME);
 
 // Colors for Survey Bg
 export const SURVEY_BG_COLORS = [
@@ -162,7 +153,6 @@ export const DEBUG = env.DEBUG === "1";
 export const ENTERPRISE_LICENSE_KEY = env.ENTERPRISE_LICENSE_KEY;
 
 export const REDIS_URL = env.REDIS_URL;
-export const REDIS_HTTP_URL = env.REDIS_HTTP_URL;
 export const RATE_LIMITING_DISABLED = env.RATE_LIMITING_DISABLED === "1";
 
 export const BREVO_API_KEY = env.BREVO_API_KEY;
@@ -182,10 +172,14 @@ export const AVAILABLE_LOCALES: TUserLocale[] = [
   "de-DE",
   "pt-BR",
   "fr-FR",
+  "nl-NL",
   "zh-Hant-TW",
   "pt-PT",
   "ro-RO",
   "ja-JP",
+  "zh-Hans-CN",
+  "es-ES",
+  "sv-SE",
 ];
 
 // Billing constants
@@ -193,21 +187,17 @@ export const AVAILABLE_LOCALES: TUserLocale[] = [
 export enum PROJECT_FEATURE_KEYS {
   FREE = "free",
   STARTUP = "startup",
-  SCALE = "scale",
-  ENTERPRISE = "enterprise",
+  CUSTOM = "custom",
 }
 
 export enum STRIPE_PROJECT_NAMES {
   STARTUP = "Formbricks Startup",
-  SCALE = "Formbricks Scale",
-  ENTERPRISE = "Formbricks Enterprise",
+  CUSTOM = "Formbricks Custom",
 }
 
 export enum STRIPE_PRICE_LOOKUP_KEYS {
   STARTUP_MAY25_MONTHLY = "STARTUP_MAY25_MONTHLY",
   STARTUP_MAY25_YEARLY = "STARTUP_MAY25_YEARLY",
-  SCALE_MONTHLY = "formbricks_scale_monthly",
-  SCALE_YEARLY = "formbricks_scale_yearly",
 }
 
 export const BILLING_LIMITS = {
@@ -221,20 +211,16 @@ export const BILLING_LIMITS = {
     RESPONSES: 5000,
     MIU: 7500,
   },
-  SCALE: {
-    PROJECTS: 5,
-    RESPONSES: 10000,
-    MIU: 30000,
+  CUSTOM: {
+    PROJECTS: null,
+    RESPONSES: null,
+    MIU: null,
   },
 } as const;
 
-export const INTERCOM_SECRET_KEY = env.INTERCOM_SECRET_KEY;
-export const INTERCOM_APP_ID = env.INTERCOM_APP_ID;
-export const IS_INTERCOM_CONFIGURED = Boolean(env.INTERCOM_APP_ID && INTERCOM_SECRET_KEY);
-
-export const POSTHOG_API_KEY = env.POSTHOG_API_KEY;
-export const POSTHOG_API_HOST = env.POSTHOG_API_HOST;
-export const IS_POSTHOG_CONFIGURED = Boolean(POSTHOG_API_KEY && POSTHOG_API_HOST);
+export const CHATWOOT_WEBSITE_TOKEN = env.CHATWOOT_WEBSITE_TOKEN;
+export const CHATWOOT_BASE_URL = env.CHATWOOT_BASE_URL || "https://app.chatwoot.com";
+export const IS_CHATWOOT_CONFIGURED = Boolean(env.CHATWOOT_WEBSITE_TOKEN);
 
 export const TURNSTILE_SECRET_KEY = env.TURNSTILE_SECRET_KEY;
 export const TURNSTILE_SITE_KEY = env.TURNSTILE_SITE_KEY;
@@ -271,3 +257,6 @@ export const USER_MANAGEMENT_MINIMUM_ROLE = env.USER_MANAGEMENT_MINIMUM_ROLE ?? 
 export const AUDIT_LOG_ENABLED = env.AUDIT_LOG_ENABLED === "1";
 export const AUDIT_LOG_GET_USER_IP = env.AUDIT_LOG_GET_USER_IP === "1";
 export const SESSION_MAX_AGE = Number(env.SESSION_MAX_AGE) || 86400;
+
+// Control hash for constant-time password verification to prevent timing attacks. Used when user doesn't exist to maintain consistent verification timing
+export const CONTROL_HASH = "$2b$12$fzHf9le13Ss9UJ04xzmsjODXpFJxz6vsnupoepF5FiqDECkX2BH5q";

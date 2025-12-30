@@ -1,9 +1,9 @@
-import { validateInputs } from "@/lib/utils/validate";
 import { Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { prisma } from "@formbricks/database";
 import { TDisplayCreateInput } from "@formbricks/types/displays";
 import { DatabaseError, ResourceNotFoundError, ValidationError } from "@formbricks/types/errors";
+import { validateInputs } from "@/lib/utils/validate";
 import { getContactByUserId } from "./contact";
 import { createDisplay } from "./display";
 
@@ -59,7 +59,6 @@ const mockDisplay = {
   contactId,
   surveyId,
   responseId: null,
-  status: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -69,7 +68,6 @@ const mockDisplayWithoutContact = {
   contactId: null,
   surveyId,
   responseId: null,
-  status: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };

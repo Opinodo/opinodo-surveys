@@ -1,9 +1,9 @@
+import { useCallback, useState } from "react";
+import toast from "react-hot-toast";
+import type { TSurvey } from "@formbricks/types/surveys/types";
 import { getFormattedErrorMessage } from "@/lib/utils/helper";
 import { generateSingleUseIdsAction } from "@/modules/survey/list/actions";
 import type { TSurvey as TSurveyList } from "@/modules/survey/list/types/surveys";
-import { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import type { TSurvey } from "@formbricks/types/surveys/types";
 
 export const useSingleUseId = (survey: TSurvey | TSurveyList, isReadOnly: boolean) => {
   const [singleUseId, setSingleUseId] = useState<string>();
@@ -29,10 +29,6 @@ export const useSingleUseId = (survey: TSurvey | TSurveyList, isReadOnly: boolea
       return undefined;
     }
   }, [survey, isReadOnly]);
-
-  useEffect(() => {
-    refreshSingleUseId();
-  }, [refreshSingleUseId]);
 
   return {
     singleUseId: isReadOnly ? undefined : singleUseId,

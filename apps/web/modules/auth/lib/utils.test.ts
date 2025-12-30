@@ -1,7 +1,7 @@
-import { queueAuditEventBackground } from "@/modules/ee/audit-logs/lib/handler";
-import { UNKNOWN_DATA } from "@/modules/ee/audit-logs/types/audit-log";
 import * as Sentry from "@sentry/nextjs";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { queueAuditEventBackground } from "@/modules/ee/audit-logs/lib/handler";
+import { UNKNOWN_DATA } from "@/modules/ee/audit-logs/types/audit-log";
 import {
   createAuditIdentifier,
   hashPassword,
@@ -40,15 +40,41 @@ vi.mock("@/lib/constants", () => ({
   SENTRY_DSN: "test-sentry-dsn",
   IS_PRODUCTION: true,
   REDIS_URL: "redis://localhost:6379",
+  ENCRYPTION_KEY: "test-encryption-key",
 }));
 
-// Mock Redis client
-const { mockGetRedisClient } = vi.hoisted(() => ({
-  mockGetRedisClient: vi.fn(),
+// Mock cache module
+const { mockCache, mockLogger } = vi.hoisted(() => ({
+  mockCache: {
+    getRedisClient: vi.fn(),
+  },
+  mockLogger: {
+    warn: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
-vi.mock("@/modules/cache/redis", () => ({
-  getRedisClient: mockGetRedisClient,
+vi.mock("@/lib/cache", () => ({
+  cache: mockCache,
+}));
+
+vi.mock("@formbricks/logger", () => ({
+  logger: mockLogger,
+}));
+
+// Mock @formbricks/cache
+vi.mock("@formbricks/cache", () => ({
+  createCacheKey: {
+    custom: vi.fn((namespace: string, ...parts: string[]) => `${namespace}:${parts.join(":")}`),
+    rateLimit: {
+      core: vi.fn(
+        (namespace: string, identifier: string, bucketStart: number) =>
+          `rate_limit:${namespace}:${identifier}:${bucketStart}`
+      ),
+    },
+  },
 }));
 
 describe("Auth Utils", () => {
@@ -81,6 +107,67 @@ describe("Auth Utils", () => {
       const isValid = await verifyPassword("WrongPassword123!", hashedPassword);
       expect(isValid).toBe(false);
     });
+
+    test("should handle empty password correctly", async () => {
+      const isValid = await verifyPassword("", hashedPassword);
+      expect(isValid).toBe(false);
+    });
+
+    test("should handle empty hash correctly", async () => {
+      const isValid = await verifyPassword(password, "");
+      expect(isValid).toBe(false);
+    });
+
+    test("should generate different hashes for same password", async () => {
+      const hash1 = await hashPassword(password);
+      const hash2 = await hashPassword(password);
+
+      expect(hash1).not.toBe(hash2);
+      expect(await verifyPassword(password, hash1)).toBe(true);
+      expect(await verifyPassword(password, hash2)).toBe(true);
+    });
+
+    test("should hash complex passwords correctly", async () => {
+      const complexPassword = "MyC0mpl3x!P@ssw0rd#2024$%^&*()";
+      const hashedComplex = await hashPassword(complexPassword);
+
+      expect(typeof hashedComplex).toBe("string");
+      expect(hashedComplex.length).toBe(60);
+      expect(await verifyPassword(complexPassword, hashedComplex)).toBe(true);
+      expect(await verifyPassword("wrong", hashedComplex)).toBe(false);
+    });
+
+    test("should handle bcrypt errors gracefully and log warning", async () => {
+      // Save the original bcryptjs implementation
+      const originalModule = await import("bcryptjs");
+
+      // Mock bcryptjs to throw an error on compare
+      vi.doMock("bcryptjs", () => ({
+        ...originalModule,
+        compare: vi.fn().mockRejectedValue(new Error("Invalid salt version")),
+        hash: originalModule.hash, // Keep hash working
+      }));
+
+      // Re-import the utils module to use the mocked bcryptjs
+      const { verifyPassword: verifyPasswordMocked } = await import("./utils?t=" + Date.now());
+
+      const password = "testPassword";
+      const invalidHash = "invalid-hash-format";
+
+      const result = await verifyPasswordMocked(password, invalidHash);
+
+      // Should return false for security
+      expect(result).toBe(false);
+
+      // Should log warning with correct signature (Pino format: object first, then message)
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        { error: expect.any(Error) },
+        "Secret verification failed due to invalid hash format"
+      );
+
+      // Restore the module
+      vi.doUnmock("bcryptjs");
+    });
   });
 
   describe("Audit Identifier Utils", () => {
@@ -110,20 +197,115 @@ describe("Auth Utils", () => {
       const identifier = createAuditIdentifier("test@example.com");
       expect(identifier).toMatch(/^actor_/);
     });
+
+    test("should handle case-insensitive inputs consistently", () => {
+      const id1 = createAuditIdentifier("User@Example.COM", "email");
+      const id2 = createAuditIdentifier("user@example.com", "email");
+
+      expect(id1).toBe(id2);
+    });
+
+    test("should handle special characters in identifiers", () => {
+      const specialEmail = "user+test@example-domain.co.uk";
+      const identifier = createAuditIdentifier(specialEmail, "email");
+
+      expect(identifier).toMatch(/^email_/);
+      expect(identifier).not.toContain("user+test");
+      expect(identifier.length).toBe(38); // "email_" + 32 chars
+    });
+
+    test("should create different hashes for different prefixes", () => {
+      const input = "test@example.com";
+      const emailId = createAuditIdentifier(input, "email");
+      const ipId = createAuditIdentifier(input, "ip");
+
+      expect(emailId).not.toBe(ipId);
+      expect(emailId).toMatch(/^email_/);
+      expect(ipId).toMatch(/^ip_/);
+    });
+
+    test("should handle numeric identifiers", () => {
+      const numericId = "12345678";
+      const identifier = createAuditIdentifier(numericId, "user");
+
+      expect(identifier).toMatch(/^user_/);
+      expect(identifier).not.toContain("12345678");
+    });
   });
 
   describe("Rate Limiting", () => {
     test("should always allow successful authentication logging", async () => {
       // This test doesn't need Redis to be available as it short-circuits for success
-      mockGetRedisClient.mockResolvedValue(null);
+      mockCache.getRedisClient.mockResolvedValue(null);
 
       expect(await shouldLogAuthFailure("user@example.com", true)).toBe(true);
       expect(await shouldLogAuthFailure("user@example.com", true)).toBe(true);
     });
 
+    describe("Bucket Time Alignment", () => {
+      test("should align timestamps to bucket boundaries for consistent keys across pods", async () => {
+        mockCache.getRedisClient.mockResolvedValue(null);
+
+        const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes = 300000ms
+
+        // Test with a known aligned timestamp (start of hour for simplicity)
+        const alignedTime = 1700000000000; // Use this as our aligned bucket start
+        const bucketStart = Math.floor(alignedTime / RATE_LIMIT_WINDOW) * RATE_LIMIT_WINDOW;
+
+        // Verify bucket alignment logic with specific test cases
+        const testCases = [
+          { timestamp: bucketStart, expected: bucketStart },
+          { timestamp: bucketStart + 50000, expected: bucketStart }, // 50 seconds later
+          { timestamp: bucketStart + 100000, expected: bucketStart }, // 1 min 40 sec later
+          { timestamp: bucketStart + 200000, expected: bucketStart }, // 3 min 20 sec later
+          { timestamp: bucketStart + RATE_LIMIT_WINDOW, expected: bucketStart + RATE_LIMIT_WINDOW }, // Next bucket
+        ];
+
+        for (const { timestamp, expected } of testCases) {
+          const actualBucketStart = Math.floor(timestamp / RATE_LIMIT_WINDOW) * RATE_LIMIT_WINDOW;
+          expect(actualBucketStart).toBe(expected);
+        }
+      });
+
+      test("should create consistent cache keys with bucketed timestamps", async () => {
+        const { createCacheKey } = await import("@formbricks/cache");
+        const { createAuditIdentifier } = await import("./utils");
+
+        mockCache.getRedisClient.mockResolvedValue(null);
+
+        const identifier = "test@example.com";
+        const hashedIdentifier = createAuditIdentifier(identifier, "ratelimit");
+
+        const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes = 300000ms
+
+        // Use a simple aligned time for testing
+        const baseTime = 1700000000000;
+        const bucketStart = Math.floor(baseTime / RATE_LIMIT_WINDOW) * RATE_LIMIT_WINDOW;
+
+        // Test that cache keys are consistent for the same bucket
+        const timestamp1 = bucketStart;
+        const timestamp2 = bucketStart + 60000; // 1 minute later in same bucket
+
+        const bucketStart1 = Math.floor(timestamp1 / RATE_LIMIT_WINDOW) * RATE_LIMIT_WINDOW;
+        const bucketStart2 = Math.floor(timestamp2 / RATE_LIMIT_WINDOW) * RATE_LIMIT_WINDOW;
+
+        // Both should align to the same bucket
+        expect(bucketStart1).toBe(bucketStart);
+        expect(bucketStart2).toBe(bucketStart);
+
+        // Both should generate the same cache key
+        const key1 = (createCacheKey.rateLimit.core as any)("auth", hashedIdentifier, bucketStart1);
+        const key2 = (createCacheKey.rateLimit.core as any)("auth", hashedIdentifier, bucketStart2);
+        expect(key1).toBe(key2);
+
+        const expectedKey = `rate_limit:auth:${hashedIdentifier}:${bucketStart}`;
+        expect(key1).toBe(expectedKey);
+      });
+    });
+
     test("should implement fail-closed behavior when Redis is unavailable", async () => {
       // Set Redis unavailable for this test
-      mockGetRedisClient.mockResolvedValue(null);
+      mockCache.getRedisClient.mockResolvedValue(null);
 
       const email = "rate-limit-test@example.com";
 
@@ -167,8 +349,8 @@ describe("Auth Utils", () => {
         };
 
         // Reset the Redis mock for these specific tests
-        mockGetRedisClient.mockReset();
-        mockGetRedisClient.mockReturnValue(mockRedis); // Use mockReturnValue instead of mockResolvedValue
+        mockCache.getRedisClient.mockReset();
+        mockCache.getRedisClient.mockResolvedValue(mockRedis); // Use mockResolvedValue since it's now async
       });
 
       test("should handle Redis transaction failure - !results branch", async () => {
@@ -188,15 +370,15 @@ describe("Auth Utils", () => {
         };
 
         // Reset and setup mock for this specific test
-        mockGetRedisClient.mockReset();
-        mockGetRedisClient.mockReturnValue(testMockRedis);
+        mockCache.getRedisClient.mockReset();
+        mockCache.getRedisClient.mockResolvedValue(testMockRedis);
 
         const email = "transaction-failure@example.com";
         const result = await shouldLogAuthFailure(email, false);
 
         // Function should return false when Redis transaction fails (fail-closed behavior)
         expect(result).toBe(false);
-        expect(mockGetRedisClient).toHaveBeenCalled();
+        expect(mockCache.getRedisClient).toHaveBeenCalled();
         expect(testMockRedis.multi).toHaveBeenCalled();
         expect(testMockMulti.zRemRangeByScore).toHaveBeenCalled();
         expect(testMockMulti.zCard).toHaveBeenCalled();
@@ -388,6 +570,23 @@ describe("Auth Utils", () => {
           expect.stringContaining("rate_limit:auth:"),
           expect.any(Number)
         );
+      });
+
+      test("should handle edge case with empty identifier", async () => {
+        const result = await shouldLogAuthFailure("", false);
+        expect(result).toBe(false);
+      });
+
+      test("should handle edge case with null identifier", async () => {
+        // @ts-expect-error - Testing runtime behavior with null
+        const result = await shouldLogAuthFailure(null, false);
+        expect(result).toBe(false);
+      });
+
+      test("should handle edge case with undefined identifier", async () => {
+        // @ts-expect-error - Testing runtime behavior with undefined
+        const result = await shouldLogAuthFailure(undefined, false);
+        expect(result).toBe(false);
       });
     });
   });

@@ -1,5 +1,8 @@
 "use client";
 
+import { Language } from "@prisma/client";
+import { useTranslation } from "react-i18next";
+import { getLanguageLabel } from "@formbricks/i18n-utils/src/utils";
 import { DefaultTag } from "@/modules/ui/components/default-tag";
 import { Label } from "@/modules/ui/components/label";
 import {
@@ -9,9 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/modules/ui/components/select";
-import { Language } from "@prisma/client";
-import { useTranslate } from "@tolgee/react";
-import { getLanguageLabel } from "@formbricks/i18n-utils/src/utils";
 import type { ConfirmationModalProps } from "./multi-language-card";
 
 interface DefaultLanguageSelectProps {
@@ -29,7 +29,7 @@ export function DefaultLanguageSelect({
   setConfirmationModalInfo,
   locale,
 }: DefaultLanguageSelectProps) {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       <Label>{t("environments.surveys.edit.1_choose_the_default_language_for_this_survey")}</Label>
@@ -56,7 +56,7 @@ export function DefaultLanguageSelect({
               });
             }}
             value={`${defaultLanguage?.code}`}>
-            <SelectTrigger className="xs:w-[180px] xs:text-sm w-full px-4 text-xs text-slate-800 dark:border-slate-400 dark:bg-slate-700 dark:text-slate-300">
+            <SelectTrigger className="w-full max-w-full truncate px-4 text-xs text-slate-800">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

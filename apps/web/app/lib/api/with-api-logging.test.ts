@@ -1,9 +1,9 @@
-import { AuthenticationMethod } from "@/app/middleware/endpoint-validator";
 import * as Sentry from "@sentry/nextjs";
 import { NextRequest } from "next/server";
 import { Mock, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "@formbricks/logger";
 import { TAuthenticationApiKey } from "@formbricks/types/auth";
+import { AuthenticationMethod } from "@/app/middleware/endpoint-validator";
 import { responses } from "./response";
 
 // Mocks
@@ -14,12 +14,24 @@ vi.mock("@/modules/ee/audit-logs/lib/handler", () => ({
 
 vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
+  withScope: vi.fn((callback) => {
+    callback(mockSentryScope);
+    return mockSentryScope;
+  }),
 }));
 
 // Define these outside the mock factory so they can be referenced in tests and reset by clearAllMocks.
 const mockContextualLoggerError = vi.fn();
 const mockContextualLoggerWarn = vi.fn();
 const mockContextualLoggerInfo = vi.fn();
+
+// Mock Sentry scope that can be referenced in tests
+const mockSentryScope = {
+  setTag: vi.fn(),
+  setExtra: vi.fn(),
+  setContext: vi.fn(),
+  setLevel: vi.fn(),
+};
 
 vi.mock("@formbricks/logger", () => {
   const mockWithContextInstance = vi.fn(() => ({
@@ -92,10 +104,12 @@ function createMockRequest({ method = "GET", url = "https://api.test/endpoint", 
 }
 
 const mockApiAuthentication = {
-  hashedApiKey: "test-api-key",
+  type: "apiKey" as const,
+  environmentPermissions: [],
   apiKeyId: "api-key-1",
   organizationId: "org-1",
-} as TAuthenticationApiKey;
+  organizationAccess: "all" as const,
+} as unknown as TAuthenticationApiKey;
 
 describe("withV1ApiWrapper", () => {
   beforeEach(() => {
@@ -110,6 +124,12 @@ describe("withV1ApiWrapper", () => {
     }));
 
     vi.clearAllMocks();
+
+    // Reset mock Sentry scope calls
+    mockSentryScope.setTag.mockClear();
+    mockSentryScope.setExtra.mockClear();
+    mockSentryScope.setContext.mockClear();
+    mockSentryScope.setLevel.mockClear();
   });
 
   test("logs and audits on error response with API key authentication", async () => {
@@ -161,10 +181,9 @@ describe("withV1ApiWrapper", () => {
         organizationId: "org-1",
       })
     );
-    expect(Sentry.captureException).toHaveBeenCalledWith(
-      expect.any(Error),
-      expect.objectContaining({ extra: expect.objectContaining({ correlationId: "abc-123" }) })
-    );
+    expect(Sentry.withScope).toHaveBeenCalled();
+    expect(mockSentryScope.setExtra).toHaveBeenCalledWith("originalError", undefined);
+    expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(Error));
   });
 
   test("does not log Sentry if not 500", async () => {
@@ -269,10 +288,8 @@ describe("withV1ApiWrapper", () => {
         organizationId: "org-1",
       })
     );
-    expect(Sentry.captureException).toHaveBeenCalledWith(
-      expect.any(Error),
-      expect.objectContaining({ extra: expect.objectContaining({ correlationId: "err-1" }) })
-    );
+    expect(Sentry.withScope).toHaveBeenCalled();
+    expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(Error));
   });
 
   test("does not log on success response but still audits", async () => {

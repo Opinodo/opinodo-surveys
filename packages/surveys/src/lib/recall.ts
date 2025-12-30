@@ -1,7 +1,7 @@
+import { type TResponseData, type TResponseVariables } from "@formbricks/types/responses";
+import { TSurveyElement, TSurveyElementTypeEnum } from "@formbricks/types/surveys/elements";
 import { formatDateWithOrdinal, isValidDateString } from "@/lib/date-time";
 import { getLocalizedValue } from "@/lib/i18n";
-import { type TResponseData, type TResponseVariables } from "@formbricks/types/responses";
-import { type TSurveyQuestion } from "@formbricks/types/surveys/types";
 
 // Extracts the ID of recall question from a string containing the "recall" pattern.
 const extractId = (text: string): string | null => {
@@ -69,11 +69,11 @@ export const replaceRecallInfo = (
 };
 
 export const parseRecallInformation = (
-  question: TSurveyQuestion,
+  question: TSurveyElement,
   languageCode: string,
   responseData: TResponseData,
   variables: TResponseVariables
-) => {
+): TSurveyElement => {
   const modifiedQuestion = JSON.parse(JSON.stringify(question));
   if (question.headline[languageCode].includes("recall:")) {
     modifiedQuestion.headline[languageCode] = replaceRecallInfo(
@@ -83,6 +83,18 @@ export const parseRecallInformation = (
     );
   }
   if (
+    question.subheader &&
+    question.subheader[languageCode].includes("recall:") &&
+    modifiedQuestion.subheader
+  ) {
+    modifiedQuestion.subheader[languageCode] = replaceRecallInfo(
+      getLocalizedValue(modifiedQuestion.subheader, languageCode),
+      responseData,
+      variables
+    );
+  }
+  if (
+    (question.type === TSurveyElementTypeEnum.CTA || question.type === TSurveyElementTypeEnum.Consent) &&
     question.subheader &&
     question.subheader[languageCode].includes("recall:") &&
     modifiedQuestion.subheader

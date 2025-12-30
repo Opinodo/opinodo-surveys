@@ -1,8 +1,42 @@
 "use client";
 
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  FingerprintIcon,
+  MonitorSmartphoneIcon,
+  MoreVertical,
+  TagIcon,
+  Trash2,
+  Users2Icon,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
+import type {
+  TArithmeticOperator,
+  TAttributeOperator,
+  TBaseFilter,
+  TDeviceOperator,
+  TSegment,
+  TSegmentAttributeFilter,
+  TSegmentConnector,
+  TSegmentDeviceFilter,
+  TSegmentFilter,
+  TSegmentFilterValue,
+  TSegmentOperator,
+  TSegmentPersonFilter,
+  TSegmentSegmentFilter,
+} from "@formbricks/types/segment";
+import {
+  ARITHMETIC_OPERATORS,
+  ATTRIBUTE_OPERATORS,
+  DEVICE_OPERATORS,
+  PERSON_OPERATORS,
+} from "@formbricks/types/segment";
 import { cn } from "@/lib/cn";
 import { structuredClone } from "@/lib/pollyfills/structuredClone";
-import { isCapitalized } from "@/lib/utils/strings";
 import {
   convertOperatorToText,
   convertOperatorToTitle,
@@ -29,41 +63,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/modules/ui/components/select";
-import { useTranslate } from "@tolgee/react";
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  FingerprintIcon,
-  MonitorSmartphoneIcon,
-  MoreVertical,
-  TagIcon,
-  Trash2,
-  Users2Icon,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { z } from "zod";
-import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
-import type {
-  TArithmeticOperator,
-  TAttributeOperator,
-  TBaseFilter,
-  TDeviceOperator,
-  TSegment,
-  TSegmentAttributeFilter,
-  TSegmentConnector,
-  TSegmentDeviceFilter,
-  TSegmentFilter,
-  TSegmentFilterValue,
-  TSegmentOperator,
-  TSegmentPersonFilter,
-  TSegmentSegmentFilter,
-} from "@formbricks/types/segment";
-import {
-  ARITHMETIC_OPERATORS,
-  ATTRIBUTE_OPERATORS,
-  DEVICE_OPERATORS,
-  PERSON_OPERATORS,
-} from "@formbricks/types/segment";
 import { AddFilterModal } from "./add-filter-modal";
 
 interface TSegmentFilterProps {
@@ -94,7 +93,7 @@ function SegmentFilterItemConnector({
   filterId: string;
   viewOnly?: boolean;
 }) {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const updateLocalSurvey = (newConnector: TSegmentConnector) => {
     const updatedSegment = structuredClone(segment);
     if (updatedSegment.filters) {
@@ -145,12 +144,14 @@ function SegmentFilterItemContextMenu({
   onMoveFilter: (filterId: string, direction: "up" | "down") => void;
   viewOnly?: boolean;
 }) {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2">
       <DropdownMenu>
-        <DropdownMenuTrigger disabled={viewOnly}>
-          <MoreVertical className="h-4 w-4" />
+        <DropdownMenuTrigger asChild disabled={viewOnly}>
+          <Button variant="outline" size="icon">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent>
@@ -185,13 +186,13 @@ function SegmentFilterItemContextMenu({
       </DropdownMenu>
 
       <Button
-        className="mr-4 p-0"
+        size="icon"
         disabled={viewOnly}
         onClick={() => {
           if (viewOnly) return;
           onDeleteFilter(filterId);
         }}
-        variant="ghost">
+        variant="outline">
         <Trash2 className={cn("h-4 w-4 cursor-pointer", viewOnly && "cursor-not-allowed")} />
       </Button>
     </div>
@@ -218,7 +219,7 @@ function AttributeSegmentFilter({
   viewOnly,
 }: TAttributeSegmentFilterProps) {
   const { contactAttributeKey } = resource.root;
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const operatorText = convertOperatorToText(resource.qualifier.operator);
 
   const [valueError, setValueError] = useState("");
@@ -314,10 +315,10 @@ function AttributeSegmentFilter({
         }}
         value={attrKeyValue}>
         <SelectTrigger
-          className="flex w-auto items-center justify-center whitespace-nowrap bg-white capitalize"
+          className="flex w-auto items-center justify-center whitespace-nowrap bg-white"
           hideArrow>
           <SelectValue>
-            <div className={cn("flex items-center gap-2", !isCapitalized(attrKeyValue ?? "") && "lowercase")}>
+            <div className="flex items-center gap-2">
               <TagIcon className="h-4 w-4 text-sm" />
               <p>{attrKeyValue}</p>
             </div>
@@ -357,7 +358,7 @@ function AttributeSegmentFilter({
       {!["isSet", "isNotSet"].includes(resource.qualifier.operator) && (
         <div className="relative flex flex-col gap-1">
           <Input
-            className={cn("w-auto bg-white", valueError && "border border-red-500 focus:border-red-500")}
+            className={cn("h-9 w-auto bg-white", valueError && "border border-red-500 focus:border-red-500")}
             disabled={viewOnly}
             onChange={(e) => {
               if (viewOnly) return;
@@ -406,7 +407,7 @@ function PersonSegmentFilter({
 }: TPersonSegmentFilterProps) {
   const { personIdentifier } = resource.root;
   const operatorText = convertOperatorToText(resource.qualifier.operator);
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const [valueError, setValueError] = useState("");
 
   // when the operator changes, we need to check if the value is valid
@@ -496,7 +497,7 @@ function PersonSegmentFilter({
         }}
         value={personIdentifier}>
         <SelectTrigger
-          className="flex w-auto items-center justify-center whitespace-nowrap bg-white capitalize"
+          className="flex w-auto items-center justify-center whitespace-nowrap bg-white"
           hideArrow>
           <SelectValue>
             <div className="flex items-center gap-1 lowercase">
@@ -537,7 +538,7 @@ function PersonSegmentFilter({
       {!["isSet", "isNotSet"].includes(resource.qualifier.operator) && (
         <div className="relative flex flex-col gap-1">
           <Input
-            className={cn("w-auto bg-white", valueError && "border border-red-500 focus:border-red-500")}
+            className={cn("h-8 w-auto bg-white", valueError && "border border-red-500 focus:border-red-500")}
             disabled={viewOnly}
             onChange={(e) => {
               if (viewOnly) return;
@@ -647,7 +648,7 @@ function SegmentSegmentFilter({
         }}
         value={currentSegment?.id}>
         <SelectTrigger
-          className="flex w-auto items-center justify-center whitespace-nowrap bg-white capitalize"
+          className="flex w-auto items-center justify-center whitespace-nowrap bg-white"
           hideArrow>
           <div className="flex items-center gap-1">
             <Users2Icon className="h-4 w-4 text-sm" />
@@ -692,7 +693,7 @@ function DeviceFilter({
   viewOnly,
 }: TDeviceFilterProps) {
   const { value } = resource;
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const operatorText = convertOperatorToText(resource.qualifier.operator);
   const operatorArr = DEVICE_OPERATORS.map((operator) => ({
     id: operator,
@@ -800,7 +801,7 @@ export function SegmentFilter({
   onMoveFilter,
   viewOnly = false,
 }: TSegmentFilterProps) {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const [addFilterModalOpen, setAddFilterModalOpen] = useState(false);
   const updateFilterValueInSegment = (filterId: string, newValue: string | number) => {
     const updatedSegment = structuredClone(segment);

@@ -1,5 +1,23 @@
 "use client";
 
+import { TFunction } from "i18next";
+import { PlusIcon, TrashIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Control,
+  FieldArrayWithId,
+  UseFieldArrayRemove,
+  UseFormReturn,
+  useFieldArray,
+  useWatch,
+} from "react-hook-form";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import {
+  ACTION_CLASS_PAGE_URL_RULES,
+  TActionClassInput,
+  TActionClassPageUrlRule,
+} from "@formbricks/types/action-classes";
 import { cn } from "@/lib/cn";
 import { testURLmatch } from "@/lib/utils/url";
 import { Button } from "@/modules/ui/components/button";
@@ -14,25 +32,8 @@ import {
   SelectValue,
 } from "@/modules/ui/components/select";
 import { TabToggle } from "@/modules/ui/components/tab-toggle";
-import { TFnType, useTranslate } from "@tolgee/react";
-import { PlusIcon, TrashIcon } from "lucide-react";
-import { useMemo, useState } from "react";
-import {
-  Control,
-  FieldArrayWithId,
-  UseFieldArrayRemove,
-  UseFormReturn,
-  useFieldArray,
-  useWatch,
-} from "react-hook-form";
-import toast from "react-hot-toast";
-import {
-  ACTION_CLASS_PAGE_URL_RULES,
-  TActionClassInput,
-  TActionClassPageUrlRule,
-} from "@formbricks/types/action-classes";
 
-const getRuleLabel = (rule: TActionClassPageUrlRule, t: TFnType): string => {
+const getRuleLabel = (rule: TActionClassPageUrlRule, t: TFunction): string => {
   switch (rule) {
     case "exactMatch":
       return t("environments.actions.exactly_matches");
@@ -61,8 +62,9 @@ interface PageUrlSelectorProps {
 export const PageUrlSelector = ({ form, isReadOnly }: PageUrlSelectorProps) => {
   const [testUrl, setTestUrl] = useState("");
   const [isMatch, setIsMatch] = useState<boolean | null>(null);
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const urlFilters = form.watch("noCodeConfig.urlFilters");
+  const urlFiltersConnector = form.watch("noCodeConfig.urlFiltersConnector") ?? "or";
   const filterType = urlFilters?.length ? "specific" : "all";
 
   const setFilterType = (value: string) => {
@@ -71,10 +73,20 @@ export const PageUrlSelector = ({ form, isReadOnly }: PageUrlSelectorProps) => {
 
   const handleMatchClick = () => {
     try {
-      const match =
-        urlFilters?.some((urlFilter) => {
-          return testURLmatch(testUrl, urlFilter.value, urlFilter.rule, t);
-        }) || false;
+      const connector = urlFiltersConnector ?? "or";
+      let match = false;
+
+      if (connector === "and") {
+        match =
+          urlFilters?.every((urlFilter) => {
+            return testURLmatch(testUrl, urlFilter.value, urlFilter.rule, t);
+          }) || false;
+      } else {
+        match =
+          urlFilters?.some((urlFilter) => {
+            return testURLmatch(testUrl, urlFilter.value, urlFilter.rule, t);
+          }) || false;
+      }
 
       setIsMatch(match);
       if (match) toast.success(t("environments.actions.your_survey_would_be_shown_on_this_url"));
@@ -138,6 +150,10 @@ export const PageUrlSelector = ({ form, isReadOnly }: PageUrlSelectorProps) => {
             fields={fields}
             removeUrlRule={removeUrlRule}
             disabled={isReadOnly}
+            connector={urlFiltersConnector}
+            onConnectorChange={(value) => {
+              form.setValue("noCodeConfig.urlFiltersConnector", value as "or" | "and");
+            }}
           />
           <Button variant="secondary" size="sm" type="button" onClick={handleAddMore} disabled={isReadOnly}>
             <PlusIcon className="mr-2 h-4 w-4" />
@@ -184,13 +200,17 @@ const UrlInput = ({
   fields,
   removeUrlRule,
   disabled,
+  connector,
+  onConnectorChange,
 }: {
   control: Control<TActionClassInput>;
   fields: FieldArrayWithId<TActionClassInput, "noCodeConfig.urlFilters", "id">[];
   removeUrlRule: UseFieldArrayRemove;
   disabled: boolean;
+  connector: "or" | "and";
+  onConnectorChange: (value: string) => void;
 }) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
 
   // Watch all rule values to determine placeholders
   const ruleValues = useWatch({
@@ -201,7 +221,17 @@ const UrlInput = ({
     <div className="flex w-full flex-col gap-2">
       {fields.map((field, index) => (
         <div key={field.id} className="ml-1 flex items-start space-x-2">
-          {index !== 0 && <p className="ml-1 text-sm font-bold text-slate-700">or</p>}
+          {index !== 0 && (
+            <Select value={connector} onValueChange={onConnectorChange} disabled={disabled}>
+              <SelectTrigger className="h-[40px] w-[80px] bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="or">{t("environments.actions.or")}</SelectItem>
+                <SelectItem value="and">{t("environments.actions.and")}</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <FormField
             name={`noCodeConfig.urlFilters.${index}.rule`}
             control={control}

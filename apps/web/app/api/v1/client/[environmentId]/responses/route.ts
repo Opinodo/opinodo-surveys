@@ -1,19 +1,20 @@
-import { responses } from "@/app/lib/api/response";
-import { transformErrorToDetails } from "@/app/lib/api/validator";
-import { withV1ApiWrapper } from "@/app/lib/api/with-api-logging";
-import { sendToPipeline } from "@/app/lib/pipelines";
-import { validateFileUploads } from "@/lib/fileValidation";
-import { capturePosthogEnvironmentEvent } from "@/lib/posthogServer";
-import { getSurvey } from "@/lib/survey/service";
-import { getIsContactsEnabled } from "@/modules/ee/license-check/lib/utils";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 import { UAParser } from "ua-parser-js";
 import { logger } from "@formbricks/logger";
-import { ZId } from "@formbricks/types/common";
+import { ZEnvironmentId } from "@formbricks/types/environment";
 import { InvalidInputError } from "@formbricks/types/errors";
-import { TResponse, TResponseInput, ZResponseInput } from "@formbricks/types/responses";
-import { createResponse } from "./lib/response";
+import { TResponseWithQuotaFull } from "@formbricks/types/quota";
+import { TResponseInput, ZResponseInput } from "@formbricks/types/responses";
+import { responses } from "@/app/lib/api/response";
+import { transformErrorToDetails } from "@/app/lib/api/validator";
+import { withV1ApiWrapper } from "@/app/lib/api/with-api-logging";
+import { sendToPipeline } from "@/app/lib/pipelines";
+import { getSurvey } from "@/lib/survey/service";
+import { getIsContactsEnabled } from "@/modules/ee/license-check/lib/utils";
+import { createQuotaFullObject } from "@/modules/ee/quotas/lib/helpers";
+import { validateFileUploads } from "@/modules/storage/utils";
+import { createResponseWithQuotaEvaluation } from "./lib/response";
 
 interface Context {
   params: Promise<{
@@ -49,7 +50,7 @@ export const POST = withV1ApiWrapper({
     }
 
     const { environmentId } = params;
-    const environmentIdValidation = ZId.safeParse(environmentId);
+    const environmentIdValidation = ZEnvironmentId.safeParse(environmentId);
     const responseInputValidation = ZResponseInput.safeParse({ ...responseInput, environmentId });
 
     if (!environmentIdValidation.success) {
@@ -121,7 +122,7 @@ export const POST = withV1ApiWrapper({
       };
     }
 
-    let response: TResponse;
+    let response: TResponseWithQuotaFull;
     try {
       const meta: TResponseInput["meta"] = {
         source: responseInputData?.meta?.source ?? "",
@@ -135,7 +136,7 @@ export const POST = withV1ApiWrapper({
         action: responseInputData?.meta?.action,
       };
 
-      response = await createResponse({
+      response = await createResponseWithQuotaEvaluation({
         ...responseInputData,
         meta,
         panelistId: responseInputData.userId || "",
@@ -153,29 +154,33 @@ export const POST = withV1ApiWrapper({
       }
     }
 
+    const { quotaFull, ...responseData } = response;
+
     sendToPipeline({
       event: "responseCreated",
       environmentId: survey.environmentId,
-      surveyId: response.surveyId,
-      response: response,
+      surveyId: responseData.surveyId,
+      response: responseData,
     });
 
     if (responseInput.finished) {
       sendToPipeline({
         event: "responseFinished",
         environmentId: survey.environmentId,
-        surveyId: response.surveyId,
-        response: response,
+        surveyId: responseData.surveyId,
+        response: responseData,
       });
     }
 
-    await capturePosthogEnvironmentEvent(survey.environmentId, "response created", {
-      surveyId: response.surveyId,
-      surveyType: survey.type,
-    });
+    const quotaObj = createQuotaFullObject(quotaFull);
+
+    const responseDataWithQuota = {
+      id: responseData.id,
+      ...quotaObj,
+    };
 
     return {
-      response: responses.successResponse({ id: response.id }, true),
+      response: responses.successResponse(responseDataWithQuota, true),
     };
   },
 });

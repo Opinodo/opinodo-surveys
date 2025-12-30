@@ -1,11 +1,4 @@
 import "server-only";
-import {
-  GOOGLE_SHEETS_CLIENT_ID,
-  GOOGLE_SHEETS_CLIENT_SECRET,
-  GOOGLE_SHEETS_REDIRECT_URL,
-} from "@/lib/constants";
-import { GOOGLE_SHEET_MESSAGE_LIMIT } from "@/lib/constants";
-import { createOrUpdateIntegration } from "@/lib/integration/service";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ZString } from "@formbricks/types/common";
@@ -14,6 +7,13 @@ import {
   TIntegrationGoogleSheets,
   ZIntegrationGoogleSheets,
 } from "@formbricks/types/integration/google-sheet";
+import {
+  GOOGLE_SHEETS_CLIENT_ID,
+  GOOGLE_SHEETS_CLIENT_SECRET,
+  GOOGLE_SHEETS_REDIRECT_URL,
+} from "@/lib/constants";
+import { GOOGLE_SHEET_MESSAGE_LIMIT } from "@/lib/constants";
+import { createOrUpdateIntegration } from "@/lib/integration/service";
 import { truncateText } from "../utils/strings";
 import { validateInputs } from "../utils/validate";
 
@@ -22,31 +22,36 @@ const { google } = require("googleapis");
 export const writeData = async (
   integrationData: TIntegrationGoogleSheets,
   spreadsheetId: string,
-  values: string[][]
+  responses: string[],
+  elements: string[]
 ) => {
   validateInputs(
     [integrationData, ZIntegrationGoogleSheets],
     [spreadsheetId, ZString],
-    [values, z.array(z.array(ZString))]
+    [responses, z.array(ZString)],
+    [elements, z.array(ZString)]
   );
 
   try {
     const authClient = await authorize(integrationData);
     const sheets = google.sheets({ version: "v4", auth: authClient });
-    const responses = {
+    const responsesMapped = {
       values: [
-        values[0].map((value) =>
-          value.length > GOOGLE_SHEET_MESSAGE_LIMIT ? truncateText(value, GOOGLE_SHEET_MESSAGE_LIMIT) : value
+        responses.map((response) =>
+          response.length > GOOGLE_SHEET_MESSAGE_LIMIT
+            ? truncateText(response, GOOGLE_SHEET_MESSAGE_LIMIT)
+            : response
         ),
       ],
     };
-    const question = { values: [values[1]] };
+
+    const element = { values: [elements] };
     sheets.spreadsheets.values.update(
       {
         spreadsheetId: spreadsheetId,
         range: "A1",
         valueInputOption: "RAW",
-        resource: question,
+        resource: element,
       },
       (err: Error) => {
         if (err) {
@@ -60,7 +65,7 @@ export const writeData = async (
         spreadsheetId: spreadsheetId,
         range: "A2",
         valueInputOption: "RAW",
-        resource: responses,
+        resource: responsesMapped,
       },
       (err: Error) => {
         if (err) {

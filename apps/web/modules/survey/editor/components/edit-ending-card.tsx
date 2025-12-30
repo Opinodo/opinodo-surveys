@@ -1,5 +1,17 @@
 "use client";
 
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { createId } from "@paralleldrive/cuid2";
+import * as Collapsible from "@radix-ui/react-collapsible";
+import { GripIcon, Handshake, Link2, Undo2 } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { TSurveyQuota } from "@formbricks/types/quota";
+import { TSurvey, TSurveyEndScreenCard, TSurveyRedirectUrlCard, TSurveyAffiliateOfferCard } from "@formbricks/types/surveys/types";
+import { getTextContent } from "@formbricks/types/surveys/validation";
+import { TUserLocale } from "@formbricks/types/user";
 import { cn } from "@/lib/cn";
 import { recallToHeadline } from "@/lib/utils/recall";
 import { translateText } from "@/modules/survey/editor/actions";
@@ -7,43 +19,31 @@ import { AffiliateOfferForm } from "@/modules/survey/editor/components/affiliate
 import { EditorCardMenu } from "@/modules/survey/editor/components/editor-card-menu";
 import { EndScreenForm } from "@/modules/survey/editor/components/end-screen-form";
 import { RedirectUrlForm } from "@/modules/survey/editor/components/redirect-url-form";
-// New import
-import { findEndingCardUsedInLogic, formatTextWithSlashes } from "@/modules/survey/editor/lib/utils";
+import {
+  findEndingCardUsedInLogic,
+  formatTextWithSlashes,
+  isUsedInQuota,
+} from "@/modules/survey/editor/lib/utils";
 import { ConfirmationModal } from "@/modules/ui/components/confirmation-modal";
 import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import { OptionsSwitch } from "@/modules/ui/components/options-switch";
 import { TooltipRenderer } from "@/modules/ui/components/tooltip";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { createId } from "@paralleldrive/cuid2";
-import * as Collapsible from "@radix-ui/react-collapsible";
-import { useTranslate } from "@tolgee/react";
-import { GripIcon, Handshake, Link2, Undo2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { TOrganizationBillingPlan } from "@formbricks/types/organizations";
-import {
-  TSurvey,
-  TSurveyAffiliateOfferCard,
-  TSurveyEndScreenCard,
-  TSurveyQuestionId,
-  TSurveyRedirectUrlCard,
-} from "@formbricks/types/surveys/types";
-import { TUserLocale } from "@formbricks/types/user";
 
 interface EditEndingCardProps {
   localSurvey: TSurvey;
   endingCardIndex: number;
   setLocalSurvey: React.Dispatch<React.SetStateAction<TSurvey>>;
-  setActiveQuestionId: (id: string | null) => void;
-  activeQuestionId: TSurveyQuestionId | null;
+  setActiveElementId: (id: string | null) => void;
+  activeElementId: string | null;
   isInvalid: boolean;
   selectedLanguageCode: string;
   setSelectedLanguageCode: (languageCode: string) => void;
-  plan: TOrganizationBillingPlan;
   addEndingCard: (index: number) => void;
   isFormbricksCloud: boolean;
   locale: TUserLocale;
+  isStorageConfigured: boolean;
+  quotas: TSurveyQuota[];
+  isExternalUrlsAllowed: boolean;
   defaultRedirect: string;
 }
 
@@ -51,21 +51,28 @@ export const EditEndingCard = ({
   localSurvey,
   endingCardIndex,
   setLocalSurvey,
-  setActiveQuestionId,
-  activeQuestionId,
+  setActiveElementId,
+  activeElementId,
   isInvalid,
   selectedLanguageCode,
   setSelectedLanguageCode,
-  plan,
   addEndingCard,
   isFormbricksCloud,
   locale,
+  isStorageConfigured,
+  quotas,
+  isExternalUrlsAllowed,
   defaultRedirect,
 }: EditEndingCardProps) => {
-  const endingCard = localSurvey.endings[endingCardIndex];
-  const { t } = useTranslate();
+  const { t } = useTranslation();
+
+  const endingCard = useMemo(
+    () => localSurvey.endings[endingCardIndex],
+    [localSurvey.endings, endingCardIndex]
+  );
+
   const isRedirectToUrlDisabled = isFormbricksCloud
-    ? plan === "free" && endingCard.type !== "redirectToUrl"
+    ? !isExternalUrlsAllowed && endingCard.type !== "redirectToUrl"
     : false;
 
   const [openDeleteConfirmationModal, setOpenDeleteConfirmationModal] = useState(false);
@@ -87,7 +94,7 @@ export const EditEndingCard = ({
     id: endingCard.id,
   });
 
-  let open = activeQuestionId === endingCard.id;
+  let open = activeElementId === endingCard.id;
 
   useEffect(() => {
     if (endingCard.type === "redirectToUrl" && !endingCard.url) {
@@ -103,24 +110,51 @@ export const EditEndingCard = ({
 
   const setOpen = (e) => {
     if (e) {
-      setActiveQuestionId(endingCard.id);
+      setActiveElementId(endingCard.id);
     } else {
-      setActiveQuestionId(null);
+      setActiveElementId(null);
     }
   };
 
   const updateSurvey = (
-    data: Partial<TSurveyEndScreenCard> | Partial<TSurveyRedirectUrlCard> | Partial<TSurveyAffiliateOfferCard>
+    data: Partial<TSurveyEndScreenCard& { _forceUpdate?: boolean }> | Partial<TSurveyRedirectUrlCard> | Partial<TSurveyAffiliateOfferCard>
   ) => {
     setLocalSurvey((prevSurvey) => {
+      const currentEnding = prevSurvey.endings[endingCardIndex];
+
+      // If subheader was explicitly deleted (is undefined) in the current state,
+      // block ALL attempts to recreate it (from Editor cleanup/updates)
+      // UNLESS it's a forced update from the "Add Description" button
+      const filteredData = { ...data };
+      const isForceUpdate = "_forceUpdate" in filteredData;
+      if (isForceUpdate) {
+        delete (filteredData as any)._forceUpdate; // Remove the flag
+      }
+
+      if (!isForceUpdate && currentEnding?.type === "endScreen" && currentEnding.subheader === undefined) {
+        if ("subheader" in filteredData) {
+          // Block subheader updates when it's been deleted (Editor cleanup trying to recreate)
+          delete filteredData.subheader;
+        }
+      }
+
       const updatedEndings = prevSurvey.endings.map((ending, idx) =>
-        idx === endingCardIndex ? { ...ending, ...data } : ending
+        idx === endingCardIndex ? { ...ending, ...filteredData } : ending
       );
       return { ...prevSurvey, endings: updatedEndings };
     });
   };
 
   const deleteEndingCard = () => {
+    const quotaIdx = quotas.findIndex((quota) => isUsedInQuota(quota, { endingCardId: endingCard.id }));
+    if (quotaIdx !== -1) {
+      toast.error(
+        t("environments.surveys.edit.ending_used_in_quota", {
+          quotaName: quotas[quotaIdx].name,
+        })
+      );
+      return;
+    }
     const isEndingCardUsedInFollowUps = localSurvey.followUps.some((followUp) => {
       if (followUp.trigger.type === "endings") {
         if (followUp.trigger.properties?.endingIds?.includes(endingCard.id)) {
@@ -323,9 +357,11 @@ export const EditEndingCard = ({
                       selectedLanguageCode
                     ]
                       ? formatTextWithSlashes(
-                          recallToHeadline(endingCard.headline, localSurvey, true, selectedLanguageCode)[
-                            selectedLanguageCode
-                          ]
+                          getTextContent(
+                            recallToHeadline(endingCard.headline, localSurvey, true, selectedLanguageCode)[
+                              selectedLanguageCode
+                            ]
+                          )
                         )
                       : t("environments.surveys.edit.ending_card"))}
                   {endingCard.type === "redirectToUrl" &&
@@ -374,7 +410,7 @@ export const EditEndingCard = ({
         <Collapsible.CollapsibleContent className={`flex flex-col px-4 ${open && "mt-3 pb-6"}`}>
           <TooltipRenderer
             shouldRender={endingCard.type === "endScreen" && isRedirectToUrlDisabled}
-            tooltipContent={t("environments.surveys.edit.redirect_to_url_not_available_on_free_plan")}
+            tooltipContent={t("environments.surveys.edit.external_urls_paywall_tooltip")}
             triggerClass="w-full">
             <OptionsSwitch
               options={endingCardTypes}
@@ -403,6 +439,8 @@ export const EditEndingCard = ({
               updateSurvey={updateSurvey}
               endingCard={endingCard}
               locale={locale}
+              isStorageConfigured={isStorageConfigured}
+              isExternalUrlsAllowed={isExternalUrlsAllowed}
               defaultRedirect={defaultRedirect}
             />
           )}

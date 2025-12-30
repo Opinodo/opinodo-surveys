@@ -1,14 +1,20 @@
-import { checkForInvalidImagesInQuestions } from "@/lib/survey/utils";
-import { TriggerUpdate } from "@/modules/survey/editor/types/survey-trigger";
-import { getActionClasses } from "@/modules/survey/lib/action-class";
-import { getOrganizationAIKeys, getOrganizationIdFromEnvironmentId } from "@/modules/survey/lib/organization";
-import { getSurvey, selectSurvey } from "@/modules/survey/lib/survey";
 import { ActionClass, Prisma } from "@prisma/client";
 import { prisma } from "@formbricks/database";
 import { logger } from "@formbricks/logger";
 import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TSegment, ZSegmentFilters } from "@formbricks/types/segment";
 import { TSurvey } from "@formbricks/types/surveys/types";
+import { updateSurveyInternal } from "@/lib/survey/service";
+import { validateMediaAndPrepareBlocks } from "@/lib/survey/utils";
+import { TriggerUpdate } from "@/modules/survey/editor/types/survey-trigger";
+import { getActionClasses } from "@/modules/survey/lib/action-class";
+import { getOrganizationAIKeys, getOrganizationIdFromEnvironmentId } from "@/modules/survey/lib/organization";
+import { getSurvey, selectSurvey } from "@/modules/survey/lib/survey";
+
+export const updateSurveyDraft = async (updatedSurvey: TSurvey): Promise<TSurvey> => {
+  // Use internal version with skipValidation=true to allow incomplete drafts
+  return updateSurveyInternal(updatedSurvey, true);
+};
 
 export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => {
   try {
@@ -47,7 +53,10 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       };
     }
 
-    checkForInvalidImagesInQuestions(questions);
+    // Validate and prepare blocks for persistence
+    if (updatedSurvey.blocks && updatedSurvey.blocks.length > 0) {
+      data.blocks = validateMediaAndPrepareBlocks(updatedSurvey.blocks);
+    }
 
     if (languages) {
       // Process languages update logic here
@@ -251,11 +260,6 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       };
     }
 
-    data.questions = questions.map((question) => {
-      const { isDraft, ...rest } = question;
-      return rest;
-    });
-
     const organizationId = await getOrganizationIdFromEnvironmentId(environmentId);
     const organization = await getOrganizationAIKeys(organizationId);
     if (!organization) {
@@ -269,19 +273,6 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       ...data,
       type,
     };
-
-    // Remove scheduled status when runOnDate is not set
-    if (data.status === "scheduled" && data.runOnDate === null) {
-      data.status = "inProgress";
-    }
-    // Set scheduled status when runOnDate is set and in the future on completed surveys
-    if (
-      (data.status === "completed" || data.status === "paused" || data.status === "inProgress") &&
-      data.runOnDate &&
-      data.runOnDate > new Date()
-    ) {
-      data.status = "scheduled";
-    }
 
     delete data.createdBy;
     const prismaSurvey = await prisma.survey.update({
@@ -298,8 +289,6 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       };
     }
 
-    // TODO: Fix this, this happens because the survey type "web" is no longer in the zod types but its required in the schema for migration
-    // @ts-expect-error
     const modifiedSurvey: TSurvey = {
       ...prismaSurvey, // Properties from prismaSurvey
       displayPercentage: Number(prismaSurvey.displayPercentage) || null,

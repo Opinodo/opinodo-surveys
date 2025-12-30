@@ -1,16 +1,16 @@
-import { Button } from "@/modules/ui/components/button";
-import { getTranslate } from "@/tolgee/server";
 import { Project } from "@prisma/client";
 import { CalendarClockIcon, CheckCircle2Icon, HelpCircleIcon, PauseCircleIcon } from "lucide-react";
 import Link from "next/link";
 import { TSurveyClosedMessage } from "@formbricks/types/surveys/types";
+import { getTranslate } from "@/lingodotdev/server";
+import { Button } from "@/modules/ui/components/button";
 
 export const SurveyInactive = async ({
   status,
   surveyClosedMessage,
   project,
 }: {
-  status: "paused" | "completed" | "link invalid" | "scheduled" | "response submitted" | "link expired";
+  status: "paused" | "completed" | "link invalid" | "response submitted" | "link expired";
   surveyClosedMessage?: TSurveyClosedMessage | null;
   project?: Pick<Project, "linkSurveyBranding">;
 }) => {

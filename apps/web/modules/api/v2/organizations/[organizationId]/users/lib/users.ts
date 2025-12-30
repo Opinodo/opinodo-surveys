@@ -1,4 +1,7 @@
-import { captureTelemetry } from "@/lib/telemetry";
+import { OrganizationRole, Prisma, TeamUserRole } from "@prisma/client";
+import { prisma } from "@formbricks/database";
+import { TUser } from "@formbricks/database/zod/users";
+import { Result, err, ok } from "@formbricks/types/error-handlers";
 import { getUsersQuery } from "@/modules/api/v2/organizations/[organizationId]/users/lib/utils";
 import {
   TGetUsersFilter,
@@ -7,10 +10,6 @@ import {
 } from "@/modules/api/v2/organizations/[organizationId]/users/types/users";
 import { ApiErrorResponseV2 } from "@/modules/api/v2/types/api-error";
 import { ApiResponseWithMeta } from "@/modules/api/v2/types/api-success";
-import { OrganizationRole, Prisma, TeamUserRole } from "@prisma/client";
-import { prisma } from "@formbricks/database";
-import { TUser } from "@formbricks/database/zod/users";
-import { Result, err, ok } from "@formbricks/types/error-handlers";
 
 export const getUsers = async (
   organizationId: string,
@@ -73,8 +72,6 @@ export const createUser = async (
   userInput: TUserInput,
   organizationId
 ): Promise<Result<TUser, ApiErrorResponseV2>> => {
-  captureTelemetry("user created");
-
   const { name, email, role, teams, isActive } = userInput;
 
   try {
@@ -150,8 +147,6 @@ export const updateUser = async (
   userInput: TUserInputPatch,
   organizationId: string
 ): Promise<Result<TUser, ApiErrorResponseV2>> => {
-  captureTelemetry("user updated");
-
   const { name, email, role, teams, isActive } = userInput;
   let existingTeams: string[] = [];
   let newTeams;

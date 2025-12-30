@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { TResponseErrorCodesEnum } from "@/types/response-error-codes";
 
 interface ErrorComponentProps {
@@ -5,15 +6,15 @@ interface ErrorComponentProps {
 }
 
 export function ErrorComponent({ errorType }: ErrorComponentProps) {
+  const { t } = useTranslation();
   const errorData = {
     [TResponseErrorCodesEnum.RecaptchaError]: {
-      title: "We couldn't verify that you're human.",
-      message:
-        "Your response could not be submitted because it was flagged as automated activity. If you breathe, please try again.",
+      title: t("errors.recaptcha_error.title"),
+      message: t("errors.recaptcha_error.message"),
     },
     [TResponseErrorCodesEnum.InvalidDeviceError]: {
-      title: "This device doesn’t support spam protection.",
-      message: "Please disable spam protection in the survey settings to continue using this device.",
+      title: t("errors.invalid_device_error.title"),
+      message: t("errors.invalid_device_error.message"),
     },
   };
 
@@ -21,13 +22,11 @@ export function ErrorComponent({ errorType }: ErrorComponentProps) {
 
   return (
     <div
-      className="fb-flex fb-flex-col fb-bg-white fb-p-8 fb-text-center fb-items-center"
+      className="bg-survey-bg text-heading flex flex-col items-center p-8 text-center"
       role="alert"
       aria-live="assertive">
-      <span className="fb-mb-1.5 fb-text-base fb-font-bold fb-leading-6 fb-text-slate-900">
-        {error.title}
-      </span>
-      <p className="fb-max-w-lg fb-text-sm fb-font-normal fb-leading-6 fb-text-slate-600">{error.message}</p>
+      <span className="mb-1.5 text-base leading-6 font-bold">{error.title}</span>
+      <p className="max-w-lg text-sm leading-6 font-normal">{error.message}</p>
     </div>
   );
 }

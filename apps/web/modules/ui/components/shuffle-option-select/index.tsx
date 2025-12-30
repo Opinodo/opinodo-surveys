@@ -1,5 +1,12 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+import {
+  TSurveyMatrixElement,
+  TSurveyMultipleChoiceElement,
+  TSurveyRankingElement,
+} from "@formbricks/types/surveys/elements";
+import { TShuffleOption } from "@formbricks/types/surveys/types";
 import {
   Select,
   SelectContent,
@@ -7,13 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/modules/ui/components/select";
-import { useTranslate } from "@tolgee/react";
-import {
-  TShuffleOption,
-  TSurveyMatrixQuestion,
-  TSurveyMultipleChoiceQuestion,
-  TSurveyRankingQuestion,
-} from "@formbricks/types/surveys/types";
 
 interface ShuffleOptionType {
   id: string;
@@ -29,27 +29,27 @@ interface ShuffleOptionsTypes {
 
 interface ShuffleOptionSelectProps {
   shuffleOption: TShuffleOption | undefined;
-  updateQuestion: (
-    questionIdx: number,
-    updatedAttributes: Partial<TSurveyMatrixQuestion | TSurveyMultipleChoiceQuestion | TSurveyRankingQuestion>
+  updateElement: (
+    elementIdx: number,
+    updatedAttributes: Partial<TSurveyMatrixElement | TSurveyMultipleChoiceElement | TSurveyRankingElement>
   ) => void;
-  questionIdx: number;
+  elementIdx: number;
   shuffleOptionsTypes: ShuffleOptionsTypes;
 }
 
 export const ShuffleOptionSelect: React.FC<ShuffleOptionSelectProps> = ({
-  questionIdx,
+  elementIdx,
   shuffleOption,
-  updateQuestion,
+  updateElement,
   shuffleOptionsTypes,
 }) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   return (
     <Select
       defaultValue={shuffleOption}
       value={shuffleOption}
       onValueChange={(e: TShuffleOption) => {
-        updateQuestion(questionIdx, { shuffleOption: e });
+        updateElement(elementIdx, { shuffleOption: e });
       }}>
       <SelectTrigger className="w-fit space-x-2 overflow-hidden border-0 font-medium text-slate-600">
         <SelectValue placeholder={t("environments.surveys.edit.select_ordering")} />

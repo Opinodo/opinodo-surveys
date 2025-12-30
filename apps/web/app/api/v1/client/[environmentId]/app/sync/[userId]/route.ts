@@ -1,5 +1,10 @@
 // Deprecated: This api route is deprecated now and will be removed in the future.
 // Deprecated: This is currently only being used for the older react native SDKs. Please upgrade to the latest SDKs.
+import { NextRequest, userAgent } from "next/server";
+import { prisma } from "@formbricks/database";
+import { logger } from "@formbricks/logger";
+import { TJsPeopleUserIdInput, ZJsPeopleUserIdInput } from "@formbricks/types/js";
+import { TSurvey } from "@formbricks/types/surveys/types";
 import { getContactByUserId } from "@/app/api/v1/client/[environmentId]/app/sync/lib/contact";
 import { getSyncSurveys } from "@/app/api/v1/client/[environmentId]/app/sync/lib/survey";
 import { replaceAttributeRecall } from "@/app/api/v1/client/[environmentId]/app/sync/lib/utils";
@@ -13,17 +18,8 @@ import {
   getMonthlyOrganizationResponseCount,
   getOrganizationByEnvironmentId,
 } from "@/lib/organization/service";
-import {
-  capturePosthogEnvironmentEvent,
-  sendPlanLimitsReachedEventToPosthogWeekly,
-} from "@/lib/posthogServer";
 import { getProjectByEnvironmentId } from "@/lib/project/service";
 import { COLOR_DEFAULTS } from "@/lib/styling/constants";
-import { NextRequest, userAgent } from "next/server";
-import { prisma } from "@formbricks/database";
-import { logger } from "@formbricks/logger";
-import { TJsPeopleUserIdInput, ZJsPeopleUserIdInput } from "@formbricks/types/js";
-import { TSurvey } from "@formbricks/types/surveys/types";
 
 const validateInput = (
   environmentId: string,
@@ -57,20 +53,6 @@ const checkResponseLimit = async (environmentId: string): Promise<boolean> => {
   const currentResponseCount = await getMonthlyOrganizationResponseCount(organization.id);
   const monthlyResponseLimit = organization.billing.limits.monthly.responses;
   const isLimitReached = monthlyResponseLimit !== null && currentResponseCount >= monthlyResponseLimit;
-
-  if (isLimitReached) {
-    try {
-      await sendPlanLimitsReachedEventToPosthogWeekly(environmentId, {
-        plan: organization.billing.plan,
-        limits: {
-          projects: null,
-          monthly: { responses: monthlyResponseLimit, miu: null },
-        },
-      });
-    } catch (error) {
-      logger.error({ error }, `Error sending plan limits reached event to Posthog`);
-    }
-  }
 
   return isLimitReached;
 };
@@ -111,10 +93,7 @@ export const GET = withV1ApiWrapper({
       }
 
       if (!environment.appSetupCompleted) {
-        await Promise.all([
-          updateEnvironment(environment.id, { appSetupCompleted: true }),
-          capturePosthogEnvironmentEvent(environmentId, "app setup completed"),
-        ]);
+        await updateEnvironment(environment.id, { appSetupCompleted: true });
       }
 
       // check organization subscriptions and response limits

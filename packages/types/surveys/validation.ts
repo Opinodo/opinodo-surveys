@@ -1,14 +1,55 @@
+import { parse } from "node-html-parser";
 import { z } from "zod";
+import type { TI18nString } from "../i18n";
+import type { TConditionGroup, TSingleCondition } from "./logic";
 import type {
   TActionJumpToQuestion,
-  TConditionGroup,
-  TI18nString,
-  TSingleCondition,
   TSurveyLanguage,
   TSurveyLogicAction,
   TSurveyQuestion,
   TSurveyQuestionId,
 } from "./types";
+
+/**
+ * Checks if a string contains valid HTML markup
+ * @param str - The input string to test
+ * @returns true if the string contains valid HTML elements, false otherwise
+ */
+export const isValidHTML = (str: string): boolean => {
+  if (!str) return false;
+
+  try {
+    const root = parse(str);
+    // Check if there are any element nodes (not just text nodes)
+    // nodeType 1 = ELEMENT_NODE
+    return root.childNodes.some((node) => Number(node.nodeType) === 1);
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Extracts text content from an HTML string
+ * Works in both browser and Node.js using node-html-parser
+ * @param str - The input string (can be HTML or plain text)
+ * @returns The extracted text content without HTML tags
+ */
+export const getTextContent = (str: string): string => {
+  if (!str || str.trim() === "") return "";
+
+  if (isValidHTML(str)) {
+    try {
+      const root = parse(str);
+      const textContent = root.textContent;
+      return textContent.trim();
+    } catch {
+      // If parsing fails, treat as plain text
+      return str.trim();
+    }
+  }
+
+  return str.trim();
+};
 
 export const FORBIDDEN_IDS = [
   "userId",
@@ -52,9 +93,15 @@ const validateLabelForAllLanguages = (label: TI18nString, surveyLanguages: TSurv
   const languageCodes = extractLanguageCodes(enabledLanguages);
 
   const languages = !languageCodes.length ? ["default"] : languageCodes;
-  const invalidLanguageCodes = languages.filter(
-    (language) => !label[language] || label[language].trim() === ""
-  );
+  const invalidLanguageCodes = languages.filter((language) => {
+    // Check if label exists and is not undefined
+    if (!label[language]) return true;
+
+    // Use getTextContent to extract text from HTML or plain text
+    // This ensures empty HTML like <p><br></p> is properly detected as empty
+    const textContent = getTextContent(label[language]);
+    return textContent.length === 0;
+  });
 
   return invalidLanguageCodes.map((invalidLanguageCode) => {
     if (invalidLanguageCode === "default") {
@@ -251,11 +298,11 @@ const findJumpToQuestionActions = (actions: TSurveyLogicAction[]): TActionJumpTo
   return actions.filter((action): action is TActionJumpToQuestion => action.objective === "jumpToQuestion");
 };
 
-// function to validate hidden field or question id
+// function to validate hidden field or question id or element id
 export const validateId = (
-  type: "Hidden field" | "Question",
+  type: "Hidden field" | "Question", // TODO: Change this to "Element" when we're ready to change the UI
   field: string,
-  existingQuestionIds: string[],
+  existingElementIds: string[],
   existingEndingCardIds: string[],
   existingHiddenFieldIds: string[]
 ): string | null => {
@@ -263,10 +310,10 @@ export const validateId = (
     return `Please enter a ${type} Id.`;
   }
 
-  const combinedIds = [...existingQuestionIds, ...existingHiddenFieldIds, ...existingEndingCardIds];
+  const combinedIds = [...existingElementIds, ...existingHiddenFieldIds, ...existingEndingCardIds];
 
   if (combinedIds.findIndex((id) => id.toLowerCase() === field.toLowerCase()) !== -1) {
-    return `${type} ID already exists in questions or hidden fields.`;
+    return `${type} ID already exists in questions or hidden fields`;
   }
 
   if (FORBIDDEN_IDS.includes(field)) {
@@ -285,6 +332,10 @@ export const validateId = (
 };
 
 type TCondition = TSingleCondition | TConditionGroup;
+
+export const isSingleCondition = (condition: TCondition): condition is TSingleCondition => {
+  return "leftOperand" in condition && "operator" in condition;
+};
 
 export const isConditionGroup = (condition: TCondition): condition is TConditionGroup => {
   return "conditions" in condition;

@@ -1,9 +1,9 @@
 "use client";
 
-import { cn } from "@/lib/cn";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as React from "react";
 import { ReactNode } from "react";
+import { cn } from "@/lib/cn";
 
 const TooltipProvider: React.ComponentType<TooltipPrimitive.TooltipProviderProps> = TooltipPrimitive.Provider;
 
@@ -32,7 +32,7 @@ const TooltipContent: React.ComponentType<TooltipPrimitive.TooltipContentProps> 
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };
 
 interface TooltipRendererProps {
   tooltipContent: ReactNode;
@@ -40,12 +40,13 @@ interface TooltipRendererProps {
   className?: string;
   triggerClass?: string;
   shouldRender?: boolean;
+  delayDuration?: number;
 }
 export const TooltipRenderer = (props: TooltipRendererProps) => {
-  const { children, shouldRender = true, tooltipContent, className, triggerClass } = props;
+  const { children, shouldRender = true, tooltipContent, className, triggerClass, delayDuration = 0 } = props;
   if (shouldRender) {
     return (
-      <TooltipProvider delayDuration={0}>
+      <TooltipProvider delayDuration={delayDuration}>
         <Tooltip>
           <TooltipTrigger asChild>
             <span className={triggerClass}>{children}</span>

@@ -1,12 +1,12 @@
 "use client";
 
-import { cn } from "@/lib/cn";
-import { TooltipRenderer } from "@/modules/ui/components/tooltip";
 import { Table } from "@tanstack/react-table";
-import { useTranslate } from "@tolgee/react";
 import { MoveVerticalIcon, RefreshCcwIcon, SettingsIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/cn";
+import { TooltipRenderer } from "@/modules/ui/components/tooltip";
 import { SelectedRowSettings } from "./selected-row-settings";
 
 interface DataTableToolbarProps<T> {
@@ -16,8 +16,9 @@ interface DataTableToolbarProps<T> {
   table: Table<T>;
   updateRowList: (rowIds: string[]) => void;
   type: "response" | "contact";
-  deleteAction: (id: string) => Promise<void>;
+  deleteAction: (id: string, params?: Record<string, boolean>) => Promise<void>;
   downloadRowsAction?: (rowIds: string[], format: string) => Promise<void>;
+  isQuotasAllowed: boolean;
 }
 
 export const DataTableToolbar = <T,>({
@@ -29,12 +30,13 @@ export const DataTableToolbar = <T,>({
   type,
   deleteAction,
   downloadRowsAction,
+  isQuotasAllowed,
 }: DataTableToolbarProps<T>) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const router = useRouter();
 
   return (
-    <div className="sticky top-0 z-30 my-2 flex w-full items-center justify-between bg-slate-50 py-2">
+    <div className="sticky top-0 z-30 flex w-full items-center justify-between bg-slate-50 py-2">
       {table.getFilteredSelectedRowModel().rows.length > 0 ? (
         <SelectedRowSettings
           table={table}
@@ -42,6 +44,7 @@ export const DataTableToolbar = <T,>({
           type={type}
           deleteAction={deleteAction}
           downloadRowsAction={downloadRowsAction}
+          isQuotasAllowed={isQuotasAllowed}
         />
       ) : (
         <div></div>

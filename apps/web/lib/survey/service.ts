@@ -1,8 +1,4 @@
 import "server-only";
-import {
-  getOrganizationByEnvironmentId,
-  subscribeOrganizationMembersToSurveyResponses,
-} from "@/lib/organization/service";
 import { ActionClass, Prisma } from "@prisma/client";
 import { cache as reactCache } from "react";
 import { prisma } from "@formbricks/database";
@@ -11,11 +7,20 @@ import { ZId, ZOptionalNumber } from "@formbricks/types/common";
 import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TSegment, ZSegmentFilters } from "@formbricks/types/segment";
 import { TSurvey, TSurveyCreateInput, ZSurvey, ZSurveyCreateInput } from "@formbricks/types/surveys/types";
+import {
+  getOrganizationByEnvironmentId,
+  subscribeOrganizationMembersToSurveyResponses,
+} from "@/lib/organization/service";
 import { getActionClasses } from "../actionClass/service";
 import { ITEMS_PER_PAGE } from "../constants";
-import { capturePosthogEnvironmentEvent } from "../posthogServer";
 import { validateInputs } from "../utils/validate";
-import { checkForInvalidImagesInQuestions, transformPrismaSurvey } from "./utils";
+import {
+  checkForInvalidImagesInQuestions,
+  checkForInvalidMediaInBlocks,
+  stripIsDraftFromBlocks,
+  transformPrismaSurvey,
+  validateMediaAndPrepareBlocks,
+} from "./utils";
 
 interface TriggerUpdate {
   create?: Array<{ actionClassId: string }>;
@@ -37,6 +42,7 @@ export const selectSurvey = {
   status: true,
   welcomeCard: true,
   questions: true,
+  blocks: true,
   endings: true,
   hiddenFields: true,
   variables: true,
@@ -44,8 +50,6 @@ export const selectSurvey = {
   recontactDays: true,
   displayLimit: true,
   autoClose: true,
-  runOnDate: true,
-  closeOnDate: true,
   delay: true,
   displayPercentage: true,
   autoComplete: true,
@@ -330,8 +334,13 @@ export const getSurveyCount = reactCache(async (environmentId: string): Promise<
   }
 });
 
-export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => {
-  validateInputs([updatedSurvey, ZSurvey]);
+export const updateSurveyInternal = async (
+  updatedSurvey: TSurvey,
+  skipValidation = false
+): Promise<TSurvey> => {
+  if (!skipValidation) {
+    validateInputs([updatedSurvey, ZSurvey]);
+  }
 
   try {
     const surveyId = updatedSurvey.id;
@@ -369,7 +378,17 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       };
     }
 
-    checkForInvalidImagesInQuestions(questions);
+    if (!skipValidation) {
+      checkForInvalidImagesInQuestions(questions);
+    }
+
+    // Add blocks media validation
+    if (!skipValidation && updatedSurvey.blocks && updatedSurvey.blocks.length > 0) {
+      const blocksValidation = checkForInvalidMediaInBlocks(updatedSurvey.blocks);
+      if (!blocksValidation.ok) {
+        throw new InvalidInputError(blocksValidation.error.message);
+      }
+    }
 
     if (languages) {
       // Process languages update logic here
@@ -428,7 +447,7 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       if (type === "app") {
         // parse the segment filters:
         const parsedFilters = ZSegmentFilters.safeParse(segment.filters);
-        if (!parsedFilters.success) {
+        if (!skipValidation && !parsedFilters.success) {
           throw new InvalidInputError("Invalid user segment filters");
         }
 
@@ -578,6 +597,11 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       return rest;
     });
 
+    // Strip isDraft from elements before saving
+    if (updatedSurvey.blocks && updatedSurvey.blocks.length > 0) {
+      data.blocks = stripIsDraftFromBlocks(updatedSurvey.blocks);
+    }
+
     const organization = await getOrganizationByEnvironmentId(environmentId);
     if (!organization) {
       throw new ResourceNotFoundError("Organization", null);
@@ -623,8 +647,6 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
       };
     }
 
-    // TODO: Fix this, this happens because the survey type "web" is no longer in the zod types but its required in the schema for migration
-    // @ts-expect-error
     const modifiedSurvey: TSurvey = {
       ...prismaSurvey, // Properties from prismaSurvey
       displayPercentage: Number(prismaSurvey.displayPercentage) || null,
@@ -640,6 +662,15 @@ export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => 
 
     throw error;
   }
+};
+
+export const updateSurvey = async (updatedSurvey: TSurvey): Promise<TSurvey> => {
+  return updateSurveyInternal(updatedSurvey);
+};
+
+// Draft update without validation
+export const updateSurveyDraft = async (updatedSurvey: TSurvey): Promise<TSurvey> => {
+  return updateSurveyInternal(updatedSurvey, true);
 };
 
 export const createSurvey = async (
@@ -701,6 +732,11 @@ export const createSurvey = async (
       checkForInvalidImagesInQuestions(data.questions);
     }
 
+    // Validate and prepare blocks for persistence
+    if (data.blocks && data.blocks.length > 0) {
+      data.blocks = validateMediaAndPrepareBlocks(data.blocks);
+    }
+
     const survey = await prisma.survey.create({
       data: {
         ...data,
@@ -715,14 +751,6 @@ export const createSurvey = async (
 
     // if the survey created is an "app" survey, we also create a private segment for it.
     if (survey.type === "app") {
-      // const newSegment = await createSegment({
-      //   environmentId: parsedEnvironmentId,
-      //   surveyId: survey.id,
-      //   filters: [],
-      //   title: survey.id,
-      //   isPrivate: true,
-      // });
-
       const newSegment = await prisma.segment.create({
         data: {
           title: survey.id,
@@ -765,11 +793,6 @@ export const createSurvey = async (
     if (createdBy) {
       await subscribeOrganizationMembersToSurveyResponses(survey.id, createdBy, organization.id);
     }
-
-    await capturePosthogEnvironmentEvent(survey.environmentId, "survey created", {
-      surveyId: survey.id,
-      surveyType: survey.type,
-    });
 
     return transformedSurvey;
   } catch (error) {

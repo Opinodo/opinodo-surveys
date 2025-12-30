@@ -1,16 +1,17 @@
-import { getTeamsByOrganizationId } from "@/app/(app)/(onboarding)/lib/onboarding";
-import { ProjectSettings } from "@/app/(app)/(onboarding)/organizations/[organizationId]/projects/new/settings/components/ProjectSettings";
-import { DEFAULT_BRAND_COLOR } from "@/lib/constants";
-import { getUserProjects } from "@/lib/project/service";
-import { getAccessControlPermission } from "@/modules/ee/license-check/lib/utils";
-import { getOrganizationAuth } from "@/modules/organization/lib/utils";
-import { Button } from "@/modules/ui/components/button";
-import { Header } from "@/modules/ui/components/header";
-import { getTranslate } from "@/tolgee/server";
 import { XIcon } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TProjectConfigChannel, TProjectConfigIndustry, TProjectMode } from "@formbricks/types/project";
+import { getTeamsByOrganizationId } from "@/app/(app)/(onboarding)/lib/onboarding";
+import { ProjectSettings } from "@/app/(app)/(onboarding)/organizations/[organizationId]/projects/new/settings/components/ProjectSettings";
+import { DEFAULT_BRAND_COLOR } from "@/lib/constants";
+import { getPublicDomain } from "@/lib/getPublicUrl";
+import { getUserProjects } from "@/lib/project/service";
+import { getTranslate } from "@/lingodotdev/server";
+import { getAccessControlPermission } from "@/modules/ee/license-check/lib/utils";
+import { getOrganizationAuth } from "@/modules/organization/lib/utils";
+import { Button } from "@/modules/ui/components/button";
+import { Header } from "@/modules/ui/components/header";
 
 interface ProjectSettingsPageProps {
   params: Promise<{
@@ -47,6 +48,8 @@ const Page = async (props: ProjectSettingsPageProps) => {
     throw new Error(t("common.organization_teams_not_found"));
   }
 
+  const publicDomain = getPublicDomain();
+
   return (
     <div className="flex min-h-full min-w-full flex-col items-center justify-center space-y-12">
       <Header
@@ -62,6 +65,7 @@ const Page = async (props: ProjectSettingsPageProps) => {
         organizationTeams={organizationTeams}
         isAccessControlAllowed={isAccessControlAllowed}
         userProjectsCount={projects.length}
+        publicDomain={publicDomain}
       />
       {projects.length >= 1 && (
         <Button

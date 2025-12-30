@@ -1,16 +1,17 @@
 "use client";
 
+import { Environment, Project } from "@prisma/client";
+import { motion } from "framer-motion";
+import { ExpandIcon, MonitorIcon, ShrinkIcon, SmartphoneIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { TProjectStyling } from "@formbricks/types/project";
+import { TSurvey, TSurveyStyling } from "@formbricks/types/surveys/types";
+import { cn } from "@/lib/cn";
 import { ClientLogo } from "@/modules/ui/components/client-logo";
 import { MediaBackground } from "@/modules/ui/components/media-background";
 import { ResetProgressButton } from "@/modules/ui/components/reset-progress-button";
 import { SurveyInline } from "@/modules/ui/components/survey";
-import { Environment, Project } from "@prisma/client";
-import { useTranslate } from "@tolgee/react";
-import { Variants, motion } from "framer-motion";
-import { ExpandIcon, MonitorIcon, ShrinkIcon, SmartphoneIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { TProjectStyling } from "@formbricks/types/project";
-import { TSurvey, TSurveyQuestionId, TSurveyStyling } from "@formbricks/types/surveys/types";
 import { Modal } from "./components/modal";
 import { TabOption } from "./components/tab-option";
 
@@ -18,98 +19,36 @@ type TPreviewType = "modal" | "fullwidth" | "email";
 
 interface PreviewSurveyProps {
   survey: TSurvey;
-  questionId?: string | null;
+  elementId?: string | null;
   previewType?: TPreviewType;
   project: Project;
   environment: Pick<Environment, "id" | "appSetupCompleted">;
   languageCode: string;
   isSpamProtectionAllowed: boolean;
+  publicDomain: string;
 }
 
 let surveyNameTemp: string;
-
-const previewParentContainerVariant: Variants = {
-  expanded: {
-    position: "fixed",
-    height: "100%",
-    width: "100%",
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
-    backdropFilter: "blur(15px)",
-    left: 0,
-    top: 0,
-    zIndex: 1040,
-    transition: {
-      ease: "easeIn",
-      duration: 0.001,
-    },
-  },
-  shrink: {
-    display: "none",
-    position: "fixed",
-    backgroundColor: "rgba(0, 0, 0, 0.0)",
-    backdropFilter: "blur(0px)",
-    transition: {
-      duration: 0,
-    },
-    zIndex: -1,
-  },
-};
-
-let setQuestionId = (_: string) => {};
+let setBlockId = (_: string) => {};
 
 export const PreviewSurvey = ({
-  questionId,
+  elementId,
   survey,
   previewType,
   project,
   environment,
   languageCode,
   isSpamProtectionAllowed,
+  publicDomain,
 }: PreviewSurveyProps) => {
   const [isModalOpen, setIsModalOpen] = useState(true);
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const [appSetupCompleted, setAppSetupCompleted] = useState(false);
 
   const [previewMode, setPreviewMode] = useState("desktop");
-  const [previewPosition, setPreviewPosition] = useState("relative");
   const ContentRef = useRef<HTMLDivElement | null>(null);
-  const [shrink, setShrink] = useState(false);
   const { projectOverwrites } = survey || {};
-  const previewScreenVariants: Variants = {
-    expanded: {
-      right: "5%",
-      bottom: "10%",
-      top: "12%",
-      width: "40%",
-      position: "fixed",
-      height: "80%",
-      zIndex: 1050,
-      boxShadow: "0px 4px 5px 4px rgba(169, 169, 169, 0.25)",
-      transition: {
-        ease: "easeInOut",
-        duration: shrink ? 0.3 : 0,
-      },
-    },
-    expanded_with_fixed_positioning: {
-      zIndex: 1050,
-      position: "fixed",
-      top: "5%",
-      right: "5%",
-      bottom: "10%",
-      width: "90%",
-      height: "90%",
-      transition: {
-        ease: "easeOut",
-        duration: 0.4,
-      },
-    },
-    shrink: {
-      display: "relative",
-      width: ["95%"],
-      height: ["95%"],
-    },
-  };
 
   const { placement: surveyPlacement } = projectOverwrites || {};
   const { darkOverlay: surveyDarkOverlay } = projectOverwrites || {};
@@ -118,8 +57,6 @@ export const PreviewSurvey = ({
   const placement = surveyPlacement || project.placement;
   const darkOverlay = surveyDarkOverlay ?? project.darkOverlay;
   const clickOutsideClose = surveyClickOutsideClose ?? project.clickOutsideClose;
-
-  const widgetSetupCompleted = appSetupCompleted;
 
   const styling: TSurveyStyling | TProjectStyling = useMemo(() => {
     // allow style overwrite is disabled from the project
@@ -141,33 +78,53 @@ export const PreviewSurvey = ({
     return project.styling;
   }, [project.styling, survey.styling]);
 
-  const updateQuestionId = useCallback(
-    (newQuestionId: TSurveyQuestionId) => {
+  const updateElementId = useCallback(
+    (newElementId: string) => {
       if (
-        !newQuestionId ||
-        newQuestionId === "hidden" ||
-        newQuestionId === "multiLanguage" ||
-        newQuestionId.includes("fb-variables-")
+        !newElementId ||
+        newElementId === "hidden" ||
+        newElementId === "multiLanguage" ||
+        newElementId.includes("fb-variables-")
       )
         return;
-      if (newQuestionId === "start" && !survey.welcomeCard.enabled) return;
-      setQuestionId(newQuestionId);
+      if (newElementId === "start" && !survey.welcomeCard.enabled) return;
+
+      if (newElementId === "start") {
+        setBlockId("start");
+        return;
+      }
+
+      // Convert elementId to blockId and set it directly
+      const block = survey.blocks.find((b) => b.elements.some((e) => e.id === newElementId));
+      if (block) {
+        setBlockId(block.id);
+        return;
+      }
+
+      // check the endings
+      const ending = survey.endings.find((e) => e.id === newElementId);
+      if (ending) {
+        setBlockId(ending.id);
+        return;
+      }
     },
-    [survey.welcomeCard.enabled]
+    [survey.welcomeCard.enabled, survey.blocks, survey.endings]
   );
 
   useEffect(() => {
-    if (questionId) {
-      updateQuestionId(questionId);
+    if (elementId) {
+      updateElementId(elementId);
     }
-  }, [questionId, updateQuestionId]);
+  }, [elementId, updateElementId]);
 
   const onFinished = () => {
-    // close modal if there are no questions left
+    // close modal if there are no elements left
     if (survey.type === "app" && survey.endings.length === 0) {
       setIsModalOpen(false);
       setTimeout(() => {
-        setQuestionId(survey.questions[0]?.id);
+        if (survey.blocks[0]) {
+          setBlockId(survey.blocks[0].id);
+        }
         setIsModalOpen(true);
       }, 500);
     }
@@ -176,20 +133,24 @@ export const PreviewSurvey = ({
   // this useEffect is for refreshing the survey preview only if user is switching between templates on survey templates page and hence we are checking for survey.id === "someUniqeId1" which is a common Id for all templates
   useEffect(() => {
     if (survey.name !== surveyNameTemp && survey.id === "someUniqueId1") {
-      resetQuestionProgress();
+      resetProgress();
       surveyNameTemp = survey.name;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [survey]);
 
-  const resetQuestionProgress = () => {
+  const resetProgress = () => {
     let storePreviewMode = previewMode;
     setPreviewMode("null");
     setTimeout(() => {
       setPreviewMode(storePreviewMode);
     }, 10);
 
-    setQuestionId(survey.welcomeCard.enabled ? "start" : survey?.questions[0]?.id);
+    if (survey.welcomeCard.enabled) {
+      setBlockId("start");
+    } else if (survey.blocks[0]) {
+      setBlockId(survey.blocks[0].id);
+    }
   };
 
   useEffect(() => {
@@ -206,14 +167,14 @@ export const PreviewSurvey = ({
     setIsModalOpen(false);
     setTimeout(() => {
       setIsModalOpen(true);
-      resetQuestionProgress();
+      resetProgress();
     }, 1000);
   };
 
   if (!previewType) {
-    previewType = widgetSetupCompleted ? "modal" : "fullwidth";
+    previewType = appSetupCompleted ? "modal" : "fullwidth";
 
-    if (!questionId) {
+    if (!elementId) {
       return <></>;
     }
   }
@@ -221,36 +182,54 @@ export const PreviewSurvey = ({
   const handlePreviewModeChange = (mode: "mobile" | "desktop") => {
     setPreviewMode(mode);
     requestAnimationFrame(() => {
-      if (questionId) {
-        setQuestionId(questionId);
+      if (elementId) {
+        updateElementId(elementId);
       }
     });
   };
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-items-center py-4" id="survey-preview">
+    <div
+      className="flex h-full w-full flex-col items-center justify-items-center p-2 py-4"
+      id="survey-preview">
       <motion.div
-        variants={previewParentContainerVariant}
-        animate={isFullScreenPreview ? "expanded" : "shrink"}
+        className={cn(
+          "z-50 flex h-full w-fit items-center justify-center",
+          isFullScreenPreview && "h-full w-full bg-zinc-500/50 backdrop-blur-md"
+        )}
+        style={{
+          position: isFullScreenPreview ? "fixed" : "absolute",
+          zIndex: 50,
+          left: isFullScreenPreview ? 0 : undefined,
+          top: isFullScreenPreview ? 0 : undefined,
+        }}
+        transition={{
+          ease: "easeInOut",
+          delay: 1.5,
+        }}
       />
       <motion.div
         layout
-        variants={previewScreenVariants}
-        animate={
-          isFullScreenPreview
-            ? previewPosition === "relative"
-              ? "expanded"
-              : "expanded_with_fixed_positioning"
-            : "shrink"
-        }
-        className="relative flex h-full w-[95%] items-center justify-center rounded-lg border border-slate-300 bg-slate-200">
+        style={{
+          left: isFullScreenPreview ? "2.5%" : undefined,
+          top: isFullScreenPreview ? 0 : undefined,
+        }}
+        transition={{
+          duration: 0.8,
+          ease: "easeInOut",
+          type: "spring",
+        }}
+        className={cn(
+          "z-50 flex h-[95%] w-full items-center justify-center overflow-hidden rounded-lg border border-slate-300",
+          isFullScreenPreview && "absolute z-50 h-[95%] w-[95%]"
+        )}>
         {previewMode === "mobile" && (
           <>
             <p className="absolute left-0 top-0 m-2 rounded bg-slate-100 px-2 py-1 text-xs text-slate-400">
               Preview
             </p>
             <div className="absolute right-0 top-0 m-2">
-              <ResetProgressButton onClick={resetQuestionProgress} />
+              <ResetProgressButton onClick={resetProgress} />
             </div>
             <MediaBackground
               surveyType={survey.type}
@@ -267,6 +246,7 @@ export const PreviewSurvey = ({
                   borderRadius={styling?.roundness ?? 8}
                   background={styling?.cardBackgroundColor?.light}>
                   <SurveyInline
+                    appUrl={publicDomain}
                     isPreviewMode={true}
                     survey={survey}
                     isBrandingEnabled={project.inAppSurveyBranding}
@@ -275,8 +255,8 @@ export const PreviewSurvey = ({
                     styling={styling}
                     isCardBorderVisible={!styling.highlightBorderColor?.light}
                     onClose={handlePreviewModalClose}
-                    getSetQuestionId={(f: (value: string) => void) => {
-                      setQuestionId = f;
+                    getSetBlockId={(f: (value: string) => void) => {
+                      setBlockId = f;
                     }}
                     onFinished={onFinished}
                     isSpamProtectionEnabled={isSpamProtectionEnabled}
@@ -286,19 +266,25 @@ export const PreviewSurvey = ({
                 <div className="flex h-full w-full flex-col justify-center px-1">
                   <div className="absolute left-5 top-5">
                     {!styling.isLogoHidden && (
-                      <ClientLogo environmentId={environment.id} projectLogo={project.logo} previewSurvey />
+                      <ClientLogo
+                        environmentId={environment.id}
+                        projectLogo={project.logo}
+                        surveyLogo={styling.logo}
+                        previewSurvey
+                      />
                     )}
                   </div>
                   <div className="z-10 w-full rounded-lg border border-transparent">
                     <SurveyInline
+                      appUrl={publicDomain}
                       isPreviewMode={true}
                       survey={{ ...survey, type: "link" }}
                       isBrandingEnabled={project.linkSurveyBranding}
                       languageCode={languageCode}
                       responseCount={42}
                       styling={styling}
-                      getSetQuestionId={(f: (value: string) => void) => {
-                        setQuestionId = f;
+                      getSetBlockId={(f: (value: string) => void) => {
+                        setBlockId = f;
                       }}
                       isSpamProtectionEnabled={isSpamProtectionEnabled}
                     />
@@ -318,13 +304,9 @@ export const PreviewSurvey = ({
                   className="h-3 w-3 cursor-pointer rounded-full bg-emerald-500"
                   onClick={() => {
                     if (isFullScreenPreview) {
-                      setShrink(true);
-                      setPreviewPosition("relative");
-                      setTimeout(() => setIsFullScreenPreview(false), 300);
+                      setIsFullScreenPreview(false);
                     } else {
-                      setShrink(false);
                       setIsFullScreenPreview(true);
-                      setTimeout(() => setPreviewPosition("fixed"), 300);
                     }
                   }}
                   aria-label={isFullScreenPreview ? "Shrink Preview" : "Expand Preview"}></button>
@@ -341,22 +323,18 @@ export const PreviewSurvey = ({
                     <ShrinkIcon
                       className="mr-1 h-[22px] w-[22px] cursor-pointer rounded-md bg-white p-1 text-slate-500 hover:text-slate-700"
                       onClick={() => {
-                        setShrink(true);
-                        setPreviewPosition("relative");
-                        setTimeout(() => setIsFullScreenPreview(false), 300);
+                        setIsFullScreenPreview(false);
                       }}
                     />
                   ) : (
                     <ExpandIcon
                       className="mr-1 h-[22px] w-[22px] cursor-pointer rounded-md bg-white p-1 text-slate-500 hover:text-slate-700"
                       onClick={() => {
-                        setShrink(false);
                         setIsFullScreenPreview(true);
-                        setTimeout(() => setPreviewPosition("fixed"), 300);
                       }}
                     />
                   )}
-                  <ResetProgressButton onClick={resetQuestionProgress} />
+                  <ResetProgressButton onClick={resetProgress} />
                 </div>
               </div>
             </div>
@@ -371,6 +349,7 @@ export const PreviewSurvey = ({
                 borderRadius={styling.roundness ?? 8}
                 background={styling.cardBackgroundColor?.light}>
                 <SurveyInline
+                  appUrl={publicDomain}
                   isPreviewMode={true}
                   survey={survey}
                   isBrandingEnabled={project.inAppSurveyBranding}
@@ -379,8 +358,8 @@ export const PreviewSurvey = ({
                   styling={styling}
                   isCardBorderVisible={!styling.highlightBorderColor?.light}
                   onClose={handlePreviewModalClose}
-                  getSetQuestionId={(f: (value: string) => void) => {
-                    setQuestionId = f;
+                  getSetBlockId={(f: (value: string) => void) => {
+                    setBlockId = f;
                   }}
                   onFinished={onFinished}
                   isSpamProtectionEnabled={isSpamProtectionEnabled}
@@ -394,11 +373,17 @@ export const PreviewSurvey = ({
                 isEditorView>
                 <div className="absolute left-5 top-5">
                   {!styling.isLogoHidden && (
-                    <ClientLogo environmentId={environment.id} projectLogo={project.logo} previewSurvey />
+                    <ClientLogo
+                      environmentId={environment.id}
+                      projectLogo={project.logo}
+                      surveyLogo={styling.logo}
+                      previewSurvey
+                    />
                   )}
                 </div>
                 <div className="z-0 w-full max-w-lg rounded-lg border-transparent">
                   <SurveyInline
+                    appUrl={publicDomain}
                     isPreviewMode={true}
                     survey={{ ...survey, type: "link" }}
                     isBrandingEnabled={project.linkSurveyBranding}
@@ -406,8 +391,8 @@ export const PreviewSurvey = ({
                     languageCode={languageCode}
                     responseCount={42}
                     styling={styling}
-                    getSetQuestionId={(f: (value: string) => void) => {
-                      setQuestionId = f;
+                    getSetBlockId={(f: (value: string) => void) => {
+                      setBlockId = f;
                     }}
                     isSpamProtectionEnabled={isSpamProtectionEnabled}
                   />

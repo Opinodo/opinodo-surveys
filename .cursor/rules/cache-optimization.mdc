@@ -16,9 +16,10 @@ Formbricks uses a **hybrid caching approach** optimized for enterprise scale:
 ## Key Files
 
 ### Core Cache Infrastructure
-- [apps/web/modules/cache/lib/service.ts](mdc:apps/web/modules/cache/lib/service.ts) - Redis cache service
-- [apps/web/modules/cache/lib/withCache.ts](mdc:apps/web/modules/cache/lib/withCache.ts) - Cache wrapper utilities
-- [apps/web/modules/cache/lib/cacheKeys.ts](mdc:apps/web/modules/cache/lib/cacheKeys.ts) - Enterprise cache key patterns and utilities
+- [packages/cache/src/service.ts](mdc:packages/cache/src/service.ts) - Redis cache service
+- [packages/cache/src/client.ts](mdc:packages/cache/src/client.ts) - Cache client initialization and singleton management  
+- [apps/web/lib/cache/index.ts](mdc:apps/web/lib/cache/index.ts) - Cache service proxy for web app
+- [packages/cache/src/index.ts](mdc:packages/cache/src/index.ts) - Cache package exports and utilities
 
 ### Environment State Caching (Critical Endpoint)
 - [apps/web/app/api/v1/client/[environmentId]/environment/route.ts](mdc:apps/web/app/api/v1/client/[environmentId]/environment/route.ts) - Main endpoint serving hundreds of thousands of SDK clients
@@ -26,7 +27,7 @@ Formbricks uses a **hybrid caching approach** optimized for enterprise scale:
 
 ## Enterprise-Grade Cache Key Patterns
 
-**Always use** the `createCacheKey` utilities from [cacheKeys.ts](mdc:apps/web/modules/cache/lib/cacheKeys.ts):
+**Always use** the `createCacheKey` utilities from the cache package:
 
 ```typescript
 // ✅ Correct patterns
@@ -50,14 +51,14 @@ export const getEnterpriseLicense = reactCache(async () => {
 });
 ```
 
-### Use `withCache()` for Simple Database Queries
+### Use `cache.withCache()` for Simple Database Queries
 ```typescript
 // ✅ Simple caching with automatic fallback (TTL in milliseconds)
 export const getActionClasses = (environmentId: string) => {
-  return withCache(() => fetchActionClassesFromDB(environmentId), {
-    key: createCacheKey.environment.actionClasses(environmentId),
-    ttl: 60 * 30 * 1000, // 30 minutes in milliseconds
-  })();
+  return cache.withCache(() => fetchActionClassesFromDB(environmentId), 
+    createCacheKey.environment.actionClasses(environmentId),
+    60 * 30 * 1000 // 30 minutes in milliseconds
+  );
 };
 ```
 
@@ -178,14 +179,14 @@ For endpoints serving client SDKs, coordinate TTLs across layers:
 
 ```typescript
 // Client SDK cache (expiresAt) - longest TTL for fewer requests
-const CLIENT_TTL = 60 * 60;           // 1 hour (seconds for client)
+const CLIENT_TTL = 60;           // 1 minute (seconds for client)
 
 // Server Redis cache - shorter TTL ensures fresh data for clients  
-const SERVER_TTL = 60 * 30 * 1000;   // 30 minutes in milliseconds
+const SERVER_TTL = 60 * 1000;   // 1 minutes in milliseconds
 
 // HTTP cache headers (seconds)
-const BROWSER_TTL = 60 * 60;         // 1 hour (max-age)
-const CDN_TTL = 60 * 30;             // 30 minutes (s-maxage)
+const BROWSER_TTL = 60;         // 1 minute (max-age)
+const CDN_TTL = 60;             // 1 minute (s-maxage)
 const CORS_TTL = 60 * 60;            // 1 hour (balanced approach)
 ```
 

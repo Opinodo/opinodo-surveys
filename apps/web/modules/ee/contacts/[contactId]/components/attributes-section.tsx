@@ -1,9 +1,8 @@
 import { getResponsesByContactId } from "@/lib/response/service";
-import { capitalizeFirstLetter } from "@/lib/utils/strings";
+import { getTranslate } from "@/lingodotdev/server";
 import { getContactAttributes } from "@/modules/ee/contacts/lib/contact-attributes";
 import { getContact } from "@/modules/ee/contacts/lib/contacts";
 import { IdBadge } from "@/modules/ui/components/id-badge";
-import { getTranslate } from "@/tolgee/server";
 
 export const AttributesSection = async ({ contactId }: { contactId: string }) => {
   const t = await getTranslate();
@@ -20,7 +19,7 @@ export const AttributesSection = async ({ contactId }: { contactId: string }) =>
     <div className="space-y-6">
       <h2 className="text-lg font-bold text-slate-700">{t("common.attributes")}</h2>
       <div>
-        <dt className="text-sm font-medium text-slate-500">{t("common.email")}</dt>
+        <dt className="text-sm font-medium text-slate-500">email</dt>
         <dd className="ph-no-capture mt-1 text-sm text-slate-900">
           {attributes.email ? (
             <span>{attributes.email}</span>
@@ -30,7 +29,7 @@ export const AttributesSection = async ({ contactId }: { contactId: string }) =>
         </dd>
       </div>
       <div>
-        <dt className="text-sm font-medium text-slate-500">{t("common.language")}</dt>
+        <dt className="text-sm font-medium text-slate-500">language</dt>
         <dd className="ph-no-capture mt-1 text-sm text-slate-900">
           {attributes.language ? (
             <span>{attributes.language}</span>
@@ -40,7 +39,7 @@ export const AttributesSection = async ({ contactId }: { contactId: string }) =>
         </dd>
       </div>
       <div>
-        <dt className="text-sm font-medium text-slate-500">{t("common.user_id")}</dt>
+        <dt className="text-sm font-medium text-slate-500">userId</dt>
         <dd className="ph-no-capture mt-1 text-sm text-slate-900">
           {attributes.userId ? (
             <IdBadge id={attributes.userId} />
@@ -50,7 +49,7 @@ export const AttributesSection = async ({ contactId }: { contactId: string }) =>
         </dd>
       </div>
       <div>
-        <dt className="text-sm font-medium text-slate-500">ID</dt>
+        <dt className="text-sm font-medium text-slate-500">contactId</dt>
         <dd className="ph-no-capture mt-1 text-sm text-slate-900">{contact.id}</dd>
       </div>
 
@@ -59,7 +58,7 @@ export const AttributesSection = async ({ contactId }: { contactId: string }) =>
         .map(([key, attributeData]) => {
           return (
             <div key={key}>
-              <dt className="text-sm font-medium text-slate-500">{capitalizeFirstLetter(key.toString())}</dt>
+              <dt className="text-sm font-medium text-slate-500">{key}</dt>
               <dd className="mt-1 text-sm text-slate-900">{attributeData}</dd>
             </div>
           );

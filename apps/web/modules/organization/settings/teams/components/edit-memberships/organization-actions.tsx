@@ -1,5 +1,12 @@
 "use client";
 
+import { XIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { TOrganizationRole } from "@formbricks/types/memberships";
+import { TOrganization } from "@formbricks/types/organizations";
 import { FORMBRICKS_ENVIRONMENT_ID_LS } from "@/lib/localStorage";
 import { getAccessFlags } from "@/lib/membership/utils";
 import { getFormattedErrorMessage } from "@/lib/utils/helper";
@@ -16,13 +23,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/modules/ui/components/dialog";
-import { useTranslate } from "@tolgee/react";
-import { XIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import toast from "react-hot-toast";
-import { TOrganizationRole } from "@formbricks/types/memberships";
-import { TOrganization } from "@formbricks/types/organizations";
 
 interface OrganizationActionsProps {
   role: TOrganizationRole;
@@ -36,6 +36,9 @@ interface OrganizationActionsProps {
   environmentId: string;
   isMultiOrgEnabled: boolean;
   isUserManagementDisabledFromUi: boolean;
+  isStorageConfigured: boolean;
+  isTeamAdmin: boolean;
+  userAdminTeamIds?: string[];
 }
 
 export const OrganizationActions = ({
@@ -50,15 +53,20 @@ export const OrganizationActions = ({
   environmentId,
   isMultiOrgEnabled,
   isUserManagementDisabledFromUi,
+  isStorageConfigured,
+  isTeamAdmin,
+  userAdminTeamIds,
 }: OrganizationActionsProps) => {
   const router = useRouter();
-  const { t } = useTranslate();
-  const [isLeaveOrganizationModalOpen, setLeaveOrganizationModalOpen] = useState(false);
-  const [isInviteMemberModalOpen, setInviteMemberModalOpen] = useState(false);
+  const { t } = useTranslation();
+  const [isLeaveOrganizationModalOpen, setIsLeaveOrganizationModalOpen] = useState(false);
+  const [isInviteMemberModalOpen, setIsInviteMemberModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { isOwner, isManager } = getAccessFlags(membershipRole);
   const isOwnerOrManager = isOwner || isManager;
+
+  const canInvite = isOwnerOrManager || (isAccessControlAllowed && isTeamAdmin);
 
   const handleLeaveOrganization = async () => {
     setLoading(true);
@@ -132,18 +140,18 @@ export const OrganizationActions = ({
     <>
       <div className="mb-4 flex justify-end space-x-2 text-right">
         {role !== "owner" && isMultiOrgEnabled && (
-          <Button variant="secondary" size="sm" onClick={() => setLeaveOrganizationModalOpen(true)}>
+          <Button variant="destructive" size="sm" onClick={() => setIsLeaveOrganizationModalOpen(true)}>
             {t("environments.settings.general.leave_organization")}
             <XIcon />
           </Button>
         )}
 
-        {!isInviteDisabled && isOwnerOrManager && !isUserManagementDisabledFromUi && (
+        {!isInviteDisabled && canInvite && !isUserManagementDisabledFromUi && (
           <Button
             size="sm"
-            variant="secondary"
+            variant="default"
             onClick={() => {
-              setInviteMemberModalOpen(true);
+              setIsInviteMemberModalOpen(true);
             }}>
             {t("environments.settings.teams.invite_member")}
           </Button>
@@ -151,16 +159,20 @@ export const OrganizationActions = ({
       </div>
       <InviteMemberModal
         open={isInviteMemberModalOpen}
-        setOpen={setInviteMemberModalOpen}
+        setOpen={setIsInviteMemberModalOpen}
         onSubmit={handleAddMembers}
         membershipRole={membershipRole}
         isAccessControlAllowed={isAccessControlAllowed}
         isFormbricksCloud={isFormbricksCloud}
         environmentId={environmentId}
         teams={teams}
+        isStorageConfigured={isStorageConfigured}
+        isOwnerOrManager={isOwnerOrManager}
+        isTeamAdmin={isTeamAdmin}
+        userAdminTeamIds={userAdminTeamIds}
       />
 
-      <Dialog open={isLeaveOrganizationModalOpen} onOpenChange={setLeaveOrganizationModalOpen}>
+      <Dialog open={isLeaveOrganizationModalOpen} onOpenChange={setIsLeaveOrganizationModalOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("environments.settings.general.leave_organization_title")}</DialogTitle>
@@ -174,7 +186,7 @@ export const OrganizationActions = ({
             </p>
           )}
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setLeaveOrganizationModalOpen(false)}>
+            <Button variant="secondary" onClick={() => setIsLeaveOrganizationModalOpen(false)}>
               {t("common.cancel")}
             </Button>
             <Button

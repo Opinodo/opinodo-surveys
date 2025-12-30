@@ -1,21 +1,22 @@
 "use client";
 
+import { Project } from "@prisma/client";
+import { Variants, motion } from "framer-motion";
+import { Fragment, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { TSurvey, TSurveyType } from "@formbricks/types/surveys/types";
 import { ClientLogo } from "@/modules/ui/components/client-logo";
 import { MediaBackground } from "@/modules/ui/components/media-background";
 import { Modal } from "@/modules/ui/components/preview-survey/components/modal";
 import { ResetProgressButton } from "@/modules/ui/components/reset-progress-button";
 import { SurveyInline } from "@/modules/ui/components/survey";
-import { Project } from "@prisma/client";
-import { useTranslate } from "@tolgee/react";
-import { Variants, motion } from "framer-motion";
-import { Fragment, useRef, useState } from "react";
-import { TSurvey, TSurveyType } from "@formbricks/types/surveys/types";
 
 interface ThemeStylingPreviewSurveyProps {
   survey: TSurvey;
   project: Project;
   previewType: TSurveyType;
   setPreviewType: (type: TSurveyType) => void;
+  publicDomain: string;
 }
 
 const previewParentContainerVariant: Variants = {
@@ -50,12 +51,13 @@ export const ThemeStylingPreviewSurvey = ({
   project,
   previewType,
   setPreviewType,
+  publicDomain,
 }: ThemeStylingPreviewSurveyProps) => {
   const [isFullScreenPreview] = useState(false);
   const [previewPosition] = useState("relative");
   const ContentRef = useRef<HTMLDivElement | null>(null);
   const [shrink] = useState(false);
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const { projectOverwrites } = survey || {};
 
   const previewScreenVariants: Variants = {
@@ -110,6 +112,10 @@ export const ThemeStylingPreviewSurvey = ({
 
   const isAppSurvey = previewType === "app";
 
+  // Create a unique key that includes both timestamp and preview type
+  // This ensures the survey remounts when switching between app and link
+  const surveyKey = `${previewType}-${surveyFormKey}`;
+
   const scrollToEditLogoSection = () => {
     const editLogoSection = document.getElementById("edit-logo");
     if (editLogoSection) {
@@ -160,8 +166,9 @@ export const ThemeStylingPreviewSurvey = ({
               previewMode="desktop"
               background={project.styling.cardBackgroundColor?.light}
               borderRadius={project.styling.roundness ?? 8}>
-              <Fragment key={surveyFormKey}>
+              <Fragment key={surveyKey}>
                 <SurveyInline
+                  appUrl={publicDomain}
                   isPreviewMode={true}
                   survey={{ ...survey, type: "app" }}
                   isBrandingEnabled={project.inAppSurveyBranding}
@@ -185,9 +192,10 @@ export const ThemeStylingPreviewSurvey = ({
                 </button>
               )}
               <div
-                key={surveyFormKey}
+                key={surveyKey}
                 className={`${project.logo?.url && !project.styling.isLogoHidden && !isFullScreenPreview ? "mt-12" : ""} z-0 w-full max-w-md rounded-lg p-4`}>
                 <SurveyInline
+                  appUrl={publicDomain}
                   isPreviewMode={true}
                   survey={{ ...survey, type: "link" }}
                   isBrandingEnabled={project.linkSurveyBranding}

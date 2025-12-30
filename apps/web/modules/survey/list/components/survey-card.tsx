@@ -1,15 +1,14 @@
 "use client";
 
+import Link from "next/link";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { TUserLocale } from "@formbricks/types/user";
 import { cn } from "@/lib/cn";
 import { convertDateString, timeSince } from "@/lib/time";
-import { useSingleUseId } from "@/modules/survey/hooks/useSingleUseId";
 import { SurveyTypeIndicator } from "@/modules/survey/list/components/survey-type-indicator";
 import { TSurvey } from "@/modules/survey/list/types/surveys";
 import { SurveyStatusIndicator } from "@/modules/ui/components/survey-status-indicator";
-import { useTranslate } from "@tolgee/react";
-import Link from "next/link";
-import { useMemo } from "react";
-import { TUserLocale } from "@formbricks/types/user";
 import { SurveyDropDownMenu } from "./survey-dropdown-menu";
 
 interface SurveyCardProps {
@@ -30,13 +29,11 @@ export const SurveyCard = ({
   locale,
   onSurveysCopied,
 }: SurveyCardProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const surveyStatusLabel = (() => {
     switch (survey.status) {
       case "inProgress":
         return t("common.in_progress");
-      case "scheduled":
-        return t("common.scheduled");
       case "completed":
         return t("common.completed");
       case "draft":
@@ -49,8 +46,6 @@ export const SurveyCard = ({
   })();
 
   const isSurveyCreationDeletionDisabled = isReadOnly;
-
-  const { refreshSingleUseId } = useSingleUseId(survey, isReadOnly);
 
   const linkHref = useMemo(() => {
     return survey.status === "draft"
@@ -73,7 +68,6 @@ export const SurveyCard = ({
         <div
           className={cn(
             "col-span-1 flex w-fit items-center gap-2 whitespace-nowrap rounded-full py-1 pl-1 pr-2 text-sm text-slate-800",
-            surveyStatusLabel === "Scheduled" && "bg-slate-200",
             surveyStatusLabel === "In Progress" && "bg-emerald-50",
             surveyStatusLabel === "Completed" && "bg-slate-200",
             surveyStatusLabel === "Draft" && "bg-slate-100",
@@ -101,7 +95,6 @@ export const SurveyCard = ({
           environmentId={environmentId}
           publicDomain={publicDomain}
           disabled={isDraftAndReadOnly}
-          refreshSingleUseId={refreshSingleUseId}
           isSurveyCreationDeletionDisabled={isSurveyCreationDeletionDisabled}
           deleteSurvey={deleteSurvey}
           onSurveysCopied={onSurveysCopied}

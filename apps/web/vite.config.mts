@@ -15,7 +15,7 @@ export default defineConfig({
       provider: "v8", // Use V8 as the coverage provider
       reporter: ["text", "html", "lcov"], // Generate text summary and HTML reports
       reportsDirectory: "./coverage", // Output coverage reports to the coverage/ directory
-      include: ["app/**/*.{ts,tsx}", "modules/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
+      include: ["app/**/*.ts", "modules/**/*.ts", "lib/**/*.ts", "lingodotdev/**/*.ts"],
       exclude: [
         // Build and configuration files
         "**/.next/**", // Next.js build output
@@ -31,6 +31,9 @@ export default defineConfig({
         "**/mocks/**", // Mock directories
         "**/__mocks__/**", // Jest-style mock directories
         "**/playwright/**", // Playwright E2E test files
+
+        // TSX files (covered by E2E tests)
+        "**/*.tsx", // All TSX/React component files
 
         // Next.js specific files
         "**/route.{ts,tsx}", // Next.js API routes
@@ -54,7 +57,6 @@ export default defineConfig({
         "**/actions.ts", // Server actions (plural)
         "**/action.ts", // Server actions (singular)
         "lib/env.ts", // Environment configuration
-        "lib/posthogServer.ts", // PostHog server integration
         "**/cache.ts", // Cache files
         "**/cache/**", // Cache directories
 
@@ -85,8 +87,6 @@ export default defineConfig({
         "app/api/v1/integrations/**", // Integration APIs
 
         // Specific components
-        "packages/surveys/src/components/general/smileys.tsx", // Smiley components
-        "modules/analysis/components/SingleResponseCard/components/Smileys.tsx", // Analysis smiley components
         "modules/auth/lib/mock-data.ts", // Mock data for authentication
         "packages/js-core/src/index.ts", // JS Core index file
 

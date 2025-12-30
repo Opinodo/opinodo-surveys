@@ -1,10 +1,3 @@
-import {
-  getOrganizationByEnvironmentId,
-  subscribeOrganizationMembersToSurveyResponses,
-} from "@/lib/organization/service";
-import { capturePosthogEnvironmentEvent } from "@/lib/posthogServer";
-import { getActionClasses } from "@/modules/survey/lib/action-class";
-import { selectSurvey } from "@/modules/survey/lib/survey";
 import { ActionClass, Prisma } from "@prisma/client";
 import "@testing-library/jest-dom/vitest";
 import { beforeEach, describe, expect, test, vi } from "vitest";
@@ -12,13 +5,15 @@ import { prisma } from "@formbricks/database";
 import { logger } from "@formbricks/logger";
 import { DatabaseError, InvalidInputError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TSurveyCreateInput } from "@formbricks/types/surveys/types";
+import {
+  getOrganizationByEnvironmentId,
+  subscribeOrganizationMembersToSurveyResponses,
+} from "@/lib/organization/service";
+import { getActionClasses } from "@/modules/survey/lib/action-class";
+import { selectSurvey } from "@/modules/survey/lib/survey";
 import { createSurvey, handleTriggerUpdates } from "./survey";
 
 // Mock dependencies
-vi.mock("@/lib/posthogServer", () => ({
-  capturePosthogEnvironmentEvent: vi.fn(),
-}));
-
 vi.mock("@/lib/survey/utils", () => ({
   checkForInvalidImagesInQuestions: vi.fn(),
 }));
@@ -120,11 +115,6 @@ describe("survey module", () => {
         "survey-123",
         "user-123",
         "org-123"
-      );
-      expect(capturePosthogEnvironmentEvent).toHaveBeenCalledWith(
-        environmentId,
-        "survey created",
-        expect.objectContaining({ surveyId: "survey-123" })
       );
       expect(result).toBeDefined();
       expect(result.id).toBe("survey-123");

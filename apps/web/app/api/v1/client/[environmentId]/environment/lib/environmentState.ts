@@ -1,15 +1,10 @@
 import "server-only";
+import { createCacheKey } from "@formbricks/cache";
+import { prisma } from "@formbricks/database";
+import { TJsEnvironmentState } from "@formbricks/types/js";
+import { cache } from "@/lib/cache";
 import { IS_FORMBRICKS_CLOUD, IS_RECAPTCHA_CONFIGURED, RECAPTCHA_SITE_KEY } from "@/lib/constants";
 import { getMonthlyOrganizationResponseCount } from "@/lib/organization/service";
-import {
-  capturePosthogEnvironmentEvent,
-  sendPlanLimitsReachedEventToPosthogWeekly,
-} from "@/lib/posthogServer";
-import { createCacheKey } from "@/modules/cache/lib/cacheKeys";
-import { withCache } from "@/modules/cache/lib/withCache";
-import { prisma } from "@formbricks/database";
-import { logger } from "@formbricks/logger";
-import { TJsEnvironmentState } from "@formbricks/types/js";
 import { getEnvironmentStateData } from "./data";
 
 /**
@@ -24,8 +19,7 @@ import { getEnvironmentStateData } from "./data";
 export const getEnvironmentState = async (
   environmentId: string
 ): Promise<{ data: TJsEnvironmentState["data"] }> => {
-  // Use withCache for efficient Redis caching with automatic fallback
-  const getCachedEnvironmentState = withCache(
+  return cache.withCache(
     async () => {
       // Single optimized database call replacing multiple service calls
       const { environment, organization, surveys, actionClasses } =
@@ -34,13 +28,10 @@ export const getEnvironmentState = async (
       // Handle app setup completion update if needed
       // This is a one-time setup flag that can tolerate TTL-based cache expiration
       if (!environment.appSetupCompleted) {
-        await Promise.all([
-          prisma.environment.update({
-            where: { id: environmentId },
-            data: { appSetupCompleted: true },
-          }),
-          capturePosthogEnvironmentEvent(environmentId, "app setup completed"),
-        ]);
+        await prisma.environment.update({
+          where: { id: environmentId },
+          data: { appSetupCompleted: true },
+        });
       }
 
       // Check monthly response limits for Formbricks Cloud
@@ -50,24 +41,6 @@ export const getEnvironmentState = async (
         const currentResponseCount = await getMonthlyOrganizationResponseCount(organization.id);
         isMonthlyResponsesLimitReached =
           monthlyResponseLimit !== null && currentResponseCount >= monthlyResponseLimit;
-
-        // Send plan limits event if needed
-        if (isMonthlyResponsesLimitReached) {
-          try {
-            await sendPlanLimitsReachedEventToPosthogWeekly(environmentId, {
-              plan: organization.billing.plan,
-              limits: {
-                projects: null,
-                monthly: {
-                  miu: null,
-                  responses: organization.billing.limits.monthly.responses,
-                },
-              },
-            });
-          } catch (err) {
-            logger.error(err, "Error sending plan limits reached event to Posthog");
-          }
-        }
       }
 
       // Build the response data
@@ -80,13 +53,7 @@ export const getEnvironmentState = async (
 
       return { data };
     },
-    {
-      // Use enterprise-grade cache key pattern
-      key: createCacheKey.environment.state(environmentId),
-      // This is a temporary fix for the invalidation issues, will be changed later with a proper solution
-      ttl: 5 * 60 * 1000, // 5 minutes in milliseconds
-    }
+    createCacheKey.environment.state(environmentId),
+    60 * 1000 // 1 minutes in milliseconds
   );
-
-  return getCachedEnvironmentState();
 };

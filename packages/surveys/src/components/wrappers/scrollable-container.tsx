@@ -1,10 +1,12 @@
-import { cn } from "@/lib/utils";
 import type { JSX, Ref } from "preact";
 import { forwardRef } from "preact/compat";
 import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
+import { ChevronDownIcon } from "@/components/icons/chevron-down-icon";
+import { cn } from "@/lib/utils";
 
 interface ScrollableContainerProps {
   children: JSX.Element;
+  fullSizeCards: boolean;
 }
 
 export interface ScrollableContainerHandle {
@@ -12,7 +14,7 @@ export interface ScrollableContainerHandle {
 }
 
 export const ScrollableContainer = forwardRef<ScrollableContainerHandle, ScrollableContainerProps>(
-  ({ children }: ScrollableContainerProps, ref: Ref<ScrollableContainerHandle>) => {
+  ({ children, fullSizeCards = false }: ScrollableContainerProps, ref: Ref<ScrollableContainerHandle>) => {
     const [isAtBottom, setIsAtBottom] = useState(false);
     const [isAtTop, setIsAtTop] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -61,21 +63,40 @@ export const ScrollableContainer = forwardRef<ScrollableContainerHandle, Scrolla
       checkScroll();
     }, [children]);
 
+    let maxHeight: string;
+    if (fullSizeCards) {
+      maxHeight = "calc(100vh - 6rem)";
+    } else if (isSurveyPreview) {
+      maxHeight = "42dvh";
+    } else {
+      maxHeight = "60dvh";
+    }
+
     return (
-      <div className="fb-relative">
+      <div className="relative">
         {!isAtTop && (
-          <div className="fb-from-survey-bg fb-absolute fb-left-0 fb-right-2 fb-top-0 fb-z-10 fb-h-4 fb-bg-gradient-to-b fb-to-transparent" />
+          <div className="from-survey-bg absolute top-0 right-2 left-0 z-10 h-4 bg-linear-to-b to-transparent" />
         )}
         <div
           ref={containerRef}
           style={{
-            maxHeight: isSurveyPreview ? "40dvh" : "60dvh",
+            maxHeight,
           }}
-          className={cn("fb-overflow-auto fb-px-4 fb-pb-6 fb-bg-survey-bg")}>
+          className={cn("bg-survey-bg overflow-auto px-4")}>
           {children}
         </div>
         {!isAtBottom && (
-          <div className="fb-from-survey-bg fb-absolute fb-bottom-0 fb-left-4 fb-right-4 fb-h-4 fb-bg-gradient-to-t fb-to-transparent" />
+          <>
+            <div className="from-survey-bg absolute right-4 bottom-0 left-4 h-4 bg-linear-to-t to-transparent" />
+            <button
+              type="button"
+              onClick={scrollToBottom}
+              style={{ transform: "translateX(-50%)" }}
+              className="bg-survey-bg hover:border-border focus:ring-brand absolute bottom-2 left-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-transparent shadow-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
+              aria-label="Scroll to bottom">
+              <ChevronDownIcon className="text-heading h-5 w-5" />
+            </button>
+          </>
         )}
       </div>
     );

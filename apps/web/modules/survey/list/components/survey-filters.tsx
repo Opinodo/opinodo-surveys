@@ -1,7 +1,15 @@
 "use client";
 
+import { TFunction } from "i18next";
+import { ChevronDownIcon, X } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useDebounce } from "react-use";
+import { TProjectConfigChannel } from "@formbricks/types/project";
+import { TFilterOption, TSortOption, TSurveyFilters } from "@formbricks/types/surveys/types";
+import { FORMBRICKS_SURVEYS_FILTERS_KEY_LS } from "@/lib/localStorage";
 import { SortOption } from "@/modules/survey/list/components/sort-option";
-import { initialFilters } from "@/modules/survey/list/components/survey-list";
+import { initialFilters } from "@/modules/survey/list/lib/constants";
 import { Button } from "@/modules/ui/components/button";
 import {
   DropdownMenu,
@@ -9,14 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/modules/ui/components/dropdown-menu";
 import { SearchBar } from "@/modules/ui/components/search-bar";
-import { TFnType, useTranslate } from "@tolgee/react";
-import { ChevronDownIcon, X } from "lucide-react";
-import { useState } from "react";
-import { useDebounce } from "react-use";
-import { TProjectConfigChannel } from "@formbricks/types/project";
-import { TFilterOption, TSortOption, TSurveyFilters } from "@formbricks/types/surveys/types";
-import { TTag } from "@formbricks/types/tags";
 import { SurveyFilterDropdown } from "./survey-filter-dropdown";
+import { TTag } from "@formbricks/types/tags";
 
 interface SurveyFilterProps {
   surveyFilters: TSurveyFilters;
@@ -25,19 +27,19 @@ interface SurveyFilterProps {
   environmentTags: TTag[];
 }
 
-const getCreatorOptions = (t: TFnType): TFilterOption[] => [
+const getCreatorOptions = (t: TFunction): TFilterOption[] => [
   { label: t("common.you"), value: "you" },
   { label: t("common.others"), value: "others" },
 ];
 
-const getStatusOptions = (t: TFnType): TFilterOption[] => [
-  { label: t("common.scheduled"), value: "scheduled" },
+const getStatusOptions = (t: TFunction): TFilterOption[] => [
+  { label: t("common.draft"), value: "draft" },
+  { label: t("common.in_progress"), value: "inProgress" },
   { label: t("common.paused"), value: "paused" },
   { label: t("common.completed"), value: "completed" },
-  { label: t("common.draft"), value: "draft" },
 ];
 
-const getSortOptions = (t: TFnType): TSortOption[] => [
+const getSortOptions = (t: TFunction): TSortOption[] => [
   {
     label: t("common.updated_at"),
     value: "updatedAt",
@@ -64,7 +66,7 @@ export const SurveyFilters = ({
 }: SurveyFilterProps) => {
   const { createdBy, sortBy, status, type, tag } = surveyFilters;
   const [name, setName] = useState("");
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   useDebounce(() => setSurveyFilters((prev) => ({ ...prev, name: name })), 800, [name]);
 
   const [dropdownOpenStates, setDropdownOpenStates] = useState(new Map());
@@ -89,13 +91,7 @@ export const SurveyFilters = ({
   };
 
   const handleStatusChange = (value: string) => {
-    if (
-      value === "inProgress" ||
-      value === "paused" ||
-      value === "completed" ||
-      value === "draft" ||
-      value === "scheduled"
-    ) {
+    if (value === "inProgress" || value === "paused" || value === "completed" || value === "draft") {
       if (status.includes(value)) {
         setSurveyFilters((prev) => ({ ...prev, status: prev.status.filter((v) => v !== value) }));
       } else {
@@ -193,12 +189,13 @@ export const SurveyFilters = ({
           </div>
         )}
 
-        {(createdBy.length > 0 || status.length > 0 || type.length > 0 || tag.length > 0) && (
+        {(createdBy.length > 0 || status.length > 0 || type.length > 0 || tag.length > 0 || name) && (
           <Button
             size="sm"
             onClick={() => {
               setSurveyFilters(initialFilters);
-              localStorage.removeItem("surveyFilters");
+              setName(""); // Also clear the search input
+              localStorage.removeItem(FORMBRICKS_SURVEYS_FILTERS_KEY_LS);
             }}
             className="h-8">
             {t("common.clear_filters")}

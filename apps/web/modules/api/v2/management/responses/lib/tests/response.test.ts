@@ -9,20 +9,15 @@ import {
   responseInputWithoutDisplay,
   responseInputWithoutTtc,
 } from "./__mocks__/response.mock";
-import { sendPlanLimitsReachedEventToPosthogWeekly } from "@/lib/posthogServer";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { prisma } from "@formbricks/database";
+import { err, ok } from "@formbricks/types/error-handlers";
 import {
   getMonthlyOrganizationResponseCount,
   getOrganizationBilling,
   getOrganizationIdFromEnvironmentId,
 } from "@/modules/api/v2/management/responses/lib/organization";
-import { beforeEach, describe, expect, test, vi } from "vitest";
-import { prisma } from "@formbricks/database";
-import { err, ok } from "@formbricks/types/error-handlers";
 import { createResponse, getResponses } from "../response";
-
-vi.mock("@/lib/posthogServer", () => ({
-  sendPlanLimitsReachedEventToPosthogWeekly: vi.fn().mockResolvedValue(undefined),
-}));
 
 vi.mock("@/modules/api/v2/management/responses/lib/organization", () => ({
   getOrganizationIdFromEnvironmentId: vi.fn(),
@@ -43,6 +38,7 @@ vi.mock("@formbricks/database", () => ({
 vi.mock("@/lib/constants", () => ({
   IS_FORMBRICKS_CLOUD: true,
   IS_PRODUCTION: false,
+  ENCRYPTION_KEY: "test",
 }));
 
 describe("Response Lib", () => {
@@ -149,11 +145,8 @@ describe("Response Lib", () => {
 
       vi.mocked(getMonthlyOrganizationResponseCount).mockResolvedValue(ok(100));
 
-      vi.mocked(sendPlanLimitsReachedEventToPosthogWeekly).mockImplementation(() => Promise.resolve(""));
-
       const result = await createResponse(environmentId, responseInput);
 
-      expect(sendPlanLimitsReachedEventToPosthogWeekly).toHaveBeenCalled();
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.data).toEqual(response);
@@ -190,10 +183,6 @@ describe("Response Lib", () => {
 
       vi.mocked(getMonthlyOrganizationResponseCount).mockResolvedValue(ok(100));
 
-      vi.mocked(sendPlanLimitsReachedEventToPosthogWeekly).mockRejectedValue(
-        new Error("Error sending plan limits")
-      );
-
       const result = await createResponse(environmentId, responseInput);
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -229,20 +218,6 @@ describe("Response Lib", () => {
             limit: responseFilter.limit,
             offset: responseFilter.skip,
           },
-        });
-      }
-    });
-
-    test("return a not_found error if responses are not found", async () => {
-      (prisma.response.findMany as any).mockResolvedValue(null);
-      (prisma.response.count as any).mockResolvedValue(0);
-
-      const result = await getResponses([environmentId], responseFilter);
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.error).toEqual({
-          type: "not_found",
-          details: [{ field: "responses", issue: "not found" }],
         });
       }
     });

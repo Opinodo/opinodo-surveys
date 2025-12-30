@@ -13,7 +13,7 @@ export const ZGetSurveysFilter = z
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
     surveyType: z.enum(["link", "app"]).optional(),
-    surveyStatus: z.enum(["draft", "scheduled", "inProgress", "paused", "completed"]).optional(),
+    surveyStatus: z.enum(["draft", "inProgress", "paused", "completed"]).optional(),
   })
   .refine(
     (data) => {
@@ -33,8 +33,8 @@ export const ZSurveyInput = ZSurveyWithoutQuestionType.pick({
   type: true,
   environmentId: true,
   questions: true,
+  blocks: true,
   endings: true,
-  thankYouCard: true,
   hiddenFields: true,
   variables: true,
   displayOption: true,
@@ -43,13 +43,10 @@ export const ZSurveyInput = ZSurveyWithoutQuestionType.pick({
   autoClose: true,
   autoComplete: true,
   delay: true,
-  runOnDate: true,
-  closeOnDate: true,
   singleUse: true,
   isVerifyEmailEnabled: true,
   isSingleResponsePerEmailEnabled: true,
   inlineTriggers: true,
-  verifyEmail: true,
   displayPercentage: true,
   welcomeCard: true,
   surveyClosedMessage: true,
@@ -60,20 +57,16 @@ export const ZSurveyInput = ZSurveyWithoutQuestionType.pick({
   .partial({
     redirectUrl: true,
     endings: true,
-    thankYouCard: true,
     variables: true,
     recontactDays: true,
     displayLimit: true,
     autoClose: true,
     autoComplete: true,
-    runOnDate: true,
-    closeOnDate: true,
     surveyClosedMessage: true,
     styling: true,
     projectOverwrites: true,
     showLanguageSwitch: true,
     inlineTriggers: true,
-    verifyEmail: true,
     displayPercentage: true,
   })
   .openapi({

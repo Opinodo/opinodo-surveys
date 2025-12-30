@@ -1,5 +1,11 @@
 "use client";
 
+import { DownloadIcon } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { TSegment } from "@formbricks/types/segment";
 import { DocumentationLinks } from "@/app/(app)/environments/[environmentId]/surveys/[surveyId]/(analysis)/summary/components/shareEmbedModal/documentation-links";
 import { getFormattedErrorMessage } from "@/lib/utils/helper";
 import { Button } from "@/modules/ui/components/button";
@@ -20,12 +26,6 @@ import {
   SelectValue,
 } from "@/modules/ui/components/select";
 import { UpgradePrompt } from "@/modules/ui/components/upgrade-prompt";
-import { useTranslate } from "@tolgee/react";
-import { DownloadIcon } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
-import { TSegment } from "@formbricks/types/segment";
 import { generatePersonalLinksAction } from "../../actions";
 
 interface PersonalLinksTabProps {
@@ -75,7 +75,7 @@ export const PersonalLinksTab = ({
   isContactsEnabled,
   isFormbricksCloud,
 }: PersonalLinksTabProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
 
   const form = useForm<PersonalLinksFormData>({
     defaultValues: {
@@ -122,7 +122,21 @@ export const PersonalLinksTab = ({
     });
 
     if (result?.data) {
-      downloadFile(result.data.downloadUrl, result.data.fileName || "personal-links.csv");
+      const fileName = result.data.fileName || "personal-links.csv";
+      const file = new File([result.data.csvContent], fileName, {
+        type: "text/csv",
+      });
+
+      try {
+        const url = URL.createObjectURL(file);
+        downloadFile(url, fileName);
+        URL.revokeObjectURL(url);
+      } catch {
+        toast.error(t("environments.surveys.share.personal_links.error_generating_links"));
+        setIsGenerating(false);
+        return;
+      }
+
       toast.success(t("environments.surveys.share.personal_links.links_generated_success_toast"), {
         duration: 5000,
         id: "generating-links",
@@ -134,6 +148,7 @@ export const PersonalLinksTab = ({
         id: "generating-links",
       });
     }
+
     setIsGenerating(false);
   };
 

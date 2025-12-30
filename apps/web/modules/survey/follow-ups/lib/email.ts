@@ -1,9 +1,9 @@
-import { sendEmail } from "@/modules/email";
-import { FollowUpEmail } from "@/modules/survey/follow-ups/components/follow-up-email";
 import { render } from "@react-email/components";
 import { TSurveyFollowUp } from "@formbricks/database/types/survey-follow-up";
 import { TResponse } from "@formbricks/types/responses";
 import { TSurvey } from "@formbricks/types/surveys/types";
+import { sendEmail } from "@/modules/email";
+import { FollowUpEmail } from "@/modules/survey/follow-ups/components/follow-up-email";
 
 export const sendFollowUpEmail = async ({
   followUp,
@@ -12,12 +12,16 @@ export const sendFollowUpEmail = async ({
   survey,
   response,
   attachResponseData = false,
+  includeVariables = false,
+  includeHiddenFields = false,
   logoUrl,
 }: {
   followUp: TSurveyFollowUp;
   to: string;
   replyTo: string[];
   attachResponseData: boolean;
+  includeVariables?: boolean;
+  includeHiddenFields?: boolean;
   survey: TSurvey;
   response: TResponse;
   logoUrl?: string;
@@ -33,6 +37,8 @@ export const sendFollowUpEmail = async ({
       followUp,
       logoUrl,
       attachResponseData,
+      includeVariables,
+      includeHiddenFields,
       survey,
       response,
     })

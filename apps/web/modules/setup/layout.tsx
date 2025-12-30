@@ -1,5 +1,5 @@
-import { Logo } from "@/modules/ui/components/logo";
 import { Toaster } from "react-hot-toast";
+import { FormbricksLogo } from "@/modules/ui/components/formbricks-logo";
 
 export const SetupLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -10,7 +10,7 @@ export const SetupLayout = ({ children }: { children: React.ReactNode }) => {
           style={{ scrollbarGutter: "stable both-edges" }}
           className="flex max-h-[90vh] w-[40rem] flex-col items-center space-y-4 overflow-auto rounded-lg border bg-white p-12 text-center shadow-md">
           <div className="h-20 w-20 rounded-lg bg-slate-900 p-2">
-            <Logo className="h-full w-full" variant="image" />
+            <FormbricksLogo className="h-full w-full" />
           </div>
           {children}
         </div>

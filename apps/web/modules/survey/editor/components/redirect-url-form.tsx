@@ -1,13 +1,13 @@
 "use client";
 
+import { useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { TSurvey, TSurveyRedirectUrlCard } from "@formbricks/types/surveys/types";
 import { headlineToRecall, recallToHeadline } from "@/lib/utils/recall";
-import { RecallWrapper } from "@/modules/survey/components/question-form-input/components/recall-wrapper";
+import { RecallWrapper } from "@/modules/survey/components/element-form-input/components/recall-wrapper";
 import { Input } from "@/modules/ui/components/input";
 import { Label } from "@/modules/ui/components/label";
-import { useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
-import { useRef } from "react";
-import { TSurvey, TSurveyRedirectUrlCard } from "@formbricks/types/surveys/types";
 
 interface RedirectUrlFormProps {
   localSurvey: TSurvey;
@@ -23,7 +23,7 @@ export const RedirectUrlForm = ({
   defaultRedirect,
 }: RedirectUrlFormProps) => {
   const selectedLanguageCode = "default";
-  const { t } = useTranslate();
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export const RedirectUrlForm = ({
         <Label>{t("common.url")}</Label>
         <RecallWrapper
           value={endingCard.url ?? defaultRedirect}
-          questionId={endingCard.id}
+          elementId={endingCard.id}
           onChange={(val, recallItems, fallbacks) => {
             const updatedValue = {
               ...endingCard,

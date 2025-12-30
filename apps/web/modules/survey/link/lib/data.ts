@@ -1,12 +1,12 @@
 import "server-only";
-import { createCacheKey } from "@/modules/cache/lib/cacheKeys";
-import { withCache } from "@/modules/cache/lib/withCache";
-import { transformPrismaSurvey } from "@/modules/survey/lib/utils";
 import { Prisma } from "@prisma/client";
 import { cache as reactCache } from "react";
+import { createCacheKey } from "@formbricks/cache";
 import { prisma } from "@formbricks/database";
 import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TSurvey } from "@formbricks/types/surveys/types";
+import { cache } from "@/lib/cache";
+import { transformPrismaSurvey } from "@/modules/survey/lib/utils";
 
 /**
  * Comprehensive survey data fetcher for link surveys
@@ -30,6 +30,7 @@ export const getSurveyWithMetadata = reactCache(async (surveyId: string) => {
         // Survey configuration
         welcomeCard: true,
         questions: true,
+        blocks: true,
         endings: true,
         hiddenFields: true,
         variables: true,
@@ -37,8 +38,6 @@ export const getSurveyWithMetadata = reactCache(async (surveyId: string) => {
         recontactDays: true,
         displayLimit: true,
         autoClose: true,
-        runOnDate: true,
-        closeOnDate: true,
         delay: true,
         displayPercentage: true,
         autoComplete: true,
@@ -59,6 +58,7 @@ export const getSurveyWithMetadata = reactCache(async (surveyId: string) => {
         surveyClosedMessage: true,
         showLanguageSwitch: true,
         recaptcha: true,
+        metadata: true,
 
         // Related data
         languages: {
@@ -68,11 +68,11 @@ export const getSurveyWithMetadata = reactCache(async (surveyId: string) => {
             language: {
               select: {
                 id: true,
-                code: true,
-                alias: true,
                 createdAt: true,
                 updatedAt: true,
+                code: true,
                 projectId: true,
+                alias: true,
               },
             },
           },
@@ -95,7 +95,15 @@ export const getSurveyWithMetadata = reactCache(async (surveyId: string) => {
           },
         },
         segment: {
-          include: {
+          select: {
+            id: true,
+            createdAt: true,
+            updatedAt: true,
+            environmentId: true,
+            title: true,
+            description: true,
+            isPrivate: true,
+            filters: true,
             surveys: {
               select: {
                 id: true,
@@ -210,7 +218,7 @@ export const getExistingContactResponse = reactCache((surveyId: string, contactI
       },
     });
 
-    return response;
+    return response ?? undefined;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       throw new DatabaseError(error.message);
@@ -223,30 +231,29 @@ export const getExistingContactResponse = reactCache((surveyId: string, contactI
  * Get organization billing information for survey limits
  * Cached separately with longer TTL
  */
-export const getOrganizationBilling = reactCache((organizationId: string) =>
-  withCache(
-    async () => {
-      try {
-        const organization = await prisma.organization.findFirst({
-          where: { id: organizationId },
-          select: { billing: true },
-        });
+export const getOrganizationBilling = reactCache(
+  async (organizationId: string) =>
+    await cache.withCache(
+      async () => {
+        try {
+          const organization = await prisma.organization.findUnique({
+            where: { id: organizationId },
+            select: { billing: true },
+          });
 
-        if (!organization) {
-          throw new ResourceNotFoundError("Organization", organizationId);
-        }
+          if (!organization) {
+            throw new ResourceNotFoundError("Organization", organizationId);
+          }
 
-        return organization.billing;
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          throw new DatabaseError(error.message);
+          return organization.billing;
+        } catch (error) {
+          if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            throw new DatabaseError(error.message);
+          }
+          throw error;
         }
-        throw error;
-      }
-    },
-    {
-      key: createCacheKey.organization.billing(organizationId),
-      ttl: 60 * 60 * 24 * 1000, // 24 hours in milliseconds - billing info changes rarely
-    }
-  )()
+      },
+      createCacheKey.organization.billing(organizationId),
+      60 * 60 * 24 * 1000 // 24 hours in milliseconds - billing info changes rarely
+    )
 );

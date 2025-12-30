@@ -1,6 +1,4 @@
 import "server-only";
-import { deleteOrganization, getOrganizationsWhereUserIsSingleOwner } from "@/lib/organization/service";
-import { deleteBrevoCustomerByEmail } from "@/modules/auth/lib/brevo";
 import { Prisma } from "@prisma/client";
 import { cache as reactCache } from "react";
 import { z } from "zod";
@@ -9,6 +7,8 @@ import { PrismaErrorType } from "@formbricks/database/types/error";
 import { ZId } from "@formbricks/types/common";
 import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TUser, TUserLocale, TUserUpdateInput, ZUserUpdateInput } from "@formbricks/types/user";
+import { deleteOrganization, getOrganizationsWhereUserIsSingleOwner } from "@/lib/organization/service";
+import { deleteBrevoCustomerByEmail } from "@/modules/auth/lib/brevo";
 import { validateInputs } from "../utils/validate";
 
 const responseSelection = {
@@ -18,10 +18,8 @@ const responseSelection = {
   emailVerified: true,
   createdAt: true,
   updatedAt: true,
-  role: true,
   twoFactorEnabled: true,
   identityProvider: true,
-  objective: true,
   notificationSettings: true,
   locale: true,
   lastLoginAt: true,

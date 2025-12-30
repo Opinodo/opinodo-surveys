@@ -1,9 +1,9 @@
-import { transformPrismaSurvey } from "@/modules/survey/lib/utils";
 import { Organization, Prisma } from "@prisma/client";
 import { cache as reactCache } from "react";
 import { prisma } from "@formbricks/database";
 import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TSurvey } from "@formbricks/types/surveys/types";
+import { transformPrismaSurvey } from "@/modules/survey/lib/utils";
 
 export const selectSurvey = {
   id: true,
@@ -16,6 +16,7 @@ export const selectSurvey = {
   status: true,
   welcomeCard: true,
   questions: true,
+  blocks: true,
   endings: true,
   hiddenFields: true,
   variables: true,
@@ -23,8 +24,6 @@ export const selectSurvey = {
   recontactDays: true,
   displayLimit: true,
   autoClose: true,
-  runOnDate: true,
-  closeOnDate: true,
   delay: true,
   displayPercentage: true,
   autoComplete: true,
@@ -54,11 +53,11 @@ export const selectSurvey = {
       language: {
         select: {
           id: true,
-          code: true,
-          alias: true,
           createdAt: true,
           updatedAt: true,
+          code: true,
           projectId: true,
+          alias: true,
         },
       },
     },
@@ -81,7 +80,15 @@ export const selectSurvey = {
     },
   },
   segment: {
-    include: {
+    select: {
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      environmentId: true,
+      title: true,
+      description: true,
+      isPrivate: true,
+      filters: true,
       surveys: {
         select: {
           id: true,

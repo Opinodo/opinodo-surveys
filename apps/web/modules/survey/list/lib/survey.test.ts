@@ -1,8 +1,3 @@
-import { checkForInvalidImagesInQuestions } from "@/lib/survey/utils";
-import { validateInputs } from "@/lib/utils/validate";
-import { buildOrderByClause, buildWhereClause } from "@/modules/survey/lib/utils";
-import { doesEnvironmentExist } from "@/modules/survey/list/lib/environment";
-import { getProjectWithLanguagesByEnvironmentId } from "@/modules/survey/list/lib/project";
 import { createId } from "@paralleldrive/cuid2";
 import { Prisma } from "@prisma/client";
 import { cache as reactCache } from "react";
@@ -11,6 +6,12 @@ import { prisma } from "@formbricks/database";
 import { logger } from "@formbricks/logger";
 import { TActionClassType } from "@formbricks/types/action-classes";
 import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
+import { checkForInvalidMediaInBlocks } from "@/lib/survey/utils";
+import { validateInputs } from "@/lib/utils/validate";
+import { getIsQuotasEnabled } from "@/modules/ee/license-check/lib/utils";
+import { buildOrderByClause, buildWhereClause } from "@/modules/survey/lib/utils";
+import { doesEnvironmentExist } from "@/modules/survey/list/lib/environment";
+import { getProjectWithLanguagesByEnvironmentId } from "@/modules/survey/list/lib/project";
 import { TProjectWithLanguages, TSurvey } from "../types/surveys";
 // Import the module to be tested
 import {
@@ -32,7 +33,7 @@ vi.mock("react", async (importOriginal) => {
 });
 
 vi.mock("@/lib/survey/utils", () => ({
-  checkForInvalidImagesInQuestions: vi.fn(),
+  checkForInvalidMediaInBlocks: vi.fn(() => ({ ok: true, data: undefined })),
 }));
 
 vi.mock("@/lib/utils/validate", () => ({
@@ -56,6 +57,10 @@ vi.mock("@paralleldrive/cuid2", () => ({
   createId: vi.fn(() => "new_cuid2_id"),
 }));
 
+vi.mock("@/modules/ee/license-check/lib/utils", () => ({
+  getIsQuotasEnabled: vi.fn(),
+}));
+
 vi.mock("@formbricks/database", () => ({
   prisma: {
     survey: {
@@ -77,6 +82,12 @@ vi.mock("@formbricks/database", () => ({
     actionClass: {
       findMany: vi.fn(),
     },
+    surveyQuota: {
+      findMany: vi.fn(),
+    },
+    organization: {
+      findFirst: vi.fn(),
+    },
   },
 }));
 
@@ -89,7 +100,7 @@ vi.mock("@formbricks/logger", () => ({
 // Helper to reset mocks
 const resetMocks = () => {
   vi.mocked(reactCache).mockClear();
-  vi.mocked(checkForInvalidImagesInQuestions).mockClear();
+  vi.mocked(checkForInvalidMediaInBlocks).mockClear();
   vi.mocked(validateInputs).mockClear();
   vi.mocked(buildOrderByClause).mockClear();
   vi.mocked(buildWhereClause).mockClear();
@@ -407,7 +418,14 @@ const mockExistingSurveyDetails = {
   type: "web" as any,
   languages: [{ default: true, enabled: true, language: { code: "en", alias: "English" } }],
   welcomeCard: { enabled: true, headline: { default: "Welcome!" } },
-  questions: [{ id: "q1", type: "openText", headline: { default: "Question 1" } }],
+  blocks: [
+    {
+      id: "block1",
+      name: "Block 1",
+      elements: [{ id: "q1", type: "openText", headline: { default: "Question 1" } }],
+    },
+  ],
+  questions: [],
   endings: [{ type: "default", headline: { default: "Thanks!" } }],
   variables: [{ id: "var1", name: "Var One" }],
   hiddenFields: { enabled: true, fieldIds: ["hf1"] },
@@ -417,6 +435,9 @@ const mockExistingSurveyDetails = {
   styling: { theme: {} },
   segment: null,
   followUps: [{ name: "Follow Up 1", trigger: {}, action: {} }],
+  displayOption: "respondMultiple" as any,
+  recontactDays: 7,
+  displayLimit: 5,
   triggers: [
     {
       actionClass: {
@@ -476,9 +497,16 @@ describe("copySurveyToOtherEnvironment", () => {
     vi.mocked(getProjectWithLanguagesByEnvironmentId)
       .mockResolvedValueOnce(mockSourceProject)
       .mockResolvedValueOnce(mockTargetProject);
+    vi.mocked(getIsQuotasEnabled).mockResolvedValue(true);
     vi.mocked(prisma.survey.create).mockResolvedValue(mockNewSurveyResult as any);
     vi.mocked(prisma.segment.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.actionClass.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.surveyQuota.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.organization.findFirst).mockResolvedValue({
+      billing: {
+        plan: "free",
+      },
+    } as any);
   });
 
   test("should copy survey to a different environment successfully", async () => {
@@ -528,7 +556,7 @@ describe("copySurveyToOtherEnvironment", () => {
         }),
       })
     );
-    expect(checkForInvalidImagesInQuestions).toHaveBeenCalledWith(mockExistingSurveyDetails.questions);
+    expect(checkForInvalidMediaInBlocks).toHaveBeenCalledWith(mockExistingSurveyDetails.blocks);
   });
 
   test("should copy survey to the same environment successfully", async () => {
@@ -734,6 +762,42 @@ describe("copySurveyToOtherEnvironment", () => {
       expect.objectContaining({
         data: expect.objectContaining({
           triggers: { create: [] },
+        }),
+      })
+    );
+  });
+
+  test("should copy recontact options (displayOption, recontactDays, displayLimit)", async () => {
+    await copySurveyToOtherEnvironment(environmentId, surveyId, targetEnvironmentId, userId);
+
+    expect(prisma.survey.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          displayOption: "respondMultiple",
+          recontactDays: 7,
+          displayLimit: 5,
+        }),
+      })
+    );
+  });
+
+  test("should copy recontact options with null values", async () => {
+    const surveyWithNullRecontact = {
+      ...mockExistingSurveyDetails,
+      displayOption: "displayOnce" as any,
+      recontactDays: null,
+      displayLimit: null,
+    };
+    vi.mocked(prisma.survey.findUnique).mockResolvedValue(surveyWithNullRecontact as any);
+
+    await copySurveyToOtherEnvironment(environmentId, surveyId, targetEnvironmentId, userId);
+
+    expect(prisma.survey.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          displayOption: "displayOnce",
+          recontactDays: null,
+          displayLimit: null,
         }),
       })
     );

@@ -1,14 +1,12 @@
 import { z } from "zod";
 import { ZId } from "./common";
+import { ZSurveyQuota } from "./quota";
 import { ZSurvey } from "./surveys/types";
 import { ZTag } from "./tags";
 
-export const ZResponseDataValue = z.union([
-  z.string(),
-  z.number(),
-  z.array(z.string()),
-  z.record(z.string()),
-]);
+export const ZResponseDataValue = z
+  .union([z.string(), z.number(), z.array(z.string()), z.record(z.string())])
+  .optional();
 
 export const ZResponseFilterCondition = z.enum([
   "accepted",
@@ -189,6 +187,18 @@ const ZResponseFilterCriteriaFilledOut = z.object({
   op: z.literal("filledOut"),
 });
 
+const ZQuotasFilterCriteriaScreenedIn = z.object({
+  op: z.literal("screenedIn"),
+});
+
+const ZQuotasFilterCriteriaScreenedOut = z.object({
+  op: z.literal("screenedOut"),
+});
+
+const ZQuotasFilterCriteriaScreenedOutNotInQuota = z.object({
+  op: z.literal("screenedOutNotInQuota"),
+});
+
 export const ZResponseFilterCriteria = z.object({
   finished: z.boolean().optional(),
   responseIds: z.array(ZId).optional(),
@@ -262,6 +272,17 @@ export const ZResponseFilterCriteria = z.object({
         ZResponseFilterCriteriaDoesNotStartWith,
         ZResponseFilterCriteriaEndsWith,
         ZResponseFilterCriteriaDoesNotEndWith,
+      ])
+    )
+    .optional(),
+
+  quotas: z
+    .record(
+      ZId,
+      z.union([
+        ZQuotasFilterCriteriaScreenedIn,
+        ZQuotasFilterCriteriaScreenedOut,
+        ZQuotasFilterCriteriaScreenedOutNotInQuota,
       ])
     )
     .optional(),
@@ -393,6 +414,7 @@ export type TResponseUpdate = z.infer<typeof ZResponseUpdate>;
 
 export const ZResponseTableData = z.object({
   responseId: z.string(),
+  singleUseId: z.string().nullable(),
   createdAt: z.date(),
   status: z.string(),
   verifiedEmail: z.string(),
@@ -403,6 +425,13 @@ export const ZResponseTableData = z.object({
   person: ZResponseContact.nullable(),
   contactAttributes: ZResponseContactAttributes,
   meta: ZResponseMeta,
+  quotas: z.array(z.string()).optional(),
 });
 
 export type TResponseTableData = z.infer<typeof ZResponseTableData>;
+
+export const ZResponseWithQuotas = ZResponse.extend({
+  quotas: z.array(ZSurveyQuota.pick({ id: true, name: true })).optional(),
+});
+
+export type TResponseWithQuotas = z.infer<typeof ZResponseWithQuotas>;

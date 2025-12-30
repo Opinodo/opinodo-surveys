@@ -1,7 +1,8 @@
+import { useState } from "preact/hooks";
+import { useTranslation } from "react-i18next";
 import { CloseIcon } from "@/components/icons/close-icon";
 import { mixColor } from "@/lib/color";
 import { cn } from "@/lib/utils";
-import { useState } from "preact/hooks";
 
 interface SurveyCloseButtonProps {
   onClose?: () => void;
@@ -10,11 +11,12 @@ interface SurveyCloseButtonProps {
 }
 
 export function SurveyCloseButton({ onClose, hoverColor, borderRadius }: Readonly<SurveyCloseButtonProps>) {
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
   const hoverColorWithOpacity = hoverColor ?? mixColor("#000000", "#ffffff", 0.8);
 
   return (
-    <div className="fb-z-[1001] fb-flex fb-w-fit fb-items-center">
+    <div className="z-1001 flex w-fit items-center">
       <button
         type="button"
         onClick={onClose}
@@ -26,9 +28,9 @@ export function SurveyCloseButton({ onClose, hoverColor, borderRadius }: Readonl
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={cn(
-          "fb-text-heading fb-relative focus:fb-outline-none focus:fb-ring-2 focus:fb-ring-offset-2 fb-p-2 fb-h-8 fb-w-8 flex items-center justify-center"
+          "text-heading relative flex h-8 w-8 items-center justify-center p-2 focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
         )}
-        aria-label="Close survey">
+        aria-label={t("common.close_survey")}>
         <CloseIcon />
       </button>
     </div>

@@ -1,12 +1,19 @@
 "use client";
 
+import { ActionClass, Environment, Language, OrganizationRole, Project } from "@prisma/client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
+import { TSurveyQuota } from "@formbricks/types/quota";
+import { TSegment } from "@formbricks/types/segment";
+import { TSurvey, TSurveyEditorTabs, TSurveyStyling } from "@formbricks/types/surveys/types";
+import { TUserLocale } from "@formbricks/types/user";
 import { extractLanguageCodes, getEnabledLanguages } from "@/lib/i18n/utils";
 import { structuredClone } from "@/lib/pollyfills/structuredClone";
 import { useDocumentVisibility } from "@/lib/useDocumentVisibility";
 import { TTeamPermission } from "@/modules/ee/teams/project-teams/types/team";
 import { EditPublicSurveyAlertDialog } from "@/modules/survey/components/edit-public-survey-alert-dialog";
+import { ElementsView } from "@/modules/survey/editor/components/elements-view";
 import { LoadingSkeleton } from "@/modules/survey/editor/components/loading-skeleton";
-import { QuestionsView } from "@/modules/survey/editor/components/questions-view";
 import { SettingsView } from "@/modules/survey/editor/components/settings-view";
 import { StylingView } from "@/modules/survey/editor/components/styling-view";
 import { SurveyEditorTabs } from "@/modules/survey/editor/components/survey-editor-tabs";
@@ -14,14 +21,7 @@ import { SurveyMenuBar } from "@/modules/survey/editor/components/survey-menu-ba
 import { TFollowUpEmailToUser } from "@/modules/survey/editor/types/survey-follow-up";
 import { FollowUpsView } from "@/modules/survey/follow-ups/components/follow-ups-view";
 import { PreviewSurvey } from "@/modules/ui/components/preview-survey";
-import { ActionClass, Environment, Language, OrganizationRole, Project } from "@prisma/client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { TContactAttributeKey } from "@formbricks/types/contact-attribute-key";
-import { TOrganizationBillingPlan } from "@formbricks/types/organizations";
-import { TSegment } from "@formbricks/types/segment";
-import { TSurvey, TSurveyEditorTabs, TSurveyStyling } from "@formbricks/types/surveys/types";
 import { TTag } from "@formbricks/types/tags";
-import { TUserLocale } from "@formbricks/types/user";
 import { refetchProjectAction } from "../actions";
 
 interface SurveyEditorProps {
@@ -39,7 +39,7 @@ interface SurveyEditorProps {
   isSpamProtectionAllowed?: boolean;
   isFormbricksCloud: boolean;
   isUnsplashConfigured: boolean;
-  plan: TOrganizationBillingPlan;
+  isQuotasAllowed: boolean;
   isCxMode: boolean;
   locale: TUserLocale;
   projectPermission: TTeamPermission | null;
@@ -48,6 +48,10 @@ interface SurveyEditorProps {
   isSurveyFollowUpsAllowed: boolean;
   userEmail: string;
   teamMemberDetails: TFollowUpEmailToUser[];
+  isStorageConfigured: boolean;
+  quotas: TSurveyQuota[];
+  isExternalUrlsAllowed: boolean;
+  publicDomain: string;
   environmentTags: TTag[];
 }
 
@@ -68,7 +72,7 @@ export const SurveyEditor = ({
   isSpamProtectionAllowed = false,
   isFormbricksCloud,
   isUnsplashConfigured,
-  plan,
+  isQuotasAllowed,
   isCxMode = false,
   locale,
   projectPermission,
@@ -76,11 +80,15 @@ export const SurveyEditor = ({
   isSurveyFollowUpsAllowed = false,
   userEmail,
   teamMemberDetails,
+  isStorageConfigured,
+  quotas,
+  isExternalUrlsAllowed,
+  publicDomain,
 }: SurveyEditorProps) => {
-  const [activeView, setActiveView] = useState<TSurveyEditorTabs>("questions");
-  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<TSurveyEditorTabs>("elements");
+  const [activeElementId, setActiveElementId] = useState<string | null>(null);
   const [localSurvey, setLocalSurvey] = useState<TSurvey | null>(() => structuredClone(survey));
-  const [invalidQuestions, setInvalidQuestions] = useState<string[] | null>(null);
+  const [invalidElements, setInvalidElements] = useState<string[] | null>(null);
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("default");
   const surveyEditorRef = useRef(null);
   const [localProject, setLocalProject] = useState<Project>(project);
@@ -106,8 +114,10 @@ export const SurveyEditor = ({
       const surveyClone = structuredClone(survey);
       setLocalSurvey(surveyClone);
 
-      if (survey.questions.length > 0) {
-        setActiveQuestionId(survey.questions[0].id);
+      // Set first element from first block
+      const firstBlock = survey.blocks[0];
+      if (firstBlock) {
+        setActiveElementId(firstBlock.elements?.[0]?.id);
       }
     }
 
@@ -132,13 +142,14 @@ export const SurveyEditor = ({
     };
   }, [localProject.id]);
 
-  // when the survey type changes, we need to reset the active question id to the first question
+  // when the survey type changes, we need to reset the active element id to the first element
   useEffect(() => {
-    if (localSurvey?.questions?.length && localSurvey.questions.length > 0) {
-      setActiveQuestionId(localSurvey.questions[0].id);
+    const firstBlock = localSurvey?.blocks[0];
+    if (firstBlock) {
+      setActiveElementId(firstBlock.elements[0]?.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localSurvey?.type, survey?.questions]);
+  }, [localSurvey?.type]);
 
   useEffect(() => {
     if (!localSurvey?.languages) return;
@@ -161,7 +172,7 @@ export const SurveyEditor = ({
         environmentId={environment.id}
         activeId={activeView}
         setActiveId={setActiveView}
-        setInvalidQuestions={setInvalidQuestions}
+        setInvalidElements={setInvalidElements}
         project={localProject}
         responseCount={responseCount}
         selectedLanguageCode={selectedLanguageCode}
@@ -169,10 +180,11 @@ export const SurveyEditor = ({
         isCxMode={isCxMode}
         locale={locale}
         setIsCautionDialogOpen={setIsCautionDialogOpen}
+        isStorageConfigured={isStorageConfigured}
       />
       <div className="relative z-0 flex flex-1 overflow-hidden">
         <main
-          className="relative z-0 w-1/2 flex-1 overflow-y-auto bg-slate-50 focus:outline-none"
+          className="relative z-0 w-full overflow-y-auto bg-slate-50 focus:outline-none md:w-2/3"
           ref={surveyEditorRef}>
           <SurveyEditorTabs
             activeId={activeView}
@@ -182,25 +194,27 @@ export const SurveyEditor = ({
             isSurveyFollowUpsAllowed={isSurveyFollowUpsAllowed}
           />
 
-          {activeView === "questions" && (
-            <QuestionsView
+          {activeView === "elements" && (
+            <ElementsView
               localSurvey={localSurvey}
               setLocalSurvey={setLocalSurvey}
-              activeQuestionId={activeQuestionId}
-              setActiveQuestionId={setActiveQuestionId}
+              activeElementId={activeElementId}
+              setActiveElementId={setActiveElementId}
               project={localProject}
               projectLanguages={projectLanguages}
-              invalidQuestions={invalidQuestions}
-              setInvalidQuestions={setInvalidQuestions}
-              selectedLanguageCode={selectedLanguageCode ? selectedLanguageCode : "default"}
+              invalidElements={invalidElements}
+              setInvalidElements={setInvalidElements}
+              selectedLanguageCode={selectedLanguageCode || "default"}
               setSelectedLanguageCode={setSelectedLanguageCode}
               isMultiLanguageAllowed={isMultiLanguageAllowed}
               isFormbricksCloud={isFormbricksCloud}
-              plan={plan}
               isCxMode={isCxMode}
               locale={locale}
               responseCount={responseCount}
               setIsCautionDialogOpen={setIsCautionDialogOpen}
+              isStorageConfigured={isStorageConfigured}
+              quotas={quotas}
+              isExternalUrlsAllowed={isExternalUrlsAllowed}
             />
           )}
 
@@ -217,6 +231,7 @@ export const SurveyEditor = ({
               setLocalStylingChanges={setLocalStylingChanges}
               isUnsplashConfigured={isUnsplashConfigured}
               isCxMode={isCxMode}
+              isStorageConfigured={isStorageConfigured}
             />
           )}
 
@@ -236,6 +251,8 @@ export const SurveyEditor = ({
               project={localProject}
               projectPermission={projectPermission}
               isFormbricksCloud={isFormbricksCloud}
+              isQuotasAllowed={isQuotasAllowed}
+              quotas={quotas}
             />
           )}
 
@@ -253,15 +270,16 @@ export const SurveyEditor = ({
           )}
         </main>
 
-        <aside className="group hidden flex-1 flex-shrink-0 items-center justify-center overflow-hidden border-l border-slate-200 bg-slate-100 shadow-inner md:flex md:flex-col">
+        <aside className="group hidden w-1/3 flex-shrink-0 items-center justify-center overflow-hidden border-l border-slate-200 bg-slate-100 shadow-inner md:flex md:flex-col">
           <PreviewSurvey
             survey={localSurvey}
-            questionId={activeQuestionId}
+            elementId={activeElementId}
             project={localProject}
             environment={environment}
             previewType={localSurvey.type === "app" ? "modal" : "fullwidth"}
             languageCode={selectedLanguageCode}
             isSpamProtectionAllowed={isSpamProtectionAllowed}
+            publicDomain={publicDomain}
           />
         </aside>
       </div>

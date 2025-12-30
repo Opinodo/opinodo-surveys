@@ -1,6 +1,21 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "tasks": {
+    "@formbricks/cache#build": {
+      "dependsOn": ["@formbricks/logger#build"]
+    },
+    "@formbricks/cache#go": {
+      "dependsOn": ["@formbricks/logger#build"]
+    },
+    "@formbricks/cache#lint": {
+      "dependsOn": ["@formbricks/logger#build"]
+    },
+    "@formbricks/cache#test": {
+      "dependsOn": ["@formbricks/logger#build"]
+    },
+    "@formbricks/cache#test:coverage": {
+      "dependsOn": ["@formbricks/logger#build"]
+    },
     "@formbricks/database#build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
@@ -42,6 +57,36 @@
       "dependsOn": ["@formbricks/database#db:setup"],
       "persistent": true
     },
+    "@formbricks/storage#build": {
+      "dependsOn": ["@formbricks/logger#build"]
+    },
+    "@formbricks/storage#go": {
+      "cache": false,
+      "dependsOn": ["@formbricks/storage#build"],
+      "persistent": true
+    },
+    "@formbricks/storage#lint": {
+      "dependsOn": ["@formbricks/logger#build"]
+    },
+    "@formbricks/storage#test": {
+      "dependsOn": ["@formbricks/logger#build"]
+    },
+    "@formbricks/storage#test:coverage": {
+      "dependsOn": ["@formbricks/logger#build"]
+    },
+    "@formbricks/survey-ui#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "@formbricks/survey-ui#build:dev": {
+      "dependsOn": ["^build:dev"],
+      "outputs": ["dist/**"]
+    },
+    "@formbricks/survey-ui#go": {
+      "cache": false,
+      "dependsOn": ["@formbricks/survey-ui#build"],
+      "persistent": true
+    },
     "@formbricks/surveys#build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
@@ -55,16 +100,45 @@
       "dependsOn": ["@formbricks/surveys#build"],
       "persistent": true
     },
+    "@formbricks/surveys#test": {
+      "dependsOn": ["@formbricks/survey-ui#build"]
+    },
+    "@formbricks/surveys#test:coverage": {
+      "dependsOn": ["@formbricks/survey-ui#build"]
+    },
+    "@formbricks/ui#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "@formbricks/ui#build:dev": {
+      "dependsOn": ["^build:dev"],
+      "outputs": ["dist/**"]
+    },
+    "@formbricks/ui#go": {
+      "cache": false,
+      "dependsOn": ["@formbricks/ui#build"],
+      "persistent": true
+    },
     "@formbricks/web#go": {
       "cache": false,
       "dependsOn": ["@formbricks/database#db:setup"],
       "persistent": true
     },
     "@formbricks/web#test": {
-      "dependsOn": ["@formbricks/logger#build", "@formbricks/database#build"]
+      "dependsOn": [
+        "@formbricks/logger#build",
+        "@formbricks/database#build",
+        "@formbricks/storage#build",
+        "@formbricks/cache#build"
+      ]
     },
     "@formbricks/web#test:coverage": {
-      "dependsOn": ["@formbricks/logger#build", "@formbricks/database#build"]
+      "dependsOn": [
+        "@formbricks/logger#build",
+        "@formbricks/database#build",
+        "@formbricks/storage#build",
+        "@formbricks/cache#build"
+      ]
     },
     "build": {
       "dependsOn": ["^build"],
@@ -79,9 +153,9 @@
         "AZUREAD_TENANT_ID",
         "AUTH_SSO_DEFAULT_TEAM_ID",
         "AUTH_SKIP_INVITE_FOR_SSO",
+        "BASE_PATH",
         "BREVO_API_KEY",
         "BREVO_LIST_ID",
-        "DOCKER_CRON_ENABLED",
         "CRON_SECRET",
         "DATABASE_URL",
         "DEBUG",
@@ -106,8 +180,8 @@
         "IMPRINT_ADDRESS",
         "INVITE_DISABLED",
         "IS_FORMBRICKS_CLOUD",
-        "INTERCOM_APP_ID",
-        "INTERCOM_SECRET_KEY",
+        "CHATWOOT_WEBSITE_TOKEN",
+        "CHATWOOT_BASE_URL",
         "LOG_LEVEL",
         "MAIL_FROM",
         "MAIL_FROM_NAME",
@@ -132,11 +206,8 @@
         "OIDC_SIGNING_ALGORITHM",
         "PASSWORD_RESET_DISABLED",
         "PLAYWRIGHT_CI",
-        "POSTHOG_API_HOST",
-        "POSTHOG_API_KEY",
         "PRIVACY_URL",
         "RATE_LIMITING_DISABLED",
-        "REDIS_HTTP_URL",
         "REDIS_URL",
         "S3_ACCESS_KEY",
         "S3_BUCKET_NAME",
@@ -164,13 +235,11 @@
         "SURVEYS_PACKAGE_MODE",
         "SURVEYS_PACKAGE_BUILD",
         "PUBLIC_URL",
-        "TELEMETRY_DISABLED",
         "TURNSTILE_SECRET_KEY",
         "TURNSTILE_SITE_KEY",
         "RECAPTCHA_SITE_KEY",
         "RECAPTCHA_SECRET_KEY",
         "TERMS_URL",
-        "UPLOADS_DIR",
         "VERCEL",
         "VERCEL_URL",
         "VERSION",

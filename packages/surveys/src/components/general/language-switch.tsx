@@ -1,11 +1,14 @@
-import { LanguageIcon } from "@/components/icons/language-icon";
-import { mixColor } from "@/lib/color";
-import { useClickOutside } from "@/lib/use-click-outside-hook";
-import { checkIfSurveyIsRTL, cn } from "@/lib/utils";
 import { useRef, useState } from "preact/hooks";
+import { useTranslation } from "react-i18next";
 import { getLanguageLabel } from "@formbricks/i18n-utils/src";
 import { TJsEnvironmentStateSurvey } from "@formbricks/types/js";
 import { type TSurveyLanguage } from "@formbricks/types/surveys/types";
+import { LanguageIcon } from "@/components/icons/language-icon";
+import { mixColor } from "@/lib/color";
+import { getI18nLanguage } from "@/lib/i18n-utils";
+import i18n from "@/lib/i18n.config";
+import { useClickOutside } from "@/lib/use-click-outside-hook";
+import { checkIfSurveyIsRTL, cn } from "@/lib/utils";
 
 interface LanguageSwitchProps {
   survey: TJsEnvironmentStateSurvey;
@@ -28,6 +31,7 @@ export function LanguageSwitch({
   dir = "auto",
   setDir,
 }: LanguageSwitchProps) {
+  const { t } = useTranslation();
   const hoverColorWithOpacity = hoverColor ?? mixColor("#000000", "#ffffff", 0.8);
 
   const [isHovered, setIsHovered] = useState(false);
@@ -41,9 +45,18 @@ export function LanguageSwitch({
     return surveyLanguage.default;
   })?.language.code;
 
+  const handleI18nLanguage = (languageCode: string) => {
+    const calculatedLanguage = getI18nLanguage(languageCode, surveyLanguages);
+    if (i18n.language !== calculatedLanguage) {
+      i18n.changeLanguage(calculatedLanguage);
+    }
+  };
+
   const changeLanguage = (languageCode: string) => {
     const calculatedLanguageCode = languageCode === defaultLanguageCode ? "default" : languageCode;
     setSelectedLanguageCode(calculatedLanguageCode);
+
+    handleI18nLanguage(calculatedLanguageCode);
 
     if (setDir) {
       const calculateDir = checkIfSurveyIsRTL(survey, calculatedLanguageCode) ? "rtl" : "auto";
@@ -62,12 +75,12 @@ export function LanguageSwitch({
   });
 
   return (
-    <div className="fb-z-[1001] fb-flex fb-w-fit fb-items-center">
+    <div className="z-1001 flex w-fit items-center">
       <button
-        title="Language switch"
+        title={t("common.language_switch")}
         type="button"
         className={cn(
-          "fb-text-heading fb-relative fb-h-8 fb-w-8 fb-rounded-md focus:fb-outline-none focus:fb-ring-2 focus:fb-ring-offset-2 fb-justify-center fb-flex fb-items-center"
+          "text-heading relative flex h-8 w-8 items-center justify-center rounded-md focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
         )}
         style={{
           backgroundColor: isHovered ? hoverColorWithOpacity : "transparent",
@@ -78,7 +91,7 @@ export function LanguageSwitch({
         tabIndex={-1}
         aria-haspopup="true"
         aria-expanded={showLanguageDropdown}
-        aria-label="Language switch"
+        aria-label={t("common.language_switch")}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}>
         <LanguageIcon />
@@ -86,8 +99,8 @@ export function LanguageSwitch({
       {showLanguageDropdown ? (
         <div
           className={cn(
-            "fb-bg-brand fb-text-on-brand fb-absolute fb-top-10 fb-space-y-2 fb-rounded-md fb-p-2 fb-text-xs",
-            dir === "rtl" ? "fb-left-8" : "fb-right-8"
+            "bg-input-bg text-heading border-border absolute top-10 max-h-64 space-y-2 overflow-auto rounded-md border p-2 text-xs",
+            dir === "rtl" ? "left-8" : "right-8"
           )}
           ref={languageDropdownRef}>
           {surveyLanguages.map((surveyLanguage) => {
@@ -96,7 +109,7 @@ export function LanguageSwitch({
               <button
                 key={surveyLanguage.language.id}
                 type="button"
-                className="fb-block fb-w-full fb-p-1.5 fb-text-left hover:fb-opacity-80"
+                className="hover:bg-brand hover:text-on-brand block w-full max-w-48 truncate rounded-md p-1.5 text-left"
                 onClick={() => {
                   changeLanguage(surveyLanguage.language.code);
                 }}>

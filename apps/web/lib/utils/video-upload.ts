@@ -26,7 +26,7 @@ export const checkForVimeoUrl = (url: string): boolean => {
 
     if (vimeoUrl.protocol !== "https:") return false;
 
-    const vimeoDomains = ["www.vimeo.com", "vimeo.com"];
+    const vimeoDomains = ["www.vimeo.com", "vimeo.com", "player.vimeo.com"];
     const hostname = vimeoUrl.hostname;
 
     return vimeoDomains.includes(hostname);
@@ -74,7 +74,7 @@ export const extractYoutubeId = (url: string): string | null => {
 };
 
 export const extractVimeoId = (url: string): string | null => {
-  const regExp = /vimeo\.com\/(\d+)/;
+  const regExp = /vimeo\.com\/(?:video\/)?(\d+)/;
   const match = regExp.exec(url);
 
   if (match?.[1]) {
@@ -85,7 +85,7 @@ export const extractVimeoId = (url: string): string | null => {
 };
 
 export const extractLoomId = (url: string): string | null => {
-  const regExp = /loom\.com\/share\/([a-zA-Z0-9]+)/;
+  const regExp = /loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/;
   const match = regExp.exec(url);
 
   if (match?.[1]) {
@@ -123,4 +123,13 @@ export const convertToEmbedUrl = (url: string): string | undefined => {
 
   // If no supported platform found, return undefined
   return undefined;
+};
+
+/**
+ * Validates if a URL is from a supported video platform (YouTube, Vimeo, or Loom)
+ * @param url - URL to validate
+ * @returns true if URL is from a supported platform, false otherwise
+ */
+export const isValidVideoUrl = (url: string): boolean => {
+  return checkForYoutubeUrl(url) || checkForVimeoUrl(url) || checkForLoomUrl(url);
 };

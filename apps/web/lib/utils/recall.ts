@@ -1,7 +1,11 @@
+import { type TI18nString } from "@formbricks/types/i18n";
+import { TResponseData, TResponseDataValue, TResponseVariables } from "@formbricks/types/responses";
+import { TSurveyElement } from "@formbricks/types/surveys/elements";
+import { TSurvey, TSurveyRecallItem } from "@formbricks/types/surveys/types";
+import { getTextContent } from "@formbricks/types/surveys/validation";
 import { getLocalizedValue } from "@/lib/i18n/utils";
 import { structuredClone } from "@/lib/pollyfills/structuredClone";
-import { TResponseData, TResponseDataValue, TResponseVariables } from "@formbricks/types/responses";
-import { TI18nString, TSurvey, TSurveyQuestion, TSurveyRecallItem } from "@formbricks/types/surveys/types";
+import { getElementsFromBlocks } from "@/modules/survey/lib/client-utils";
 import { formatDateWithOrdinal, isValidDateString } from "./datetime";
 
 export interface fallbacks {
@@ -58,8 +62,13 @@ const getRecallItemLabel = <T extends TSurvey>(
   const isHiddenField = survey.hiddenFields.fieldIds?.includes(recallItemId);
   if (isHiddenField) return recallItemId;
 
-  const surveyQuestion = survey.questions.find((question) => question.id === recallItemId);
-  if (surveyQuestion) return surveyQuestion.headline[languageCode];
+  const questions = getElementsFromBlocks(survey.blocks);
+  const surveyQuestion = questions.find((question) => question.id === recallItemId);
+  if (surveyQuestion) {
+    const headline = getLocalizedValue(surveyQuestion.headline, languageCode);
+    // Strip HTML tags to prevent raw HTML from showing in nested recalls
+    return headline ? getTextContent(headline) : headline;
+  }
 
   const variable = survey.variables?.find((variable) => variable.id === recallItemId);
   if (variable) return variable.name;
@@ -117,16 +126,17 @@ export const replaceRecallInfoWithUnderline = (label: string): string => {
 };
 
 // Checks for survey questions with a "recall" pattern but no fallback value.
-export const checkForEmptyFallBackValue = (survey: TSurvey, language: string): TSurveyQuestion | null => {
-  const findRecalls = (text: string) => {
+export const checkForEmptyFallBackValue = (survey: TSurvey, language: string): TSurveyElement | null => {
+  const doesTextHaveRecall = (text: string) => {
     const recalls = text.match(/#recall:[^ ]+/g);
-    return recalls && recalls.some((recall) => !extractFallbackValue(recall));
+    return recalls?.some((recall) => !extractFallbackValue(recall));
   };
 
-  for (const question of survey.questions) {
+  const questions = getElementsFromBlocks(survey.blocks);
+  for (const question of questions) {
     if (
-      findRecalls(getLocalizedValue(question.headline, language)) ||
-      (question.subheader && findRecalls(getLocalizedValue(question.subheader, language)))
+      doesTextHaveRecall(getLocalizedValue(question.headline, language)) ||
+      (question.subheader && doesTextHaveRecall(getLocalizedValue(question.subheader, language)))
     ) {
       return question;
     }
@@ -137,7 +147,8 @@ export const checkForEmptyFallBackValue = (survey: TSurvey, language: string): T
 // Processes each question in a survey to ensure headlines are formatted correctly for recall and return the modified survey.
 export const replaceHeadlineRecall = <T extends TSurvey>(survey: T, language: string): T => {
   const modifiedSurvey = structuredClone(survey);
-  modifiedSurvey.questions.forEach((question) => {
+  const questions = getElementsFromBlocks(modifiedSurvey.blocks);
+  questions.forEach((question) => {
     question.headline = recallToHeadline(question.headline, modifiedSurvey, false, language);
   });
   return modifiedSurvey;
@@ -151,14 +162,15 @@ export const getRecallItems = (text: string, survey: TSurvey, languageCode: stri
   let recallItems: TSurveyRecallItem[] = [];
   ids.forEach((recallItemId) => {
     const isHiddenField = survey.hiddenFields.fieldIds?.includes(recallItemId);
-    const isSurveyQuestion = survey.questions.find((question) => question.id === recallItemId);
+    const questions = getElementsFromBlocks(survey.blocks);
+    const isSurveyQuestion = questions.find((question) => question.id === recallItemId);
     const isVariable = survey.variables.find((variable) => variable.id === recallItemId);
 
     const recallItemLabel = getRecallItemLabel(recallItemId, survey, languageCode);
 
     const getRecallItemType = () => {
       if (isHiddenField) return "hiddenField";
-      if (isSurveyQuestion) return "question";
+      if (isSurveyQuestion) return "element";
       if (isVariable) return "variable";
     };
 
@@ -265,4 +277,19 @@ export const parseRecallInfo = (
   }
 
   return modifiedText;
+};
+
+export const getTextContentWithRecallTruncated = (text: string, maxLength: number = 25): string => {
+  const cleanText = getTextContent(text).replaceAll(/\s+/g, " ").trim();
+
+  if (cleanText.length <= maxLength) {
+    return replaceRecallInfoWithUnderline(cleanText);
+  }
+
+  const recalledCleanText = replaceRecallInfoWithUnderline(cleanText);
+
+  const start = recalledCleanText.slice(0, 10);
+  const end = recalledCleanText.slice(-10);
+
+  return `${start}...${end}`;
 };

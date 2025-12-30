@@ -1,17 +1,21 @@
+import { useTranslation } from "react-i18next";
+
 export function FormbricksBranding() {
+  const { t } = useTranslation();
   return (
-    <a
-      href="https://digiopinion.com"
-      target="_blank"
-      tabIndex={-1}
-      className="fb-flex fb-justify-center"
-      rel="noopener">
-      <p className="fb-text-signature fb-text-xs">
-        Powered by{" "}
-        <b>
-          <span className="fb-text-branding-text hover:fb-text-signature">Opinodo Surveys</span>
-        </b>
-      </p>
-    </a>
+    <span className="flex justify-center">
+      <a
+        href="https://digiopinion.com"
+        target="_blank"
+        tabIndex={-1}
+        rel="noopener">
+        <p className="text-signature text-xs">
+          {t("common.powered_by")}{" "}
+          <b>
+            <span className="text-branding-text hover:text-signature">Opinodo Surveys</span>
+          </b>
+        </p>
+      </a>
+    </span>
   );
 }

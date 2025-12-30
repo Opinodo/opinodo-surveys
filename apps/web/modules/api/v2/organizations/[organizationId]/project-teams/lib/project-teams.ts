@@ -1,4 +1,7 @@
-import { captureTelemetry } from "@/lib/telemetry";
+import { ProjectTeam } from "@prisma/client";
+import { z } from "zod";
+import { prisma } from "@formbricks/database";
+import { Result, err, ok } from "@formbricks/types/error-handlers";
 import { getProjectTeamsQuery } from "@/modules/api/v2/organizations/[organizationId]/project-teams/lib/utils";
 import {
   TGetProjectTeamsFilter,
@@ -7,10 +10,6 @@ import {
 } from "@/modules/api/v2/organizations/[organizationId]/project-teams/types/project-teams";
 import { ApiErrorResponseV2 } from "@/modules/api/v2/types/api-error";
 import { ApiResponseWithMeta } from "@/modules/api/v2/types/api-success";
-import { ProjectTeam } from "@prisma/client";
-import { z } from "zod";
-import { prisma } from "@formbricks/database";
-import { Result, err, ok } from "@formbricks/types/error-handlers";
 
 export const getProjectTeams = async (
   organizationId: string,
@@ -44,8 +43,6 @@ export const getProjectTeams = async (
 export const createProjectTeam = async (
   teamInput: TProjectTeamInput
 ): Promise<Result<ProjectTeam, ApiErrorResponseV2>> => {
-  captureTelemetry("project team created");
-
   const { teamId, projectId, permission } = teamInput;
 
   try {

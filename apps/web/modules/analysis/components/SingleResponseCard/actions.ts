@@ -1,5 +1,7 @@
 "use server";
 
+import { z } from "zod";
+import { ZId } from "@formbricks/types/common";
 import { deleteResponse, getResponse } from "@/lib/response/service";
 import { createTag } from "@/lib/tag/service";
 import { addTagToRespone, deleteTagOnResponse } from "@/lib/tagOnResponse/service";
@@ -15,8 +17,6 @@ import {
 } from "@/lib/utils/helper";
 import { getTag } from "@/lib/utils/services";
 import { withAuditLogging } from "@/modules/ee/audit-logs/lib/handler";
-import { z } from "zod";
-import { ZId } from "@formbricks/types/common";
 
 const ZCreateTagAction = z.object({
   environmentId: ZId,
@@ -154,6 +154,7 @@ export const deleteTagOnResponseAction = authenticatedActionClient.schema(ZDelet
 
 const ZDeleteResponseAction = z.object({
   responseId: ZId,
+  decrementQuotas: z.boolean().default(false),
 });
 
 export const deleteResponseAction = authenticatedActionClient.schema(ZDeleteResponseAction).action(
@@ -179,7 +180,7 @@ export const deleteResponseAction = authenticatedActionClient.schema(ZDeleteResp
       });
       ctx.auditLoggingCtx.organizationId = organizationId;
       ctx.auditLoggingCtx.responseId = parsedInput.responseId;
-      const result = await deleteResponse(parsedInput.responseId);
+      const result = await deleteResponse(parsedInput.responseId, parsedInput.decrementQuotas);
       ctx.auditLoggingCtx.oldObject = result;
       return result;
     }

@@ -1,5 +1,13 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronDownIcon } from "lucide-react";
+import { useState } from "react";
+import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
+import { TUser, TUserUpdateInput, ZUser, ZUserEmail } from "@formbricks/types/user";
 import { PasswordConfirmationModal } from "@/app/(app)/environments/[environmentId]/settings/(account)/profile/components/password-confirmation-modal";
 import { appLanguages } from "@/lib/i18n/utils";
 import { getFormattedErrorMessage } from "@/lib/utils/helper";
@@ -15,14 +23,6 @@ import {
 import { FormControl, FormError, FormField, FormItem, FormLabel } from "@/modules/ui/components/form";
 import { Input } from "@/modules/ui/components/input";
 import { Label } from "@/modules/ui/components/label";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useTranslate } from "@tolgee/react";
-import { ChevronDownIcon } from "lucide-react";
-import { useState } from "react";
-import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
-import toast from "react-hot-toast";
-import { z } from "zod";
-import { TUser, TUserUpdateInput, ZUser, ZUserEmail } from "@formbricks/types/user";
 import { resetPasswordAction, updateUserAction } from "../actions";
 
 // Schema & types
@@ -42,7 +42,7 @@ export const EditProfileDetailsForm = ({
   isPasswordResetEnabled,
   emailVerificationDisabled,
 }: IEditProfileDetailsFormProps) => {
-  const { t } = useTranslate();
+  const { t } = useTranslation();
 
   const form = useForm<TEditProfileNameForm>({
     defaultValues: {
@@ -215,7 +215,7 @@ export const EditProfileDetailsForm = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                      className="min-w-[var(--radix-dropdown-menu-trigger-width)] bg-slate-50 text-slate-700"
+                      className="min-w-[var(--radix-dropdown-menu-trigger-width)] bg-white text-slate-700"
                       align="start">
                       <DropdownMenuRadioGroup value={field.value} onValueChange={field.onChange}>
                         {appLanguages.map((lang) => (

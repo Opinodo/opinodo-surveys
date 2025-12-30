@@ -1,17 +1,17 @@
 "use client";
 
-import { getFormattedErrorMessage } from "@/lib/utils/helper";
 import { LanguageDropdown } from "@/modules/analysis/components/ShareSurveyLink/components/LanguageDropdown";
-import { Button } from "@/modules/ui/components/button";
-import { CodeBlock } from "@/modules/ui/components/code-block";
-import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
-import { TabBar } from "@/modules/ui/components/tab-bar";
-import { useTranslate } from "@tolgee/react";
 import DOMPurify from "dompurify";
 import { CopyIcon, SendIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { AuthenticationError } from "@formbricks/types/errors";
+import { getFormattedErrorMessage } from "@/lib/utils/helper";
+import { Button } from "@/modules/ui/components/button";
+import { CodeBlock } from "@/modules/ui/components/code-block";
+import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
+import { TabBar } from "@/modules/ui/components/tab-bar";
 import { TSurvey } from "@formbricks/types/surveys/types";
 import { TUserLocale } from "@formbricks/types/user";
 import { getEmailHtmlAction, sendEmbedSurveyPreviewEmailAction } from "../../actions";
@@ -27,7 +27,7 @@ export const EmailTab = ({ surveyId, email, survey, locale = "en-US" }: EmailTab
   const [activeTab, setActiveTab] = useState("preview");
   const [emailHtmlPreview, setEmailHtmlPreview] = useState<string>("");
   const [language, setLanguage] = useState("default");
-  const { t } = useTranslate();
+  const { t } = useTranslation();
 
   const emailHtml = useMemo(() => {
     if (!emailHtmlPreview) return "";

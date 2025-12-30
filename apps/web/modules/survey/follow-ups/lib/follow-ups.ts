@@ -1,12 +1,3 @@
-import { getOrganizationByEnvironmentId } from "@/lib/organization/service";
-import { getResponse } from "@/lib/response/service";
-import { getSurvey } from "@/lib/survey/service";
-import { validateInputs } from "@/lib/utils/validate";
-import { applyRateLimit } from "@/modules/core/rate-limit/helpers";
-import { rateLimitConfigs } from "@/modules/core/rate-limit/rate-limit-configs";
-import { sendFollowUpEmail } from "@/modules/survey/follow-ups/lib/email";
-import { getSurveyFollowUpsPermission } from "@/modules/survey/follow-ups/lib/utils";
-import { FollowUpResult, FollowUpSendError } from "@/modules/survey/follow-ups/types/follow-up";
 import { z } from "zod";
 import { TSurveyFollowUp } from "@formbricks/database/types/survey-follow-up";
 import { logger } from "@formbricks/logger";
@@ -16,6 +7,15 @@ import { ValidationError } from "@formbricks/types/errors";
 import { TOrganization } from "@formbricks/types/organizations";
 import { TResponse } from "@formbricks/types/responses";
 import { TSurvey } from "@formbricks/types/surveys/types";
+import { getOrganizationByEnvironmentId } from "@/lib/organization/service";
+import { getResponse } from "@/lib/response/service";
+import { getSurvey } from "@/lib/survey/service";
+import { validateInputs } from "@/lib/utils/validate";
+import { applyRateLimit } from "@/modules/core/rate-limit/helpers";
+import { rateLimitConfigs } from "@/modules/core/rate-limit/rate-limit-configs";
+import { sendFollowUpEmail } from "@/modules/survey/follow-ups/lib/email";
+import { getSurveyFollowUpsPermission } from "@/modules/survey/follow-ups/lib/utils";
+import { FollowUpResult, FollowUpSendError } from "@/modules/survey/follow-ups/types/follow-up";
 
 const evaluateFollowUp = async (
   followUp: TSurveyFollowUp,
@@ -40,6 +40,8 @@ const evaluateFollowUp = async (
         survey,
         response,
         attachResponseData: properties.attachResponseData,
+        includeVariables: properties.includeVariables,
+        includeHiddenFields: properties.includeHiddenFields,
         logoUrl,
       });
 
@@ -71,6 +73,8 @@ const evaluateFollowUp = async (
           survey,
           response,
           attachResponseData: properties.attachResponseData,
+          includeVariables: properties.includeVariables,
+          includeHiddenFields: properties.includeHiddenFields,
         });
 
         return {
@@ -104,6 +108,8 @@ const evaluateFollowUp = async (
           survey,
           response,
           attachResponseData: properties.attachResponseData,
+          includeVariables: properties.includeVariables,
+          includeHiddenFields: properties.includeHiddenFields,
         });
 
         return {

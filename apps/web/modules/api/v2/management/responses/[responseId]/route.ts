@@ -1,18 +1,20 @@
-import { validateFileUploads } from "@/lib/fileValidation";
+import { z } from "zod";
+import { sendToPipeline } from "@/app/lib/pipelines";
 import { authenticatedApiClient } from "@/modules/api/v2/auth/authenticated-api-client";
-import { validateOtherOptionLengthForMultipleChoice } from "@/modules/api/v2/lib/question";
+import { validateOtherOptionLengthForMultipleChoice } from "@/modules/api/v2/lib/element";
 import { responses } from "@/modules/api/v2/lib/response";
 import { handleApiError } from "@/modules/api/v2/lib/utils";
 import { getEnvironmentId } from "@/modules/api/v2/management/lib/helper";
 import {
   deleteResponse,
   getResponse,
-  updateResponse,
+  getResponseForPipeline,
+  updateResponseWithQuotaEvaluation,
 } from "@/modules/api/v2/management/responses/[responseId]/lib/response";
 import { getSurveyQuestions } from "@/modules/api/v2/management/responses/[responseId]/lib/survey";
 import { ApiErrorResponseV2 } from "@/modules/api/v2/types/api-error";
 import { hasPermission } from "@/modules/organization/settings/api-keys/lib/utils";
-import { z } from "zod";
+import { validateFileUploads } from "@/modules/storage/utils";
 import { ZResponseIdSchema, ZResponseUpdateSchema } from "./types/responses";
 
 export const GET = async (request: Request, props: { params: Promise<{ responseId: string }> }) =>
@@ -124,7 +126,7 @@ export const PUT = (request: Request, props: { params: Promise<{ responseId: str
           request,
           {
             type: "bad_request",
-            details: [{ field: !body ? "body" : "params", issue: "missing" }],
+            details: [{ field: body ? "params" : "body", issue: "missing" }],
           },
           auditLog
         );
@@ -190,10 +192,30 @@ export const PUT = (request: Request, props: { params: Promise<{ responseId: str
         });
       }
 
-      const response = await updateResponse(params.responseId, body);
+      const response = await updateResponseWithQuotaEvaluation(params.responseId, body);
 
       if (!response.ok) {
         return handleApiError(request, response.error as ApiErrorResponseV2, auditLog); // NOSONAR // We need to assert or we get a type error
+      }
+
+      // Fetch updated response with relations for pipeline
+      const updatedResponseForPipeline = await getResponseForPipeline(params.responseId);
+      if (updatedResponseForPipeline.ok) {
+        sendToPipeline({
+          event: "responseUpdated",
+          environmentId: environmentIdResult.data,
+          surveyId: existingResponse.data.surveyId,
+          response: updatedResponseForPipeline.data,
+        });
+
+        if (response.data.finished) {
+          sendToPipeline({
+            event: "responseFinished",
+            environmentId: environmentIdResult.data,
+            surveyId: existingResponse.data.surveyId,
+            response: updatedResponseForPipeline.data,
+          });
+        }
       }
 
       if (auditLog) {
