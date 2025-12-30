@@ -1196,6 +1196,7 @@ packages:
   '@azure/microsoft-playwright-testing@1.0.0-beta.7':
     resolution: {integrity: sha512-Y6C35LWUfLevHu5NG+7vvFfhpmUrGWKRumcz7/CSCmWlx8RVfWgP6NuL8rIPDuTeJyjaTczNfeg1ppGW26TjBw==}
     engines: {node: '>=18.0.0'}
+    deprecated: This package has been deprecated and will no longer be maintained after March 8, 2026. Upgrade to the replacement package, @azure/playwright, to continue receiving updates.
     peerDependencies:
       '@playwright/test': ^1.43.1
 
@@ -7476,6 +7477,7 @@ packages:
   next@15.5.2:
     resolution: {integrity: sha512-H8Otr7abj1glFhbGnvUt3gz++0AF1+QoCXEBmd/6aKbfdFwrn0LpA836Ed5+00va/7HQSDD+mOoVhn3tNy3e/Q==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
+    deprecated: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/CVE-2025-66478 for more details.
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0

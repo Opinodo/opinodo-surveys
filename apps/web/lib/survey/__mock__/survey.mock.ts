@@ -235,6 +235,7 @@ const baseSurveyProperties = {
   tags: [],
   limitedCountries: false,
   timerDuration: null,
+  questionTimerDuration: null,
   ...commonMockProperties,
 };
 

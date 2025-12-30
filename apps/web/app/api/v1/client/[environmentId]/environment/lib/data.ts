@@ -142,6 +142,8 @@ export const getEnvironmentStateData = async (environmentId: string): Promise<En
             displayPercentage: true,
             delay: true,
             projectOverwrites: true,
+            timerDuration: true,
+            questionTimerDuration: true,
           },
         },
       },

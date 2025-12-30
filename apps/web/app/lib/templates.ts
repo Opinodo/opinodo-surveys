@@ -3709,6 +3709,7 @@ export const previewSurvey = (projectName: string, t: TFnType) => {
     limitedCountries: false,
     tags: [],
     timerDuration: null,
+    questionTimerDuration: null,
     isBackButtonHidden: false,
     metadata: {},
   } as TSurvey;

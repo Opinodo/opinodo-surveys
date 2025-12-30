@@ -907,6 +907,7 @@ export const ZSurvey = z
     displayPercentage: z.number().min(0.01).max(100).nullable(),
     languages: z.array(ZSurveyLanguage),
     timerDuration: z.number().nullable(),
+    questionTimerDuration: z.number().nullable(),
     metadata: ZSurveyMetadata,
   })
   .superRefine((survey, ctx) => {

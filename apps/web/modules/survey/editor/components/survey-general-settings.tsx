@@ -39,6 +39,12 @@ export function SurveyGeneralSettings({
   const [timerDuration, setTimerDuration] = useState<number | undefined>(
     localSurvey.timerDuration ?? undefined
   );
+  const [questionTimerEnabled, setQuestionTimerEnabled] = useState(
+    localSurvey.questionTimerDuration !== null && localSurvey.questionTimerDuration !== undefined
+  );
+  const [questionTimerDuration, setQuestionTimerDuration] = useState<number | undefined>(
+    localSurvey.questionTimerDuration ?? undefined
+  );
   const [priority, setPriority] = useState<number>(localSurvey.priority ?? 0);
 
   const toggleUsingDefaultReward = (isChecked: boolean) => {
@@ -75,9 +81,14 @@ export function SurveyGeneralSettings({
     setLocalSurvey({
       ...localSurvey,
       timerDuration: isChecked ? (timerDuration ?? 180) : null,
+      questionTimerDuration: isChecked ? null : localSurvey.questionTimerDuration, // Disable question timer if global timer enabled
     });
-    if (isChecked && (timerDuration === undefined || timerDuration === null)) {
-      setTimerDuration(180); // Set a default value if timerDuration is undefined or null
+    if (isChecked) {
+      // Disable question timer when global timer is enabled
+      setQuestionTimerEnabled(false);
+      if (timerDuration === undefined || timerDuration === null) {
+        setTimerDuration(180); // Set a default value if timerDuration is undefined or null
+      }
     }
   };
 
@@ -88,6 +99,33 @@ export function SurveyGeneralSettings({
     setLocalSurvey({
       ...localSurvey,
       timerDuration: newValue,
+    });
+  };
+
+  const toggleQuestionTimerEnabled = (isChecked: boolean) => {
+    setQuestionTimerEnabled(isChecked);
+    setLocalSurvey({
+      ...localSurvey,
+      questionTimerDuration: isChecked ? (questionTimerDuration ?? 30) : null,
+      timerDuration: isChecked ? null : localSurvey.timerDuration, // Disable global timer if question timer enabled
+    });
+    if (isChecked) {
+      // Disable global timer when question timer is enabled
+      setTimerEnabled(false);
+      if (questionTimerDuration === undefined || questionTimerDuration === null) {
+        setQuestionTimerDuration(30); // Set a default value of 30 seconds
+      }
+    }
+  };
+
+  const updateQuestionTimerDuration = (e) => {
+    let newValue = parseInt(e.target.value, 10);
+    if (isNaN(newValue) || newValue < 5) newValue = 5; // Minimum 5 seconds
+    if (newValue > 300) newValue = 300; // Maximum 300 seconds (5 minutes)
+    setQuestionTimerDuration(newValue);
+    setLocalSurvey({
+      ...localSurvey,
+      questionTimerDuration: newValue,
     });
   };
 
@@ -151,7 +189,7 @@ export function SurveyGeneralSettings({
       )}>
       <Collapsible.CollapsibleTrigger asChild className="h-full w-full cursor-pointer">
         <div className="inline-flex px-4 py-4">
-          <div className="flex items-center pr-5 pl-2">
+          <div className="flex items-center pl-2 pr-5">
             <CheckIcon
               strokeWidth={3}
               className="h-7 w-7 rounded-full border border-green-300 bg-green-100 p-1.5 text-green-600"
@@ -183,7 +221,7 @@ export function SurveyGeneralSettings({
               </Label>
             </div>
             {usingCustomReward && (
-              <div className="mt-2 ml-2">
+              <div className="ml-2 mt-2">
                 <Label htmlFor="customRewardInput" className="cursor-pointer">
                   Custom Reward:
                 </Label>
@@ -194,7 +232,7 @@ export function SurveyGeneralSettings({
                   step="0.1"
                   onChange={updateSurveyReward}
                   value={customReward}
-                  className="mr-2 ml-2 inline w-20 bg-white text-center text-sm"
+                  className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
                 />
                 <Label htmlFor="dollarSymbol" className="cursor-pointer">
                   $
@@ -270,7 +308,7 @@ export function SurveyGeneralSettings({
               </Label>
             </div>
             {timerEnabled && (
-              <div className="mt-2 ml-2">
+              <div className="ml-2 mt-2">
                 <Label htmlFor="timerDurationInput" className="cursor-pointer">
                   Timer Duration (seconds):
                 </Label>
@@ -282,8 +320,46 @@ export function SurveyGeneralSettings({
                   min="1"
                   onChange={updateTimerDuration}
                   value={timerDuration}
-                  className="mr-2 ml-2 inline w-20 bg-white text-center text-sm"
+                  className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
                 />
+              </div>
+            )}
+          </div>
+          <div className="p-3">
+            <div className="ml-2 flex items-center space-x-1">
+              <Switch
+                id="questionTimerEnabled"
+                checked={questionTimerEnabled}
+                onCheckedChange={toggleQuestionTimerEnabled}
+              />
+              <Label htmlFor="questionTimerEnabled" className="cursor-pointer">
+                <div className="ml-2">
+                  <h3 className="text-sm font-semibold text-slate-700">Enable Per-Question Timer</h3>
+                  <p className="text-xs font-normal text-slate-500">
+                    Set a time limit for each question. Mutually exclusive with survey timer.
+                  </p>
+                </div>
+              </Label>
+            </div>
+            {questionTimerEnabled && (
+              <div className="ml-2 mt-2">
+                <Label htmlFor="questionTimerDurationInput" className="cursor-pointer">
+                  Time per question (seconds):
+                </Label>
+                <Input
+                  autoFocus
+                  type="number"
+                  id="questionTimerDurationInput"
+                  step="1"
+                  min="5"
+                  max="300"
+                  onChange={updateQuestionTimerDuration}
+                  value={questionTimerDuration}
+                  className="ml-2 mr-2 inline w-20 bg-white text-center text-sm"
+                />
+                <p className="ml-2 mt-1 text-xs text-slate-500">
+                  Time limit applies to all questions in the quiz (5-300 seconds)
+                </p>
               </div>
             )}
           </div>

@@ -149,6 +149,7 @@ const mockSurvey: TJsEnvironmentStateSurvey = {
   segment: null,
   showLanguageSwitch: false,
   timerDuration: null,
+  questionTimerDuration: null,
 };
 
 const mockProjectStyling: TProjectStyling = {

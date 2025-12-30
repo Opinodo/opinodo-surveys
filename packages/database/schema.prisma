@@ -400,6 +400,7 @@ model Survey {
   tags                            Tag[]
   limitedCountries                Boolean          @default(false)
   timerDuration                   Int?
+  questionTimerDuration           Int?
   priority                        Int              @default(0)
 
   @@index([environmentId, updatedAt])

@@ -4,6 +4,7 @@ export const surveyTranslations = {
     adDescription:
       "V nekaterih izbranih anketah se vam lahko prikaže oglas, ki ga lahko preprosto preskočite in nadaljujete z anketo. Z oglasi financiramo nadaljnjo rast in razvoj te platforme, tako da lahko še naprej služite denar in uživate v naših anketah.",
     timeLeft: "Preostali čas",
+    timeRemaining: "Preostali čas",
     whyAmISeeingThisAd: "Zakaj vidim ta oglas?",
     showLess: "Pokaži manj",
     watchAd: "Oglejte si oglas za nadaljevanje",
@@ -13,6 +14,7 @@ export const surveyTranslations = {
     adDescription:
       "في بعض الاستطلاعات المحددة، قد يظهر لك إعلان يمكنك تخطيه ببساطة لمواصلة الاستطلاع. نحن نستخدم الإعلانات لتمويل النمو المستمر وتطوير هذا النظام الأساسي، حتى تتمكن من الاستمرار في كسب المال والاستمتاع باستطلاعاتنا.",
     timeLeft: "الوقت المتبقي",
+    timeRemaining: "الوقت المتبقي",
     whyAmISeeingThisAd: "لماذا أرى هذا الإعلان؟",
     showLess: "إظهار أقل",
     watchAd: "يرجى مشاهدة الإعلان للمتابعة",
@@ -22,6 +24,7 @@ export const surveyTranslations = {
     adDescription:
       "В някои избрани анкети може да ви бъде представена реклама, която можете просто да пропуснете, за да продължите с анкетата. Използваме реклами, за да финансираме непрекъснатия растеж и развитие на тази платформа, така че можете да продължите да печелите пари и да се наслаждавате на нашите проучвания.",
     timeLeft: "Оставащо време",
+    timeRemaining: "Оставащо време",
     whyAmISeeingThisAd: "Защо виждам тази реклама?",
     showLess: "Покажи по-малко",
     watchAd: "Моля, гледайте реклама, за да продължите",
@@ -31,6 +34,7 @@ export const surveyTranslations = {
     adDescription:
       "Seçilen bazı anketlerde size, ankete devam etmek için atlayabileceğiniz bir reklam sunulabilir. Bu platformun sürekli büyümesini ve gelişmesini finanse etmek için reklamları kullanıyoruz, böylece para kazanmaya devam edebilir ve anketlerimizin keyfini çıkarabilirsiniz.",
     timeLeft: "Kalan Süre",
+    timeRemaining: "Kalan Süre",
     whyAmISeeingThisAd: "Bu reklamı neden görüyorum?",
     showLess: "Daha az göster",
     watchAd: "Devam etmek için lütfen reklamı izleyin",
@@ -40,6 +44,7 @@ export const surveyTranslations = {
     adDescription:
       "У деяких вибраних опитуваннях вам може бути представлене оголошення, яке можна просто пропустити, щоб продовжити опитування. Ми використовуємо рекламу для фінансування постійного зростання та розвитку цієї платформи, щоб ви могли продовжувати заробляти гроші та насолоджуватися нашими опитуваннями.",
     timeLeft: "Час, що залишився",
+    timeRemaining: "Час, що залишився",
     whyAmISeeingThisAd: "Чому я бачу це оголошення?",
     showLess: "Показати менше",
     watchAd: "Будь ласка, перегляньте рекламу, щоб продовжити",
@@ -85,6 +90,7 @@ export const surveyTranslations = {
     adDescription:
       "In some selected surveys you might be presented with an ad that you can simply skip to continue with the survey. We use ads to finance the continued growth and development of this platform, so you can continue to earn money and enjoy our surveys.",
     timeLeft: "Time left",
+    timeRemaining: "Time remaining",
     whyAmISeeingThisAd: "Why am I seeing this ad?",
     showLess: "Show less",
     watchAd: "Please watch ad to continue",
@@ -94,6 +100,7 @@ export const surveyTranslations = {
     adDescription:
       "Joissakin valituissa kyselyissä sinulle saatetaan esittää mainos, jonka voit yksinkertaisesti ohittaa jatkaaksesi kyselyä. Käytämme mainoksia tämän alustan jatkuvan kasvun ja kehityksen rahoittamiseen, jotta voit jatkaa rahan ansaitsemista ja nauttia kyselyistämme.",
     timeLeft: "Aikaa jäljellä",
+    timeRemaining: "Aikaa jäljellä",
     whyAmISeeingThisAd: "Miksi näen tämän mainoksen?",
     showLess: "Näytä vähemmän",
     watchAd: "Ole hyvä ja katso mainos jatkaaksesi",

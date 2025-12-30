@@ -16,6 +16,7 @@ import { parseRecallInformation } from "@/lib/recall";
 import { ResponseQueue } from "@/lib/response-queue";
 import { SurveyState } from "@/lib/survey-state";
 import { surveyTranslations } from "@/lib/surveyTranslations.ts";
+import { getUpdatedTtc } from "@/lib/ttc";
 import { cn, getDefaultLanguageCode } from "@/lib/utils";
 import { TResponseErrorCodesEnum } from "@/types/response-error-codes";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -138,6 +139,10 @@ export function Survey({
   const [currentVariables, setCurrentVariables] = useState<TResponseVariables>({});
 
   const [timeLeft, setTimeLeft] = useState<number | undefined>(survey.timerDuration ?? undefined);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState<number | undefined>(
+    survey.questionTimerDuration ?? undefined
+  );
+  const [timedOutQuestions, setTimedOutQuestions] = useState<Set<string>>(new Set());
   const [isEndingPage, setIsEndingPage] = useState(false);
   const [isPreview] = useState(!getSetIsResponseSendingFinished);
 
@@ -351,6 +356,79 @@ export function Survey({
 
     return () => clearInterval(timer);
   }, [timeLeft, localSurvey.endings, isEndingPage]);
+
+  // Per-question timer countdown effect
+  useEffect(() => {
+    console.log("Timer effect running. questionTimeLeft:", questionTimeLeft, "questionId:", questionId);
+
+    // Don't run timer on welcome/ending cards or if timer not configured
+    if (questionTimeLeft === undefined || isEndingPage || questionId === "start" || isPreview) {
+      console.log("Timer effect skipped:", { questionTimeLeft, isEndingPage, questionId, isPreview });
+      return;
+    }
+
+    if (questionTimeLeft === 0) {
+      // Handle timeout directly here to avoid stale closure issues
+      const handleTimeout = async () => {
+        console.log("Timer reached 0, auto-submitting question:", questionId);
+
+        // Mark this question as timed out
+        setTimedOutQuestions((prev) => new Set(prev).add(questionId));
+
+        // Get current answer (may be empty or partial)
+        const currentAnswer = responseData[questionId] ?? "";
+        console.log("Current answer:", currentAnswer);
+
+        // Update TTC to reflect actual time spent (full duration)
+        const updatedTtc = getUpdatedTtc(ttc, questionId, localSurvey.questionTimerDuration! * 1000);
+        setTtc(updatedTtc);
+
+        // Submit with current answer - timeout info will be tracked via TTC and empty/partial answer
+        console.log("Calling onSubmit...");
+        try {
+          await onSubmit({ [questionId]: currentAnswer }, updatedTtc);
+          console.log("onSubmit completed");
+        } catch (error) {
+          console.error("Error during auto-submit:", error);
+        }
+      };
+
+      void handleTimeout(); // Use void to handle the promise
+      return;
+    }
+
+    if (questionTimeLeft < 0) {
+      console.log("Timer already timed out, skipping");
+      return; // Already timed out, don't do anything
+    }
+
+    console.log("Setting up timer interval, current time:", questionTimeLeft);
+    const timer = setInterval(() => {
+      setQuestionTimeLeft((prev) => {
+        console.log("Timer tick, prev:", prev);
+        return prev !== undefined && prev > 0 ? prev - 1 : prev;
+      });
+    }, 1000);
+
+    return () => {
+      console.log("Cleaning up timer interval");
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionTimeLeft, questionId, isEndingPage, isPreview, localSurvey.questionTimerDuration]);
+
+  // Reset timer when moving to a new question
+  useEffect(() => {
+    const isTimedOut = timedOutQuestions.has(questionId);
+
+    // Reset timer when moving to new question (unless it previously timed out)
+    if (localSurvey.questionTimerDuration && questionId !== "start" && !isEndingPage && !isTimedOut) {
+      setQuestionTimeLeft(localSurvey.questionTimerDuration);
+    } else if (isTimedOut) {
+      // Timed out questions don't get timer reset
+      setQuestionTimeLeft(0);
+    }
+  }, [questionId, localSurvey.questionTimerDuration, isEndingPage, timedOutQuestions]);
 
   useEffect(() => {
     const endingCard = localSurvey.endings.find((ending) => ending.id === questionId);
@@ -602,6 +680,21 @@ export function Survey({
     }
   }, [isResponseSendingFinished, isSurveyFinished, onFinished]);
 
+  const handleQuestionTimeout = async () => {
+    // Mark this question as timed out
+    setTimedOutQuestions((prev) => new Set(prev).add(questionId));
+
+    // Get current answer (may be empty or partial)
+    const currentAnswer = responseData[questionId] ?? "";
+
+    // Update TTC to reflect actual time spent (full duration)
+    const updatedTtc = getUpdatedTtc(ttc, questionId, localSurvey.questionTimerDuration! * 1000);
+    setTtc(updatedTtc);
+
+    // Submit with current answer - timeout info will be tracked via TTC and empty/partial answer
+    await onSubmit({ [questionId]: currentAnswer }, updatedTtc);
+  };
+
   const onSubmit = async (surveyResponseData: TResponseData, responsettc: TResponseTtc) => {
     const respondedQuestionId = Object.keys(surveyResponseData)[0];
     setLoadingElement(true);
@@ -786,7 +879,7 @@ export function Survey({
               languageCode={selectedLanguage}
               autoFocusEnabled={autoFocusEnabled}
               currentQuestionId={questionId}
-              isBackButtonHidden={localSurvey.isBackButtonHidden}
+              isBackButtonHidden={localSurvey.isBackButtonHidden || timedOutQuestions.has(question.id)}
               onOpenExternalURL={onOpenExternalURL}
               dir={dir}
             />
@@ -861,6 +954,18 @@ export function Survey({
                   </span>
                 </b>
               </p>
+            )}
+            {questionTimeLeft !== undefined && !isEndingPage && questionId !== "start" && (
+              <div className="fb-mt-2 fb-flex fb-justify-center fb-items-center">
+                <p
+                  className={cn(
+                    "fb-text-xs fb-font-semibold",
+                    questionTimeLeft <= 10 ? "fb-text-red-600 fb-animate-pulse" : "fb-text-slate-600"
+                  )}>
+                  {translations.timeLeft}: {questionTimeLeft}s
+                  {questionTimeLeft <= 10 && <span className="fb-ml-1">⏱</span>}
+                </p>
+              </div>
             )}
             <div
               className={cn(

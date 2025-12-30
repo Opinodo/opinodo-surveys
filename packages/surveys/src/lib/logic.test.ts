@@ -147,6 +147,7 @@ describe("Survey Logic", () => {
     projectOverwrites: null,
     recontactDays: null,
     timerDuration: null,
+    questionTimerDuration: null,
   };
 
   describe("isConditionGroup", () => {

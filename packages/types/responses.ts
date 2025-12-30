@@ -53,6 +53,17 @@ export const ZResponseTtc = z.record(z.number());
 
 export type TResponseTtc = z.infer<typeof ZResponseTtc>;
 
+export const ZResponseQuestionMeta = z.object({
+  timedOut: z.boolean().optional(),
+  timeoutAt: z.number().optional(),
+});
+
+export type TResponseQuestionMeta = z.infer<typeof ZResponseQuestionMeta>;
+
+export const ZResponseQuestionsMeta = z.record(ZResponseQuestionMeta);
+
+export type TResponseQuestionsMeta = z.infer<typeof ZResponseQuestionsMeta>;
+
 export const ZResponseContactAttributes = z.record(z.string()).nullable();
 
 export type TResponseContactAttributes = z.infer<typeof ZResponseContactAttributes>;

@@ -60,6 +60,10 @@ export const getSurveyWithMetadata = reactCache(async (surveyId: string) => {
         showLanguageSwitch: true,
         recaptcha: true,
 
+        // Timer settings
+        timerDuration: true,
+        questionTimerDuration: true,
+
         // Related data
         languages: {
           select: {
