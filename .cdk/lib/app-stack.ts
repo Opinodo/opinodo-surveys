@@ -16,7 +16,8 @@ import {
     Stack,
     CfnResource,
     IgnoreMode,
-    StackProps
+    StackProps,
+    SecretValue,
 } from "aws-cdk-lib";
 import {Construct} from 'constructs';
 import {DockerImageAsset} from "aws-cdk-lib/aws-ecr-assets";
@@ -173,6 +174,12 @@ export class AppStack extends Stack {
             directory: '../', // Specify the context directory
             file: './apps/web/Dockerfile',
             ignoreMode: IgnoreMode.DOCKER,
+            buildSecrets: {
+                database_url: SecretValue.secretsManager(`${props.environmentName}/database_url`).toString(),
+                encryption_key: SecretValue.secretsManager(`${props.environmentName}/encryption_key`).toString(),
+                redis_url: SecretValue.secretsManager(`${props.environmentName}/redis_url`).toString(),
+                sentry_auth_token: SecretValue.secretsManager(`${props.environmentName}/sentry_auth_token`).toString(),
+            }
         });
 
         // Create a separate Docker image for migrations

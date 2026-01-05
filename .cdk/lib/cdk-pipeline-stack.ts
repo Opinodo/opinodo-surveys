@@ -42,6 +42,17 @@ export class CdkPipelineStack extends Stack {
                         ],
                         "Resource": "arn:aws:kms:eu-central-1:627299429402:key/0eb3ea93-b6cd-4ee5-9a2a-2bbe30f39ca5"
                     }),
+                    PolicyStatement.fromJson({
+                        "Effect": "Allow",
+                        "Action": [
+                            "secretsmanager:GetSecretValue",
+                            "secretsmanager:DescribeSecret"
+                        ],
+                        "Resource": [
+                            "arn:aws:secretsmanager:eu-central-1:233154847398:secret:staging/*",
+                            "arn:aws:secretsmanager:eu-central-1:132503220113:secret:production/*"
+                        ]
+                    }),
                 ],
                 buildEnvironment: {
                     environmentVariables: {
