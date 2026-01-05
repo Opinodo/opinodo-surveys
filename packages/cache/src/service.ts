@@ -79,7 +79,18 @@ export class CacheService {
         });
       }
     } catch (error) {
-      logger.error({ error, key }, "Cache get operation failed");
+      logger.error(
+        {
+          error,
+          key,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : typeof error,
+          isTimeout: error instanceof Error && error.message.includes("timeout"),
+          redisReady: this.redis.isReady,
+          redisOpen: this.redis.isOpen,
+        },
+        "Cache get operation failed"
+      );
       return err({
         code: ErrorCode.RedisOperationError,
       });
@@ -150,7 +161,19 @@ export class CacheService {
       }
       return ok(undefined);
     } catch (error) {
-      logger.error({ error, key, ttlMs }, "Cache set operation failed");
+      logger.error(
+        {
+          error,
+          key,
+          ttlMs,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : typeof error,
+          isTimeout: error instanceof Error && error.message.includes("timeout"),
+          redisReady: this.redis.isReady,
+          redisOpen: this.redis.isOpen,
+        },
+        "Cache set operation failed"
+      );
       return err({
         code: ErrorCode.RedisOperationError,
       });

@@ -48,9 +48,19 @@ export async function createRedisClientFromEnv(): Promise<Result<RedisClient, Ca
 
   try {
     await client.connect();
+    logger.info({ url: url.replace(/:[^:]*@/, ":***@") }, "Redis client connection successful");
     return ok(client as RedisClient);
   } catch (error) {
-    logger.error(error, "Redis client connection failed");
+    logger.error(
+      {
+        error,
+        url: url.replace(/:[^:]*@/, ":***@"),
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorCode: (error as any)?.code,
+      },
+      "Redis client connection failed"
+    );
     return err({ code: ErrorCode.RedisConnectionError });
   }
 }
