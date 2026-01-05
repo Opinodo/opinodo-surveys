@@ -170,15 +170,18 @@ export class AppStack extends Stack {
         // Add explicit dependency to ensure log group is created before the task
         migrationTask.node.addDependency(ensureLogGroup);
 
+        // Determine environment variable prefix based on environment name
+        const envPrefix = props.environmentName.toUpperCase();
+
         const dockerImageAsset = new DockerImageAsset(this, 'OpinodoSurveysDockerImage', {
             directory: '../', // Specify the context directory
             file: './apps/web/Dockerfile',
             ignoreMode: IgnoreMode.DOCKER,
             buildSecrets: {
-                database_url: SecretValue.secretsManager(`${props.environmentName}/database_url`).toString(),
-                encryption_key: SecretValue.secretsManager(`${props.environmentName}/encryption_key`).toString(),
-                redis_url: SecretValue.secretsManager(`${props.environmentName}/redis_url`).toString(),
-                sentry_auth_token: SecretValue.secretsManager(`${props.environmentName}/sentry_auth_token`).toString(),
+                database_url: `${envPrefix}_DATABASE_URL`,
+                encryption_key: `${envPrefix}_ENCRYPTION_KEY`,
+                redis_url: `${envPrefix}_REDIS_URL`,
+                sentry_auth_token: `${envPrefix}_SENTRY_AUTH_TOKEN`,
             }
         });
 

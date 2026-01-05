@@ -71,6 +71,38 @@ export class CdkPipelineStack extends Stack {
                         "CRON_SECRET": {
                             type: BuildEnvironmentVariableType.PLAINTEXT,
                             value: "bd7bd817feff04e40b3112dc373ac5dbecca81afc4b9f471b40292a4bb64cf16"
+                        },
+                        "STAGING_DATABASE_URL": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "staging/database_url",
+                        },
+                        "STAGING_ENCRYPTION_KEY": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "staging/encryption_key",
+                        },
+                        "STAGING_REDIS_URL": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "staging/redis_url",
+                        },
+                        "STAGING_SENTRY_AUTH_TOKEN": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "staging/sentry_auth_token",
+                        },
+                        "PRODUCTION_DATABASE_URL": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "production/database_url",
+                        },
+                        "PRODUCTION_ENCRYPTION_KEY": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "production/encryption_key",
+                        },
+                        "PRODUCTION_REDIS_URL": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "production/redis_url",
+                        },
+                        "PRODUCTION_SENTRY_AUTH_TOKEN": {
+                            type: BuildEnvironmentVariableType.SECRETS_MANAGER,
+                            value: "production/sentry_auth_token",
                         }
                     },
                     buildImage:  LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
