@@ -178,10 +178,10 @@ export class AppStack extends Stack {
             file: './apps/web/Dockerfile',
             ignoreMode: IgnoreMode.DOCKER,
             buildSecrets: {
-                database_url: `${envPrefix}_DATABASE_URL`,
-                encryption_key: `${envPrefix}_ENCRYPTION_KEY`,
-                redis_url: `${envPrefix}_REDIS_URL`,
-                sentry_auth_token: `${envPrefix}_SENTRY_AUTH_TOKEN`,
+                database_url: `env=${envPrefix}_DATABASE_URL`,
+                encryption_key: `env=${envPrefix}_ENCRYPTION_KEY`,
+                redis_url: `env=${envPrefix}_REDIS_URL`,
+                sentry_auth_token: `env=${envPrefix}_SENTRY_AUTH_TOKEN`,
             }
         });
 
