@@ -89,7 +89,16 @@ export const POST = async (request: Request) => {
     const body = {
       webhookId: webhook.id,
       event,
-      data: response,
+      data: {
+        ...response,
+        survey: {
+          title: survey.name,
+          type: survey.type,
+          status: survey.status,
+          createdAt: survey.createdAt,
+          updatedAt: survey.updatedAt,
+        },
+      },
     };
 
     body["hash"] = createHmac("sha256", WEBHOOK_SECRET).update(JSON.stringify(body)).digest("hex");
@@ -97,20 +106,7 @@ export const POST = async (request: Request) => {
     fetchWithTimeout(webhook.url, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        webhookId: webhook.id,
-        event,
-        data: {
-          ...response,
-          survey: {
-            title: survey.name,
-            type: survey.type,
-            status: survey.status,
-            createdAt: survey.createdAt,
-            updatedAt: survey.updatedAt,
-          },
-        },
-      }),
+      body: JSON.stringify(body),
     }).catch((error) => {
       logger.error({ error, url: request.url }, `Webhook call to ${webhook.url} failed`);
     });
