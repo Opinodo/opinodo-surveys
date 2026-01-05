@@ -1,42 +1,43 @@
+import { NextRequest } from "next/server";
+import { DatabaseError } from "@formbricks/types/errors";
+import { TSurveyBlock, TSurveyBlockLogic, TSurveyBlockLogicAction } from "@formbricks/types/surveys/blocks";
+import { TSurvey } from "@formbricks/types/surveys/types";
 import { authenticateRequest } from "@/app/api/v1/auth";
 import { responses } from "@/app/lib/api/response";
 import { generateSurveySingleUseId } from "@/app/lib/singleUseSurveys";
 import { WEBAPP_URL } from "@/lib/constants";
 import { getActiveLinkSurveys } from "@/lib/survey/service";
-import { NextRequest } from "next/server";
-import { DatabaseError } from "@formbricks/types/errors";
-import { TSurvey, TSurveyLogic, TSurveyLogicAction, TSurveyQuestion } from "@formbricks/types/surveys/types";
 
-function calculateElementIdx(survey: TSurvey, currentQustionIdx: number): number {
-  const currentQuestion = survey.questions[currentQustionIdx];
-  const surveyLength = survey.questions.length;
+function calculateBlockIdx(survey: TSurvey, currentBlockIdx: number): number {
+  const currentBlock = survey.blocks[currentBlockIdx];
+  const surveyLength = survey.blocks.length;
   const middleIdx = Math.floor(surveyLength / 2);
-  const possibleNextQuestions = getPossibleNextQuestions(currentQuestion);
+  const possibleNextBlocks = getPossibleNextBlocks(currentBlock);
 
-  const getLastQuestionIndex = () => {
-    const lastQuestion = survey.questions
-      .filter((q) => possibleNextQuestions.includes(q.id))
-      .sort((a, b) => survey.questions.indexOf(a) - survey.questions.indexOf(b))
+  const getLastBlockIndex = () => {
+    const lastBlock = survey.blocks
+      .filter((b) => possibleNextBlocks.includes(b.id))
+      .sort((a, b) => survey.blocks.indexOf(a) - survey.blocks.indexOf(b))
       .pop();
-    return survey.questions.findIndex((e) => e.id === lastQuestion?.id);
+    return survey.blocks.findIndex((e) => e.id === lastBlock?.id);
   };
 
-  let elementIdx = currentQustionIdx || 0.5;
-  const lastprevQuestionIdx = getLastQuestionIndex();
+  let blockIdx = currentBlockIdx || 0.5;
+  const lastprevBlockIdx = getLastBlockIndex();
 
-  if (lastprevQuestionIdx > 0) elementIdx = Math.min(middleIdx, lastprevQuestionIdx - 1);
-  if (possibleNextQuestions.includes("end")) elementIdx = middleIdx;
-  return elementIdx;
+  if (lastprevBlockIdx > 0) blockIdx = Math.min(middleIdx, lastprevBlockIdx - 1);
+  if (possibleNextBlocks.includes("end")) blockIdx = middleIdx;
+  return blockIdx;
 }
 
-const getPossibleNextQuestions = (question: TSurveyQuestion): string[] => {
-  if (!question.logic) return [];
+const getPossibleNextBlocks = (block: TSurveyBlock | undefined): string[] => {
+  if (!block || !block.logic) return [];
 
   const possibleDestinations: string[] = [];
 
-  question.logic.forEach((logic: TSurveyLogic) => {
-    logic.actions.forEach((action: TSurveyLogicAction) => {
-      if (action.objective === "jumpToQuestion") {
+  block.logic.forEach((logic: TSurveyBlockLogic) => {
+    logic.actions.forEach((action: TSurveyBlockLogicAction) => {
+      if (action.objective === "jumpToBlock") {
         possibleDestinations.push(action.target);
       }
     });
@@ -46,11 +47,18 @@ const getPossibleNextQuestions = (question: TSurveyQuestion): string[] => {
 };
 
 function calculateTimeToComplete(survey: TSurvey): number {
-  let idx = calculateElementIdx(survey, 0);
+  // Count total elements across all blocks
+  const totalElements = survey.blocks.reduce((sum, block) => sum + block.elements.length, 0);
+
+  if (totalElements === 0) {
+    return 1; // Default to 1 minute if no elements
+  }
+
+  let idx = calculateBlockIdx(survey, 0);
   if (idx === 0.5) {
     idx = 1;
   }
-  const timeInSeconds = (survey.questions.length / idx) * 15; //15 seconds per question.
+  const timeInSeconds = (totalElements / idx) * 15; //15 seconds per element.
 
   // Calculate minutes, if there are any seconds left, add a minute
   const minutes = Math.floor(timeInSeconds / 60);
