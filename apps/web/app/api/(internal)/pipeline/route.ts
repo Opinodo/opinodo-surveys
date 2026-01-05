@@ -108,7 +108,17 @@ export const POST = async (request: Request) => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     }).catch((error) => {
-      logger.error({ error, url: request.url }, `Webhook call to ${webhook.url} failed`);
+      logger.error(
+        {
+          error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorStack: error instanceof Error ? error.stack : undefined,
+          webhookUrl: webhook.url,
+          url: request.url,
+        },
+        `Webhook call to ${webhook.url} failed`
+      );
     });
   });
 
