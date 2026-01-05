@@ -77,8 +77,12 @@ export const POST = async (request: Request) => {
   const webhooks: Webhook[] = await getWebhooksForPipeline(environmentId, event, surveyId);
   // Prepare webhook and email promises
 
-  // Fetch with timeout of 5 seconds to prevent hanging
-  const fetchWithTimeout = (url: string, options: RequestInit, timeout: number = 5000): Promise<Response> => {
+  // Fetch with timeout of 10 seconds to prevent hanging
+  const fetchWithTimeout = (
+    url: string,
+    options: RequestInit,
+    timeout: number = 10000
+  ): Promise<Response> => {
     return Promise.race([
       fetch(url, options),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), timeout)),
