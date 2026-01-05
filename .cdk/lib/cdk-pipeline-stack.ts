@@ -49,11 +49,8 @@ export class CdkPipelineStack extends Stack {
                             "secretsmanager:DescribeSecret"
                         ],
                         "Resource": [
-                            "arn:aws:secretsmanager:eu-central-1:233154847398:secret:staging/database_url-IU4rHG",
-                            "arn:aws:secretsmanager:eu-central-1:233154847398:secret:staging/encryption_key-bycqz3",
-                            "arn:aws:secretsmanager:eu-central-1:233154847398:secret:staging/redis_url-MXsEaW",
-                            "arn:aws:secretsmanager:eu-central-1:233154847398:secret:staging/sentry_auth_token-R6LtYD",
-                            "arn:aws:secretsmanager:eu-central-1:132503220113:secret:production/*"
+                            "arn:aws:secretsmanager:eu-central-1:627299429402:secret:staging/*",
+                            "arn:aws:secretsmanager:eu-central-1:627299429402:secret:production/*"
                         ]
                     }),
                 ],
@@ -77,19 +74,19 @@ export class CdkPipelineStack extends Stack {
                         },
                         "STAGING_DATABASE_URL": {
                             type: BuildEnvironmentVariableType.SECRETS_MANAGER,
-                            value: "arn:aws:secretsmanager:eu-central-1:233154847398:secret:staging/database_url-IU4rHG",
+                            value: "staging/database_url",
                         },
                         "STAGING_ENCRYPTION_KEY": {
                             type: BuildEnvironmentVariableType.SECRETS_MANAGER,
-                            value: "arn:aws:secretsmanager:eu-central-1:233154847398:secret:staging/encryption_key-bycqz3",
+                            value: "staging/encryption_key",
                         },
                         "STAGING_REDIS_URL": {
                             type: BuildEnvironmentVariableType.SECRETS_MANAGER,
-                            value: "arn:aws:secretsmanager:eu-central-1:233154847398:secret:staging/redis_url-MXsEaW",
+                            value: "staging/redis_url",
                         },
                         "STAGING_SENTRY_AUTH_TOKEN": {
                             type: BuildEnvironmentVariableType.SECRETS_MANAGER,
-                            value: "arn:aws:secretsmanager:eu-central-1:233154847398:secret:staging/sentry_auth_token-R6LtYD",
+                            value: "staging/sentry_auth_token",
                         },
                         "PRODUCTION_DATABASE_URL": {
                             type: BuildEnvironmentVariableType.SECRETS_MANAGER,
