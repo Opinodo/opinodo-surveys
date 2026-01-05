@@ -1,8 +1,8 @@
-import { responses } from "@/app/lib/api/response";
-import { CRON_SECRET } from "@/lib/constants";
 import { headers } from "next/headers";
 import { prisma } from "@formbricks/database";
 import { logger } from "@formbricks/logger";
+import { responses } from "@/app/lib/api/response";
+import { CRON_SECRET } from "@/lib/constants";
 
 /**
  * Truncates responses table by executing direct SQL truncate command
@@ -36,7 +36,8 @@ export async function POST() {
       message: "Response tables truncated successfully from cron job",
     });
   } catch (error) {
-    logger.error("Error truncating response tables from cron job", { error });
+    const errMsg = error instanceof Error ? (error.stack ?? error.message) : JSON.stringify(error);
+    logger.error(`Error truncating response tables from cron job: ${errMsg}`);
     return responses.internalServerErrorResponse("Error truncating response tables from cron job", error);
   }
 }

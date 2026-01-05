@@ -12,6 +12,7 @@ export enum TSurveyElementTypeEnum {
   MultipleChoiceMulti = "multipleChoiceMulti",
   NPS = "nps",
   CTA = "cta",
+  Ad = "ad",
   Rating = "rating",
   Consent = "consent",
   PictureSelection = "pictureSelection",
@@ -186,6 +187,19 @@ export const ZSurveyCTAElement = ZSurveyElementBase.extend({
 
 export type TSurveyCTAElement = z.infer<typeof ZSurveyCTAElement>;
 
+// Ad Element
+export const ZSurveyAdElement = ZSurveyElementBase.extend({
+  type: z.literal(TSurveyElementTypeEnum.Ad),
+  buttonLabel: ZI18nString.optional(),
+  adUnitPath: z.string().optional(),
+  adSizes: z.array(z.union([z.string(), z.array(z.number())])).optional(),
+  adDivId: z.string().optional(),
+  minWidth: z.string().optional(),
+  minHeight: z.string().optional(),
+});
+
+export type TSurveyAdElement = z.infer<typeof ZSurveyAdElement>;
+
 // Rating Element
 export const ZSurveyRatingElement = ZSurveyElementBase.extend({
   type: z.literal(TSurveyElementTypeEnum.Rating),
@@ -314,6 +328,7 @@ export const ZSurveyElement = z.union([
   ZSurveyMultipleChoiceElement,
   ZSurveyNPSElement,
   ZSurveyCTAElement,
+  ZSurveyAdElement,
   ZSurveyRatingElement,
   ZSurveyPictureSelectionElement,
   ZSurveyDateElement,

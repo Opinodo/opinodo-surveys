@@ -877,6 +877,9 @@ export const ElementsView = ({
                   isStorageConfigured={isStorageConfigured}
                   quotas={quotas}
                   isExternalUrlsAllowed={isExternalUrlsAllowed}
+                  defaultRedirect={
+                    project.defaultRedirectOnCompleteUrl ?? "https://member.digiopinion.com/overview"
+                  }
                 />
               );
             })}

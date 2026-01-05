@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@formbricks/database";
+import { logger } from "@formbricks/logger";
 import { TContactAttributes } from "@formbricks/types/contact-attribute";
 import { DatabaseError, ResourceNotFoundError } from "@formbricks/types/errors";
 import { TResponseWithQuotaFull } from "@formbricks/types/quota";
@@ -47,6 +48,7 @@ const buildPrismaResponseData = (
   const {
     surveyId,
     displayId,
+    endingId,
     finished,
     data,
     language,
@@ -65,6 +67,7 @@ const buildPrismaResponseData = (
     },
     display: displayId ? { connect: { id: displayId } } : undefined,
     finished: finished,
+    endingId,
     data: data,
     language: language,
     ...(contact?.id && {
@@ -90,7 +93,15 @@ export const createResponse = async (
 ): Promise<TResponse> => {
   validateInputs([responseInput, ZResponseInput]);
 
-  const { environmentId, contactId, finished, ttc: initialTtc } = responseInput;
+  const {
+    environmentId,
+    surveyId,
+    displayId,
+    singleUseId,
+    contactId,
+    finished,
+    ttc: initialTtc,
+  } = responseInput;
 
   try {
     let contact: { id: string; attributes: TContactAttributes } | null = null;

@@ -219,7 +219,6 @@ const ZSurveyBase = z.object({
   limitedCountries: z.boolean(),
   timerDuration: z.number().nullable(),
   redirectOnFailUrl: z.string().url().nullable(),
-  failureCard: z.object({}),
 });
 
 export const ZSurvey = ZSurveyBase;

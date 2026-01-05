@@ -241,8 +241,11 @@ export const BlockCard = ({
       additionalProps.isFormbricksCloud = isFormbricksCloud;
     }
 
-    // @ts-expect-error - These props should cover everything
     return <FormComponent {...commonProps} {...additionalProps} />;
+  };
+
+  const translateCard = async (cardIdx: number) => {
+    console.log("translateCard", cardIdx);
   };
 
   const style = {
@@ -401,6 +404,7 @@ export const BlockCard = ({
                               moveElementToBlock={moveElementToBlock}
                               cardType="element"
                               isCxMode={isCxMode}
+                              translateCard={translateCard}
                             />
                           </div>
                         </div>

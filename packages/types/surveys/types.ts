@@ -8,11 +8,13 @@ import { ZLanguage } from "../project";
 import { ZSegment } from "../segment";
 import { ZAllowedFileExtension } from "../storage";
 import { ZBaseStyling } from "../styling";
+import { ZTag } from "../tags";
 import { type TSurveyBlock, type TSurveyBlockLogicAction, ZSurveyBlocks } from "./blocks";
 import { findBlocksWithCyclicLogic } from "./blocks-validation";
 import {
   type TSurveyElement,
   TSurveyElementTypeEnum,
+  ZSurveyAdElement,
   ZSurveyAddressElement,
   ZSurveyCTAElement,
   ZSurveyCalElement,
@@ -41,7 +43,6 @@ import {
   ZConditionGroupDeprecated,
   ZDynamicLogicFieldValueDeprecated,
 } from "./logic";
-import { ZTag } from "../tags";
 import {
   FORBIDDEN_IDS,
   findLanguageCodesForDuplicateLabels,
@@ -1004,11 +1005,11 @@ export const ZSurvey = z
     if (hasQuestions) {
       questions.forEach((question, questionIndex) => {
         if (question.type !== TSurveyQuestionTypeEnum.Ad) {
-        multiLangIssue = validateQuestionLabels("headline", question.headline, languages, questionIndex);
-        if (multiLangIssue) {
-          ctx.addIssue(multiLangIssue);
+          multiLangIssue = validateQuestionLabels("headline", question.headline, languages, questionIndex);
+          if (multiLangIssue) {
+            ctx.addIssue(multiLangIssue);
+          }
         }
-      }
 
         if (question.subheader && question.subheader.default.trim() !== "") {
           multiLangIssue = validateQuestionLabels("subheader", question.subheader, languages, questionIndex);
@@ -3088,6 +3089,11 @@ const isInvalidOperatorsForElementType = (
         isInvalidOperator = true;
       }
       break;
+    case TSurveyElementTypeEnum.Ad:
+      if (!["isSubmitted", "isSkipped"].includes(operator)) {
+        isInvalidOperator = true;
+      }
+      break;
     case TSurveyElementTypeEnum.Consent:
       if (!["isAccepted", "isSkipped"].includes(operator)) {
         isInvalidOperator = true;
@@ -4093,9 +4099,9 @@ export const ZSurveyElementSummaryCta = z.object({
 
 export type TSurveyElementSummaryCta = z.infer<typeof ZSurveyElementSummaryCta>;
 
-export const ZSurveyQuestionSummaryAd = z.object({
-  type: z.literal("ad"),
-  question: ZSurveyAdQuestion,
+export const ZSurveyElementSummaryAd = z.object({
+  type: z.literal(TSurveyElementTypeEnum.Ad),
+  element: ZSurveyAdElement,
   impressionCount: z.number(),
   clickCount: z.number(),
   skipCount: z.number(),
@@ -4106,7 +4112,7 @@ export const ZSurveyQuestionSummaryAd = z.object({
   }),
 });
 
-export type TSurveyQuestionSummaryAd = z.infer<typeof ZSurveyQuestionSummaryAd>;
+export type TSurveyQuestionSummaryAd = z.infer<typeof ZSurveyElementSummaryAd>;
 
 export const ZSurveyElementSummaryConsent = z.object({
   type: z.literal(TSurveyElementTypeEnum.Consent),

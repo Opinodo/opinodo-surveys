@@ -177,7 +177,7 @@ export const getElementTypes = (t: TFunction): TElement[] => [
     },
   },
   {
-    id: QuestionId.Ad,
+    id: TSurveyElementTypeEnum.Ad,
     label: "Ad",
     description: "Show an advertisement",
     icon: ScanEyeIcon,
@@ -185,7 +185,7 @@ export const getElementTypes = (t: TFunction): TElement[] => [
       headline: {
         default: "Sponsored links",
       },
-    } as Partial<TSurveyAdQuestion>,
+    },
   },
   {
     id: TSurveyElementTypeEnum.Consent,

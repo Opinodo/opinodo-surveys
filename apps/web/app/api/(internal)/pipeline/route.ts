@@ -1,4 +1,5 @@
 import { PipelineTriggers, Webhook } from "@prisma/client";
+import { createHmac } from "crypto";
 import { headers } from "next/headers";
 import { prisma } from "@formbricks/database";
 import { logger } from "@formbricks/logger";
@@ -12,17 +13,6 @@ import { getIntegrations } from "@/lib/integration/service";
 import { getOrganizationByEnvironmentId } from "@/lib/organization/service";
 import { getSurvey } from "@/lib/survey/service";
 import { convertDatesInObject } from "@/lib/time";
-import { queueAuditEvent } from "@/modules/ee/audit-logs/lib/handler";
-import { TAuditStatus, UNKNOWN_DATA } from "@/modules/ee/audit-logs/types/audit-log";
-import { sendResponseFinishedEmail } from "@/modules/email";
-import { sendFollowUpsForResponse } from "@/modules/survey/follow-ups/lib/follow-ups";
-import { FollowUpSendError } from "@/modules/survey/follow-ups/types/follow-up";
-import { PipelineTriggers, Webhook } from "@prisma/client";
-import { createHmac } from "crypto";
-import { headers } from "next/headers";
-import { prisma } from "@formbricks/database";
-import { logger } from "@formbricks/logger";
-import { ResourceNotFoundError } from "@formbricks/types/errors";
 import { handleIntegrations } from "./lib/handleIntegrations";
 
 export const POST = async (request: Request) => {
@@ -128,9 +118,7 @@ export const POST = async (request: Request) => {
 
   if (event === "responseFinished") {
     // Fetch integrations and responseCount in parallel
-    const [integrations] = await Promise.all([
-      getIntegrations(environmentId),
-    ]);
+    const [integrations] = await Promise.all([getIntegrations(environmentId)]);
 
     if (integrations.length > 0) {
       await handleIntegrations(integrations, inputValidation.data, survey);

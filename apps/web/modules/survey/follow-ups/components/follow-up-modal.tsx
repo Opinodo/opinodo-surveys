@@ -21,6 +21,7 @@ import { TSurveyElementTypeEnum } from "@formbricks/types/surveys/elements";
 import { TSurvey } from "@formbricks/types/surveys/types";
 import { getTextContent } from "@formbricks/types/surveys/validation";
 import { TUserLocale } from "@formbricks/types/user";
+import { getLocalizedValue } from "@/lib/i18n/utils";
 import { recallToHeadline } from "@/lib/utils/recall";
 import { getSurveyFollowUpActionDefaultBody } from "@/modules/survey/editor/lib/utils";
 import {

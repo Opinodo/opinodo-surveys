@@ -11,7 +11,12 @@ import {
   TSurveyElementChoice,
   TSurveyElementTypeEnum,
 } from "@formbricks/types/surveys/elements";
-import { TSurvey, TSurveyEndScreenCard, TSurveyRedirectUrlCard } from "@formbricks/types/surveys/types";
+import {
+  TSurvey,
+  TSurveyAffiliateOfferCard,
+  TSurveyEndScreenCard,
+  TSurveyRedirectUrlCard,
+} from "@formbricks/types/surveys/types";
 import { TUserLocale } from "@formbricks/types/user";
 import { createI18nString, extractLanguageCodes } from "@/lib/i18n/utils";
 import { useSyncScroll } from "@/lib/utils/hooks/useSyncScroll";
@@ -43,7 +48,9 @@ interface ElementFormInputProps {
   localSurvey: TSurvey;
   elementIdx: number;
   updateElement?: (elementIdx: number, data: Partial<TSurveyElement>) => void;
-  updateSurvey?: (data: Partial<TSurveyEndScreenCard> | Partial<TSurveyRedirectUrlCard>) => void;
+  updateSurvey?: (
+    data: Partial<TSurveyEndScreenCard> | Partial<TSurveyRedirectUrlCard> | Partial<TSurveyAffiliateOfferCard>
+  ) => void;
   updateChoice?: (choiceIdx: number, data: Partial<TSurveyElementChoice>) => void;
   updateMatrixLabel?: (index: number, type: "row" | "column", matrixLabel: TI18nString) => void;
   isInvalid: boolean;
@@ -399,7 +406,7 @@ export const ElementFormInput = ({
     return (
       <div className="w-full">
         {label && (
-          <div className="mb-2 mt-3 flex items-center justify-between">
+          <div className="mt-3 mb-2 flex items-center justify-between">
             <Label htmlFor={id}>{label}</Label>
             {id === "headline" && currentElement && updateElement && (
               <div className="flex items-center space-x-2">
@@ -529,7 +536,7 @@ export const ElementFormInput = ({
   return (
     <div className="w-full">
       {label && (
-        <div className="mb-2 mt-3 flex items-center justify-between">
+        <div className="mt-3 mb-2 flex items-center justify-between">
           <Label htmlFor={id}>{label}</Label>
           {id === "headline" && currentElement && updateElement && (
             <div className="flex items-center space-x-2">
@@ -591,7 +598,7 @@ export const ElementFormInput = ({
                         <div className="h-10 w-full"></div>
                         <div
                           ref={highlightContainerRef}
-                          className={`no-scrollbar absolute top-0 z-0 mt-0.5 flex h-10 w-full overflow-scroll whitespace-nowrap px-3 py-2 text-center text-sm text-transparent ${
+                          className={`no-scrollbar absolute top-0 z-0 mt-0.5 flex h-10 w-full overflow-scroll px-3 py-2 text-center text-sm whitespace-nowrap text-transparent ${
                             localSurvey.languages?.length > 1 ? "pr-24" : ""
                           }`}
                           dir="auto"

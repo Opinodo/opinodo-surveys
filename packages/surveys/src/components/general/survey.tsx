@@ -358,7 +358,7 @@ export function Survey({
       setIsResponseSendingFinished(true);
       const firstEndingId = localSurvey.endings.length > 0 ? localSurvey.endings[0].id : undefined;
       if (firstEndingId) {
-        setQuestionId(firstEndingId);
+        setBlockId(firstEndingId);
       }
       return;
     }
@@ -371,13 +371,13 @@ export function Survey({
   }, [timeLeft, localSurvey.endings, isEndingPage]);
 
   useEffect(() => {
-    const endingCard = localSurvey.endings.find((ending) => ending.id === questionId);
+    const endingCard = localSurvey.endings.find((ending) => ending.id === blockId);
     if (endingCard) {
       setIsEndingPage(true);
     } else {
       setIsEndingPage(false);
     }
-  }, [questionId]);
+  }, [blockId]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);

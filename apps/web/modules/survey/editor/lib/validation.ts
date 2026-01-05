@@ -139,7 +139,7 @@ export const validationRules = {
   defaultValidation: (element: TSurveyElement, languages: TSurveyLanguage[]) => {
     // headline and subheader are default for every element
     const isHeadlineValid =
-      question.type !== "ad" ? isLabelValidForAllLanguages(element.headline, languages) : true;
+      element.type !== "ad" ? isLabelValidForAllLanguages(element.headline, languages) : true;
     const isSubheaderValid =
       element.subheader &&
       getLocalizedValue(element.subheader, "default").trim() !== "" &&

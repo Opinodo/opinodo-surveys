@@ -138,6 +138,9 @@ export const getEnvironmentWithRelations = reactCache(async (environmentId: stri
         // Project via relation (nested select)
         project: {
           select: {
+            defaultRewardInUSD: true,
+            defaultRedirectOnCompleteUrl: true,
+            defaultRedirectOnFailUrl: true,
             id: true,
             createdAt: true,
             updatedAt: true,
@@ -223,6 +226,9 @@ export const getEnvironmentWithRelations = reactCache(async (environmentId: stri
         styling: data.project.styling,
         logo: data.project.logo,
         environments: data.project.environments,
+        defaultRewardInUSD: data.project.defaultRewardInUSD,
+        defaultRedirectOnCompleteUrl: data.project.defaultRedirectOnCompleteUrl,
+        defaultRedirectOnFailUrl: data.project.defaultRedirectOnFailUrl,
       },
       organization: {
         id: data.project.organization.id,
