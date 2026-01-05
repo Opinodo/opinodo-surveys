@@ -114,7 +114,7 @@ export const getSignedDownloadUrl = async (fileKey: string): Promise<Result<stri
     try {
       await s3Client.send(headObjectCommand);
     } catch (error: unknown) {
-      logger.error({ error }, "Failed to check if file exists");
+      // logger.error({ error }, "Failed to check if file exists");
       if (
         (error as Error).name === "NotFound" ||
         (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 404
