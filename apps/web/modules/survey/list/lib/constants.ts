@@ -1,11 +1,6 @@
-export const initialFilters: {
-  name: string;
-  createdBy: any[];
-  status: any[];
-  type: any[];
-  tag: any[];
-  sortBy: string;
-} = {
+import { TSurveyFilters } from "@formbricks/types/surveys/types";
+
+export const initialFilters: TSurveyFilters = {
   name: "",
   createdBy: [],
   status: [],
