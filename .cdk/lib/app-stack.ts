@@ -259,9 +259,8 @@ export class AppStack extends Stack {
             logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs`, logGroup: webLogGroup}),
             portMappings: [{containerPort: 3000}],
             command: [
-                "/bin/sh", 
-                "-c", 
-                "supercronic -quiet /app/docker/cronjobs & exec node apps/web/server.js"
+                "node",
+                "apps/web/server.js"
             ]
         });
 
