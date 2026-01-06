@@ -31,9 +31,6 @@ export const surveySelect: Prisma.SurveySelect = {
   status: true,
   singleUse: true,
   environmentId: true,
-  _count: {
-    select: { responses: true },
-  },
 };
 
 export const getSurveys = reactCache(
@@ -49,7 +46,7 @@ export const getSurveys = reactCache(
         return await getSurveysSortedByRelevance(environmentId, limit, offset ?? 0, filterCriteria);
       }
 
-      // Fetch surveys normally with pagination and include response count
+      // Fetch surveys normally with pagination
       const surveysPrisma = await prisma.survey.findMany({
         where: {
           environmentId,
@@ -61,12 +58,7 @@ export const getSurveys = reactCache(
         skip: offset,
       });
 
-      return surveysPrisma.map((survey) => {
-        return {
-          ...survey,
-          responseCount: survey._count.responses,
-        };
-      });
+      return surveysPrisma as TSurvey[];
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         logger.error(error, "Error getting surveys");
@@ -111,12 +103,7 @@ export const getSurveysSortedByRelevance = reactCache(
               skip: offset,
             });
 
-      surveys = inProgressSurveys.map((survey) => {
-        return {
-          ...survey,
-          responseCount: survey._count.responses,
-        };
-      });
+      surveys = inProgressSurveys as TSurvey[];
 
       // Determine if additional surveys are needed
       if (offset !== undefined && limit && inProgressSurveys.length < limit) {
@@ -134,15 +121,7 @@ export const getSurveysSortedByRelevance = reactCache(
           skip: newOffset,
         });
 
-        surveys = [
-          ...surveys,
-          ...additionalSurveys.map((survey) => {
-            return {
-              ...survey,
-              responseCount: survey._count.responses,
-            };
-          }),
-        ];
+        surveys = [...surveys, ...(additionalSurveys as TSurvey[])];
       }
 
       return surveys;

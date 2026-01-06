@@ -148,7 +148,11 @@ export const SurveyDropDownMenu = ({
                   <Link
                     className="flex w-full items-center"
                     href={`/environments/${environmentId}/surveys/${survey.id}/edit`}
-                    onClick={survey.responseCount > 0 ? handleEditforActiveSurvey : undefined}>
+                    onClick={
+                      survey.status === "inProgress" || survey.status === "completed"
+                        ? handleEditforActiveSurvey
+                        : undefined
+                    }>
                     <SquarePenIcon className="mr-2 size-4" />
                     {t("common.edit")}
                   </Link>
@@ -251,7 +255,7 @@ export const SurveyDropDownMenu = ({
         />
       )}
 
-      {survey.responseCount > 0 && (
+      {(survey.status === "inProgress" || survey.status === "completed") && (
         <EditPublicSurveyAlertDialog
           open={isCautionDialogOpen}
           setOpen={setIsCautionDialogOpen}
