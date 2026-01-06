@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { TSurvey, TSurveyAffiliateOfferCard } from "@formbricks/types/surveys/types";
 import { TUserLocale } from "@formbricks/types/user";
 import { ElementFormInput } from "@/modules/survey/components/element-form-input";
+import { getElementsFromBlocks } from "@/modules/survey/lib/client-utils";
 
 interface AffiliateOfferFormProps {
   localSurvey: TSurvey;
@@ -33,6 +34,8 @@ export const AffiliateOfferForm = ({
 }: AffiliateOfferFormProps) => {
   const { t } = useTranslation();
 
+  const questions = getElementsFromBlocks(localSurvey.blocks);
+
   // Initialize default URLs if needed (minimal initialization like EndScreenForm)
   useEffect(() => {
     if (!endingCard.affiliateOfferUrl) {
@@ -53,7 +56,7 @@ export const AffiliateOfferForm = ({
           placeholder="Your headline here"
           value={endingCard.headline}
           localSurvey={localSurvey}
-          elementIdx={localSurvey.questions.length + endingCardIndex}
+          elementIdx={questions.length + endingCardIndex}
           isInvalid={isInvalid}
           updateSurvey={updateSurvey}
           selectedLanguageCode={selectedLanguageCode}
@@ -71,7 +74,7 @@ export const AffiliateOfferForm = ({
           placeholder="Your subheader here"
           value={endingCard.subheader}
           localSurvey={localSurvey}
-          elementIdx={localSurvey.questions.length + endingCardIndex}
+          elementIdx={questions.length + endingCardIndex}
           isInvalid={isInvalid}
           updateSurvey={updateSurvey}
           selectedLanguageCode={selectedLanguageCode}
@@ -92,7 +95,7 @@ export const AffiliateOfferForm = ({
           }
           value={endingCard.promotionalMessage}
           localSurvey={localSurvey}
-          elementIdx={localSurvey.questions.length + endingCardIndex}
+          elementIdx={questions.length + endingCardIndex}
           isInvalid={isInvalid}
           updateSurvey={updateSurvey}
           selectedLanguageCode={selectedLanguageCode}
@@ -111,7 +114,7 @@ export const AffiliateOfferForm = ({
             placeholder="https://example.com/affiliate-offer"
             value={endingCard.affiliateOfferUrl}
             localSurvey={localSurvey}
-            elementIdx={localSurvey.questions.length + endingCardIndex}
+            elementIdx={questions.length + endingCardIndex}
             isInvalid={isInvalid}
             updateSurvey={updateSurvey}
             selectedLanguageCode={selectedLanguageCode}
@@ -133,7 +136,7 @@ export const AffiliateOfferForm = ({
             placeholder={t("environments.surveys.edit.get_offer") || "Get Offer"}
             value={endingCard.affiliateButtonLabel}
             localSurvey={localSurvey}
-            elementIdx={localSurvey.questions.length + endingCardIndex}
+            elementIdx={questions.length + endingCardIndex}
             isInvalid={isInvalid}
             updateSurvey={updateSurvey}
             selectedLanguageCode={selectedLanguageCode}
@@ -153,7 +156,7 @@ export const AffiliateOfferForm = ({
             placeholder="https://example.com/next-survey"
             value={endingCard.skipLink}
             localSurvey={localSurvey}
-            elementIdx={localSurvey.questions.length + endingCardIndex}
+            elementIdx={questions.length + endingCardIndex}
             isInvalid={isInvalid}
             updateSurvey={updateSurvey}
             selectedLanguageCode={selectedLanguageCode}
@@ -174,7 +177,7 @@ export const AffiliateOfferForm = ({
             placeholder={t("environments.surveys.edit.skip") || "No thanks, continue to next survey"}
             value={endingCard.skipLinkLabel}
             localSurvey={localSurvey}
-            elementIdx={localSurvey.questions.length + endingCardIndex}
+            elementIdx={questions.length + endingCardIndex}
             isInvalid={isInvalid}
             updateSurvey={updateSurvey}
             selectedLanguageCode={selectedLanguageCode}

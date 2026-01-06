@@ -380,9 +380,11 @@ export const EditEndingCard = ({
                       selectedLanguageCode
                     ]
                       ? formatTextWithSlashes(
-                          recallToHeadline(endingCard.headline, localSurvey, true, selectedLanguageCode)[
-                            selectedLanguageCode
-                          ]
+                          getTextContent(
+                            recallToHeadline(endingCard.headline, localSurvey, true, selectedLanguageCode)[
+                              selectedLanguageCode
+                            ]
+                          )
                         )
                       : t("environments.surveys.edit.affiliate_offer"))}
                 </p>
@@ -429,7 +431,33 @@ export const EditEndingCard = ({
                   if (newType === "redirectToUrl") {
                     updateSurvey({ type: "redirectToUrl" });
                   } else if (newType === "affiliateOffer") {
-                    updateSurvey({ type: "affiliateOffer" });
+                    // Preserve headline and subheader when switching to affiliateOffer
+                    const currentCard = endingCard as any;
+                    const languageCodes = localSurvey.languages.map((lang) => lang.language.code);
+                    const createI18nString = (text: string) => {
+                      const i18nString: Record<string, string> = { default: text };
+                      languageCodes.forEach((code) => {
+                        if (code !== "default") {
+                          i18nString[code] = text;
+                        }
+                      });
+                      return i18nString;
+                    };
+
+                    updateSurvey({
+                      type: "affiliateOffer",
+                      headline:
+                        currentCard.headline || createI18nString(t("templates.default_ending_card_headline")),
+                      subheader:
+                        currentCard.subheader ||
+                        createI18nString(t("templates.default_ending_card_subheader")),
+                      affiliateButtonLabel: createI18nString(
+                        t("environments.surveys.edit.get_offer") || "Get Offer"
+                      ),
+                      skipLinkLabel: createI18nString(
+                        t("environments.surveys.edit.skip") || "No thanks, continue"
+                      ),
+                    });
                   } else {
                     updateSurvey({ type: "endScreen" });
                   }

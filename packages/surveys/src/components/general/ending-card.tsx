@@ -2,7 +2,11 @@ import { useEffect } from "preact/hooks";
 import { useTranslation } from "react-i18next";
 import { type TJsEnvironmentStateSurvey } from "@formbricks/types/js";
 import { type TResponseData, type TResponseVariables } from "@formbricks/types/responses";
-import { type TSurveyEndScreenCard, type TSurveyRedirectUrlCard, type TSurveyAffiliateOfferCard } from "@formbricks/types/surveys/types";
+import {
+  type TSurveyAffiliateOfferCard,
+  type TSurveyEndScreenCard,
+  type TSurveyRedirectUrlCard,
+} from "@formbricks/types/surveys/types";
 import { SubmitButton } from "@/components/buttons/submit-button";
 import { ElementMedia } from "@/components/general/element-media";
 import { Headline } from "@/components/general/headline";
@@ -227,43 +231,59 @@ export function EndingCard({
                 )}
               </>
             )}
-            {/* Promotional Message for Affiliate Offer */}
-            {endingCard.type === "affiliateOffer" &&
-              endingCard.promotionalMessage &&
-              renderPromotionalMessage(
-                replaceRecallInfo(
-                  getLocalizedValue(endingCard.promotionalMessage, languageCode),
-                  responseData,
-                  variablesData
-                )
-              )}
-            {/* Buttons for Affiliate Offer */}
-            {endingCard.type === "affiliateOffer" ? (
-              <div className="fb-mt-6 fb-flex fb-w-full fb-flex-col fb-items-center fb-justify-center fb-space-y-4">
-                {/* Primary CTA - Affiliate Offer Button */}
-                <SubmitButton
-                  buttonLabel={replaceRecallInfo(
-                    getLocalizedValue(endingCard.affiliateButtonLabel, languageCode) || "Get Offer",
-                    responseData,
-                    variablesData
-                  )}
-                  isLastQuestion={false}
-                  focus={isCurrent ? autoFocusEnabled : false}
-                  onClick={handleAffiliateSubmit}
-                />
-
-                {/* Secondary Text Link - Skip */}
-                <button
-                  className="fb-text-brand fb-mt-2 fb-cursor-pointer fb-text-sm fb-underline"
-                  onClick={handleSkipSubmit}>
-                  {replaceRecallInfo(
-                    getLocalizedValue(endingCard.skipLinkLabel, languageCode) || "No thanks, continue",
-                    responseData,
-                    variablesData
-                  )}
-                </button>
+            {endingCard.type === "affiliateOffer" && (
+              <div>
+                {media}
+                <div>
+                  <Headline
+                    alignTextCenter
+                    headline={replaceRecallInfo(
+                      getLocalizedValue(endingCard.headline, languageCode),
+                      responseData,
+                      variablesData
+                    )}
+                    elementId="EndingCard"
+                  />
+                  <Subheader
+                    subheader={replaceRecallInfo(
+                      getLocalizedValue(endingCard.subheader, languageCode),
+                      responseData,
+                      variablesData
+                    )}
+                    elementId="EndingCard"
+                  />
+                  {endingCard.promotionalMessage &&
+                    renderPromotionalMessage(
+                      replaceRecallInfo(
+                        getLocalizedValue(endingCard.promotionalMessage, languageCode),
+                        responseData,
+                        variablesData
+                      )
+                    )}
+                  <div className="mt-6 flex w-full flex-col items-center justify-center space-y-4">
+                    <SubmitButton
+                      buttonLabel={replaceRecallInfo(
+                        getLocalizedValue(endingCard.affiliateButtonLabel, languageCode) || "Get Offer",
+                        responseData,
+                        variablesData
+                      )}
+                      isLastQuestion={false}
+                      focus={isCurrent ? autoFocusEnabled : false}
+                      onClick={handleAffiliateSubmit}
+                    />
+                    <button
+                      className="fb-text-brand fb-cursor-pointer fb-text-sm fb-underline"
+                      onClick={handleSkipSubmit}>
+                      {replaceRecallInfo(
+                        getLocalizedValue(endingCard.skipLinkLabel, languageCode) || "No thanks, continue",
+                        responseData,
+                        variablesData
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
-            ) : null}
+            )}
           </>
         ) : (
           <>
