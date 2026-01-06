@@ -287,7 +287,7 @@ export class AppStack extends Stack {
         });
 
         webService.targetGroup.configureHealthCheck({
-            path: "/auth/login",
+            path: "/health",
             healthyThresholdCount: 3,
             healthyHttpCodes: '200',
             interval: Duration.seconds(10),
