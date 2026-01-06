@@ -156,7 +156,7 @@ export const getSurvey = reactCache(async (surveyId: string): Promise<TSurvey | 
     return null;
   }
 
-  return surveyPrisma as TSurvey;
+  return { ...surveyPrisma, responseCount: surveyPrisma?._count.responses };
 });
 
 export const deleteSurvey = async (surveyId: string): Promise<boolean> => {
