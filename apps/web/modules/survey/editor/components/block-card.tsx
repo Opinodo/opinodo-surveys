@@ -7,6 +7,7 @@ import { Project } from "@prisma/client";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { ChevronDownIcon, ChevronRightIcon, GripIcon } from "lucide-react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { TI18nString } from "@formbricks/types/i18n";
 import { TSurveyBlock, TSurveyBlockLogic } from "@formbricks/types/surveys/blocks";
@@ -16,6 +17,7 @@ import { getTextContent } from "@formbricks/types/surveys/validation";
 import { TUserLocale } from "@formbricks/types/user";
 import { cn } from "@/lib/cn";
 import { recallToHeadline } from "@/lib/utils/recall";
+import { translateText } from "@/modules/survey/editor/actions";
 import { AddElementToBlockButton } from "@/modules/survey/editor/components/add-element-to-block-button";
 import { AddressElementForm } from "@/modules/survey/editor/components/address-element-form";
 import { AdvancedSettings } from "@/modules/survey/editor/components/advanced-settings";
@@ -120,6 +122,9 @@ export const BlockCard = ({
   });
   const { t } = useTranslation();
   const ELEMENTS_ICON_MAP = getElementIconMap(t);
+
+  // @ts-ignore
+  const [loading, setLoading] = useState(false);
 
   const hasMultipleElements = block.elements.length > 1;
   const blockLogic = block.logic ?? [];
@@ -244,8 +249,201 @@ export const BlockCard = ({
     return <FormComponent {...commonProps} {...additionalProps} />;
   };
 
-  const translateCard = async (cardIdx: number) => {
-    console.log("translateCard", cardIdx);
+  const translateBlock = async () => {
+    setLoading(true);
+    const updatedSurvey = { ...localSurvey };
+
+    const blockToTranslate = updatedSurvey.blocks[blockIdx];
+    if (!blockToTranslate) {
+      toast.error("Block not found.");
+      setLoading(false);
+      return;
+    }
+
+    const textsToTranslate: { [key: string]: string } = {};
+
+    // Extract texts from all elements in the block
+    blockToTranslate.elements.forEach((element, elemIdx) => {
+      const elementTexts = extractTextsToTranslateFromElement(element, `elem_${elemIdx}_`);
+      Object.assign(textsToTranslate, elementTexts);
+    });
+
+    // Extract block button labels
+    if (blockToTranslate.buttonLabel?.["default"]) {
+      textsToTranslate["buttonLabel"] = blockToTranslate.buttonLabel["default"];
+    }
+    if (blockToTranslate.backButtonLabel?.["default"]) {
+      textsToTranslate["backButtonLabel"] = blockToTranslate.backButtonLabel["default"];
+    }
+
+    if (Object.keys(textsToTranslate).length === 0) {
+      toast.error("No texts to translate.");
+      setLoading(false);
+      return;
+    }
+
+    const languageCodes = localSurvey.languages
+      .map((lang) => lang.language.code)
+      .filter((code) => code !== "en" && code !== "default");
+
+    if (languageCodes.length === 0) {
+      toast.error("No target languages configured.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const translationsByLang = await translateText(languageCodes, textsToTranslate);
+
+      for (const [languageCode, translatedTexts] of Object.entries(translationsByLang)) {
+        // Update all elements in the block
+        blockToTranslate.elements.forEach((element, elemIdx) => {
+          updateElementWithTranslatedTexts(element, translatedTexts, languageCode, `elem_${elemIdx}_`);
+        });
+
+        // Update block button labels
+        if (blockToTranslate.buttonLabel && translatedTexts["buttonLabel"]) {
+          blockToTranslate.buttonLabel[languageCode] = translatedTexts["buttonLabel"];
+        }
+        if (blockToTranslate.backButtonLabel && translatedTexts["backButtonLabel"]) {
+          blockToTranslate.backButtonLabel[languageCode] = translatedTexts["backButtonLabel"];
+        }
+      }
+
+      updatedSurvey.blocks[blockIdx] = blockToTranslate;
+      setLocalSurvey(updatedSurvey);
+      toast.success("Block translated successfully.");
+    } catch (error) {
+      toast.error("Translation failed.");
+      console.error("Translation error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const extractTextsToTranslateFromElement = (element: TSurveyElement, prefix: string = "") => {
+    const textsToTranslate: { [key: string]: string } = {};
+
+    // Extract headline
+    if (element.headline?.["default"]) {
+      const headlineText = getTextContent(
+        recallToHeadline(element.headline, localSurvey, false, "default")["default"] ?? ""
+      );
+      if (headlineText) {
+        textsToTranslate[`${prefix}headline`] = headlineText;
+      }
+    }
+
+    // Extract subheader
+    if (element.subheader?.["default"]) {
+      const subheaderText = getTextContent(
+        recallToHeadline(element.subheader, localSurvey, false, "default")["default"] ?? ""
+      );
+      if (subheaderText) {
+        textsToTranslate[`${prefix}subheader`] = subheaderText;
+      }
+    }
+
+    // Extract placeholder
+    if ("placeholder" in element && element.placeholder?.["default"]) {
+      textsToTranslate[`${prefix}placeholder`] = element.placeholder["default"];
+    }
+
+    // Extract html content
+    if ("html" in element && element.html?.["default"]) {
+      const htmlText = getTextContent(
+        recallToHeadline(element.html, localSurvey, false, "default")["default"] ?? ""
+      );
+      if (htmlText) {
+        textsToTranslate[`${prefix}html`] = htmlText;
+      }
+    }
+
+    // Extract choices for multiple choice, ranking, etc.
+    if ("choices" in element && Array.isArray(element.choices)) {
+      element.choices.forEach((choice, idx) => {
+        if (choice.label?.["default"]) {
+          textsToTranslate[`${prefix}choice_${idx}`] = choice.label["default"];
+        }
+      });
+    }
+
+    // Extract matrix labels
+    if (element.type === TSurveyElementTypeEnum.Matrix && "rows" in element && "columns" in element) {
+      if (Array.isArray(element.rows)) {
+        element.rows.forEach((row, idx) => {
+          if (row?.["default"]) {
+            textsToTranslate[`${prefix}row_${idx}`] = row["default"];
+          }
+        });
+      }
+      if (Array.isArray(element.columns)) {
+        element.columns.forEach((col, idx) => {
+          if (col?.["default"]) {
+            textsToTranslate[`${prefix}column_${idx}`] = col["default"];
+          }
+        });
+      }
+    }
+
+    return textsToTranslate;
+  };
+
+  const updateElementWithTranslatedTexts = (
+    element: TSurveyElement,
+    translatedTexts: { [key: string]: string },
+    languageCode: string,
+    prefix: string = ""
+  ) => {
+    // Update headline
+    if (element.headline && translatedTexts[`${prefix}headline`]) {
+      element.headline[languageCode] = translatedTexts[`${prefix}headline`];
+    }
+
+    // Update subheader
+    if (element.subheader && translatedTexts[`${prefix}subheader`]) {
+      element.subheader[languageCode] = translatedTexts[`${prefix}subheader`];
+    }
+
+    // Update placeholder
+    if ("placeholder" in element && element.placeholder && translatedTexts[`${prefix}placeholder`]) {
+      element.placeholder[languageCode] = translatedTexts[`${prefix}placeholder`];
+    }
+
+    // Update html content
+    if ("html" in element && element.html && translatedTexts[`${prefix}html`]) {
+      element.html[languageCode] = translatedTexts[`${prefix}html`];
+    }
+
+    // Update choices
+    if ("choices" in element && Array.isArray(element.choices)) {
+      element.choices.forEach((choice, idx) => {
+        const translatedChoice = translatedTexts[`${prefix}choice_${idx}`];
+        if (choice.label && translatedChoice) {
+          choice.label[languageCode] = translatedChoice;
+        }
+      });
+    }
+
+    // Update matrix labels
+    if (element.type === TSurveyElementTypeEnum.Matrix && "rows" in element && "columns" in element) {
+      if (Array.isArray(element.rows)) {
+        element.rows.forEach((row, idx) => {
+          const translatedRow = translatedTexts[`${prefix}row_${idx}`];
+          if (row && translatedRow) {
+            row[languageCode] = translatedRow;
+          }
+        });
+      }
+      if (Array.isArray(element.columns)) {
+        element.columns.forEach((col, idx) => {
+          const translatedCol = translatedTexts[`${prefix}column_${idx}`];
+          if (col && translatedCol) {
+            col[languageCode] = translatedCol;
+          }
+        });
+      }
+    }
   };
 
   const style = {
@@ -317,6 +515,8 @@ export const BlockCard = ({
                     onDelete={() => deleteBlock(block.id)}
                     onMoveUp={() => moveBlock(block.id, "up")}
                     onMoveDown={() => moveBlock(block.id, "down")}
+                    onTranslate={translateBlock}
+                    isTranslateDisabled={localSurvey.languages.length <= 1}
                   />
                 </div>
               </div>
@@ -404,7 +604,7 @@ export const BlockCard = ({
                               moveElementToBlock={moveElementToBlock}
                               cardType="element"
                               isCxMode={isCxMode}
-                              translateCard={translateCard}
+                              translateCard={() => {}}
                             />
                           </div>
                         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDownIcon, ArrowUpIcon, CopyIcon, TrashIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, CopyIcon, LanguagesIcon, TrashIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/modules/ui/components/button";
 import { TooltipRenderer } from "@/modules/ui/components/tooltip";
@@ -13,6 +13,8 @@ interface BlockMenuProps {
   onDelete: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onTranslate?: () => void;
+  isTranslateDisabled?: boolean;
 }
 
 export const BlockMenu = ({
@@ -23,11 +25,31 @@ export const BlockMenu = ({
   onDelete,
   onMoveUp,
   onMoveDown,
+  onTranslate,
+  isTranslateDisabled = false,
 }: BlockMenuProps) => {
   const { t } = useTranslation();
 
   return (
     <div className="flex items-center gap-1">
+      {onTranslate && (
+        <TooltipRenderer tooltipContent={t("common.translate")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isTranslateDisabled}
+            onClick={(e) => {
+              if (!isTranslateDisabled) {
+                e.stopPropagation();
+                onTranslate();
+              }
+            }}
+            className="h-8 w-8">
+            <LanguagesIcon className="h-4 w-4" />
+          </Button>
+        </TooltipRenderer>
+      )}
+
       <TooltipRenderer tooltipContent={t("common.move_up")}>
         <Button
           variant="ghost"

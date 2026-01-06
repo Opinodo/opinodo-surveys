@@ -2,13 +2,26 @@
 
 import { createId } from "@paralleldrive/cuid2";
 import { Project } from "@prisma/client";
-import { ArrowDownIcon, ArrowRightIcon, ArrowUpIcon, CopyIcon, EllipsisIcon, TrashIcon, LanguagesIcon } from "lucide-react";
+import {
+  ArrowDownIcon,
+  ArrowRightIcon,
+  ArrowUpIcon,
+  CopyIcon,
+  EllipsisIcon,
+  LanguagesIcon,
+  TrashIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TI18nString } from "@formbricks/types/i18n";
 import { TSurveyBlockLogic } from "@formbricks/types/surveys/blocks";
 import { TSurveyElement, TSurveyElementTypeEnum } from "@formbricks/types/surveys/elements";
-import { TSurvey, TSurveyEndScreenCard, TSurveyRedirectUrlCard, TSurveyAffiliateOfferCard } from "@formbricks/types/surveys/types";
+import {
+  TSurvey,
+  TSurveyAffiliateOfferCard,
+  TSurveyEndScreenCard,
+  TSurveyRedirectUrlCard,
+} from "@formbricks/types/surveys/types";
 import { getElementsFromBlocks } from "@/modules/survey/lib/client-utils";
 import {
   getCXElementNameMap,
@@ -45,7 +58,11 @@ interface EditorCardMenuProps {
   deleteCard: (cardIdx: number) => void;
   translateCard: (cardIdx: number) => void;
   moveCard: (cardIdx: number, up: boolean) => void;
-  card: EditorCardMenuSurveyElement | TSurveyEndScreenCard | TSurveyRedirectUrlCard | TSurveyAffiliateOfferCard;
+  card:
+    | EditorCardMenuSurveyElement
+    | TSurveyEndScreenCard
+    | TSurveyRedirectUrlCard
+    | TSurveyAffiliateOfferCard;
   updateCard: (cardIdx: number, updatedAttributes: any) => void;
   addCard: (element: any, index?: number) => void;
   addCardToBlock?: (element: TSurveyElement, blockId: string, afterElementIdx: number) => void;
@@ -168,20 +185,22 @@ export const EditorCardMenu = ({
 
   return (
     <div className="flex">
-      <TooltipRenderer tooltipContent={t("common.translate")}>
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={isTranslateDisabled}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isTranslateDisabled) return;
-            translateCard(cardIdx);
-          }}
-          className="disabled:border-none">
-          <LanguagesIcon />
-        </Button>
-      </TooltipRenderer>
+      {cardType === "ending" && (
+        <TooltipRenderer tooltipContent={t("common.translate")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isTranslateDisabled}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isTranslateDisabled) return;
+              translateCard(cardIdx);
+            }}
+            className="disabled:border-none">
+            <LanguagesIcon />
+          </Button>
+        </TooltipRenderer>
+      )}
       <TooltipRenderer tooltipContent={t("common.move_up")}>
         <Button
           variant="ghost"
