@@ -18,6 +18,7 @@ import { TUserLocale } from "@formbricks/types/user";
 import { cn } from "@/lib/cn";
 import { recallToHeadline } from "@/lib/utils/recall";
 import { translateText } from "@/modules/survey/editor/actions";
+import { AdElementForm } from "@/modules/survey/editor/components/ad-element-form";
 import { AddElementToBlockButton } from "@/modules/survey/editor/components/add-element-to-block-button";
 import { AddressElementForm } from "@/modules/survey/editor/components/address-element-form";
 import { AdvancedSettings } from "@/modules/survey/editor/components/advanced-settings";
@@ -207,6 +208,7 @@ export const BlockCard = ({
     [TSurveyElementTypeEnum.MultipleChoiceMulti]: MultipleChoiceElementForm,
     [TSurveyElementTypeEnum.NPS]: NPSElementForm,
     [TSurveyElementTypeEnum.CTA]: CTAElementForm,
+    [TSurveyElementTypeEnum.Ad]: AdElementForm,
     [TSurveyElementTypeEnum.Rating]: RatingElementForm,
     [TSurveyElementTypeEnum.Consent]: ConsentElementForm,
     [TSurveyElementTypeEnum.Date]: DateElementForm,
@@ -246,7 +248,7 @@ export const BlockCard = ({
       additionalProps.isFormbricksCloud = isFormbricksCloud;
     }
 
-    return <FormComponent {...commonProps} {...additionalProps} />;
+    return <FormComponent {...(commonProps as any)} {...additionalProps} />;
   };
 
   const translateBlock = async () => {

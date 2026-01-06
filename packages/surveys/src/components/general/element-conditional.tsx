@@ -7,6 +7,7 @@ import {
   TSurveyElementChoice,
   TSurveyElementTypeEnum,
 } from "@formbricks/types/surveys/elements";
+import { AdElement } from "@/components/elements/ad-element";
 import { AddressElement } from "@/components/elements/address-element";
 import { CalElement } from "@/components/elements/cal-element";
 import { ConsentElement } from "@/components/elements/consent-element";
@@ -184,6 +185,21 @@ export function ElementConditional({
             autoFocusEnabled={autoFocusEnabled}
             currentElementId={currentElementId}
             onOpenExternalURL={onOpenExternalURL}
+          />
+        );
+      case TSurveyElementTypeEnum.Ad:
+        return (
+          <AdElement
+            key={element.id}
+            element={element}
+            value={typeof value === "string" ? value : ""}
+            onChange={onChange}
+            languageCode={languageCode}
+            ttc={ttc}
+            setTtc={wrappedSetTtc}
+            autoFocusEnabled={autoFocusEnabled}
+            currentElementId={currentElementId}
+            dir={dir}
           />
         );
       case TSurveyElementTypeEnum.Rating:

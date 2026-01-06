@@ -182,9 +182,8 @@ export const getElementTypes = (t: TFunction): TElement[] => [
     description: "Show an advertisement",
     icon: ScanEyeIcon,
     preset: {
-      headline: {
-        default: "Sponsored links",
-      },
+      headline: createI18nString("Sponsored links", []),
+      required: false,
     },
   },
   {

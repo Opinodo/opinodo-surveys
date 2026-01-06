@@ -1,4 +1,5 @@
 import * as React from "react";
+import { AdExplanation } from "@/components/elements/ad-explanation";
 import { ElementHeader } from "@/components/general/element-header";
 
 interface GoogleTagSlot {
@@ -44,6 +45,14 @@ interface AdProps {
   minWidth?: string;
   /** Minimum height for the ad container */
   minHeight?: string;
+  /** Text for the button that expands the explanation */
+  whyAmISeeingThisAd?: string;
+  /** Title shown when explanation is expanded */
+  adExplanation?: string;
+  /** Description text shown when explanation is expanded */
+  adDescription?: string;
+  /** Text for the button that collapses the explanation */
+  showLess?: string;
 }
 
 function Ad({
@@ -59,6 +68,10 @@ function Ad({
   adDivId = "div-gpt-surveys-midpage",
   minWidth = "300px",
   minHeight = "100px",
+  whyAmISeeingThisAd = "Why am I seeing this ad?",
+  adExplanation = "About This Ad",
+  adDescription = "Ads help support the surveys you take. We show relevant ads based on your interests and survey responses.",
+  showLess = "Show less",
 }: Readonly<AdProps>): React.JSX.Element {
   React.useEffect(() => {
     if (window.googletag?.cmd) {
@@ -88,6 +101,17 @@ function Ad({
       <div className="w-full">
         <div id={adDivId} style={{ minWidth, minHeight }} />
       </div>
+
+      {/* Ad Explanation */}
+      {whyAmISeeingThisAd && adExplanation && adDescription && showLess ? (
+        <AdExplanation
+          whyAmISeeingThisAd={whyAmISeeingThisAd}
+          adExplanation={adExplanation}
+          adDescription={adDescription}
+          showLess={showLess}
+          dir={dir}
+        />
+      ) : null}
     </div>
   );
 }

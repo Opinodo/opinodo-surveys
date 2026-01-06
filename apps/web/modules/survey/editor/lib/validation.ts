@@ -135,11 +135,19 @@ export const validationRules = {
   address: (element: TSurveyAddressElement, languages: TSurveyLanguage[]) => {
     return handleI18nCheckForContactAndAddressFields(element, languages);
   },
+  ad: () => {
+    // Ad elements don't require any translation validation - they have no user-facing text to translate
+    return true;
+  },
   // Assuming headline is of type TI18nString
   defaultValidation: (element: TSurveyElement, languages: TSurveyLanguage[]) => {
+    // Ad elements don't need validation - they have no user-facing translatable text
+    if (element.type === "ad") {
+      return true;
+    }
+
     // headline and subheader are default for every element
-    const isHeadlineValid =
-      element.type !== "ad" ? isLabelValidForAllLanguages(element.headline, languages) : true;
+    const isHeadlineValid = isLabelValidForAllLanguages(element.headline, languages);
     const isSubheaderValid =
       element.subheader &&
       getLocalizedValue(element.subheader, "default").trim() !== "" &&
