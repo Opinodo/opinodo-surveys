@@ -244,14 +244,6 @@ export function EndingCard({
                     )}
                     elementId="EndingCard"
                   />
-                  <Subheader
-                    subheader={replaceRecallInfo(
-                      getLocalizedValue(endingCard.subheader, languageCode),
-                      responseData,
-                      variablesData
-                    )}
-                    elementId="EndingCard"
-                  />
                   {endingCard.promotionalMessage &&
                     renderPromotionalMessage(
                       replaceRecallInfo(

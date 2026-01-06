@@ -245,9 +245,6 @@ export const EditEndingCard = ({
       if (endingCard.headline) {
         textsToTranslate["headline"] = endingCard.headline["default"];
       }
-      if (endingCard.subheader) {
-        textsToTranslate["subheader"] = endingCard.subheader["default"];
-      }
       if (endingCard.affiliateButtonLabel) {
         textsToTranslate["affiliateButtonLabel"] = endingCard.affiliateButtonLabel["default"];
       }
@@ -275,9 +272,6 @@ export const EditEndingCard = ({
     } else if (endingCard.type === "affiliateOffer") {
       if (endingCard.headline) {
         endingCard.headline[languageCode] = translatedTexts["headline"];
-      }
-      if (endingCard.subheader) {
-        endingCard.subheader[languageCode] = translatedTexts["subheader"];
       }
       if (endingCard.affiliateButtonLabel) {
         endingCard.affiliateButtonLabel[languageCode] = translatedTexts["affiliateButtonLabel"];
@@ -448,9 +442,6 @@ export const EditEndingCard = ({
                       type: "affiliateOffer",
                       headline:
                         currentCard.headline || createI18nString(t("templates.default_ending_card_headline")),
-                      subheader:
-                        currentCard.subheader ||
-                        createI18nString(t("templates.default_ending_card_subheader")),
                       affiliateButtonLabel: createI18nString(
                         t("environments.surveys.edit.get_offer") || "Get Offer"
                       ),

@@ -66,24 +66,6 @@ export const AffiliateOfferForm = ({
         />
       </div>
 
-      {/* Subheader */}
-      <div className="mt-4 space-y-2">
-        <ElementFormInput
-          id="subheader"
-          label={t("environments.surveys.edit.subheader")}
-          placeholder="Your subheader here"
-          value={endingCard.subheader}
-          localSurvey={localSurvey}
-          elementIdx={questions.length + endingCardIndex}
-          isInvalid={isInvalid}
-          updateSurvey={updateSurvey}
-          selectedLanguageCode={selectedLanguageCode}
-          setSelectedLanguageCode={setSelectedLanguageCode}
-          locale={locale}
-          isStorageConfigured={isStorageConfigured}
-        />
-      </div>
-
       {/* Promotional Message */}
       <div className="mt-4 space-y-2">
         <ElementFormInput
