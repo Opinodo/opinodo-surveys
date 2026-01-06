@@ -1,4 +1,5 @@
 import { prisma } from "@formbricks/database";
+import { logger } from "@formbricks/logger";
 import { TResponseWithQuotaFull } from "@formbricks/types/quota";
 import { TResponseUpdateInput } from "@formbricks/types/responses";
 import { updateResponse } from "@/lib/response/service";
@@ -8,24 +9,31 @@ export const updateResponseWithQuotaEvaluation = async (
   responseId: string,
   responseInput: TResponseUpdateInput
 ): Promise<TResponseWithQuotaFull> => {
-  const txResponse = await prisma.$transaction(async (tx) => {
-    const response = await updateResponse(responseId, responseInput, tx);
+  // Update the response first in a transaction
+  const response = await prisma.$transaction(async (tx) => {
+    return await updateResponse(responseId, responseInput, tx);
+  });
 
-    const quotaResult = await evaluateResponseQuotas({
+  // Evaluate quotas outside the transaction so it doesn't block/fail response update
+  // If you're not using quotas, this will return early without doing much work
+  let quotaResult;
+  try {
+    quotaResult = await evaluateResponseQuotas({
       surveyId: response.surveyId,
       responseId: response.id,
       data: response.data,
       variables: response.variables,
       language: response.language || "default",
       responseFinished: response.finished,
-      tx,
     });
+  } catch (error) {
+    // Log quota evaluation errors but don't fail the response update
+    logger.error({ error, responseId: response.id }, "Error evaluating quotas after response update");
+    quotaResult = { shouldEndSurvey: false };
+  }
 
-    return {
-      ...response,
-      ...(quotaResult.quotaFull && { quotaFull: quotaResult.quotaFull }),
-    };
-  });
-
-  return txResponse;
+  return {
+    ...response,
+    ...(quotaResult.quotaFull && { quotaFull: quotaResult.quotaFull }),
+  };
 };

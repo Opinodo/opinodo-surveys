@@ -167,7 +167,16 @@ const logErrorDetails = (res: Response, req: NextRequest, correlationId: string,
     method: req.method,
     path: req.url,
     status: res.status,
-    ...(error && { error }),
+    ...(error && {
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : String(error),
+    }),
   };
 
   logger.withContext(logContext).error("V1 API Error Details");

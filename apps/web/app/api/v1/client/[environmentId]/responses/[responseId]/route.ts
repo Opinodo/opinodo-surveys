@@ -125,7 +125,7 @@ export const PUT = withV1ApiWrapper({
       }
       if (error instanceof InvalidInputError) {
         return {
-          response: responses.badRequestResponse(error.message),
+          response: responses.badRequestResponse(error.message, undefined, true),
         };
       }
       if (error instanceof DatabaseError) {
@@ -134,9 +134,18 @@ export const PUT = withV1ApiWrapper({
           "Error in PUT /api/v1/client/[environmentId]/responses/[responseId]"
         );
         return {
-          response: responses.internalServerErrorResponse(error.message),
+          response: responses.internalServerErrorResponse(error.message, true),
         };
       }
+      // Handle any other unexpected errors
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      logger.error(
+        { error, url: req.url },
+        "Unexpected error in PUT /api/v1/client/[environmentId]/responses/[responseId]"
+      );
+      return {
+        response: responses.internalServerErrorResponse(errorMessage, true),
+      };
     }
 
     const { quotaFull, ...responseData } = updatedResponse;
