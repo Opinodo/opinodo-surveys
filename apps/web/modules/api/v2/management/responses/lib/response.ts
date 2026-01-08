@@ -15,7 +15,6 @@ import { getResponsesQuery } from "@/modules/api/v2/management/responses/lib/uti
 import { TGetResponsesFilter, TResponseInput } from "@/modules/api/v2/management/responses/types/responses";
 import { ApiErrorResponseV2 } from "@/modules/api/v2/types/api-error";
 import { ApiResponseWithMeta } from "@/modules/api/v2/types/api-success";
-import { evaluateResponseQuotas } from "@/modules/ee/quotas/lib/evaluation-service";
 
 export const getResponses = async (
   environmentIds: string[],
@@ -147,40 +146,5 @@ export const createResponseWithQuotaEvaluation = async (
   environmentId: string,
   responseInput: TResponseInput
 ): Promise<Result<Response, ApiErrorResponseV2>> => {
-  const txResponse = await prisma.$transaction<Result<Response, ApiErrorResponseV2>>(async (tx) => {
-    const responseResult = await createResponse(environmentId, responseInput, tx);
-    if (!responseResult.ok) {
-      return responseResult;
-    }
-
-    const response = responseResult.data;
-
-    const quotaResult = await evaluateResponseQuotas({
-      surveyId: responseInput.surveyId,
-      responseId: response.id,
-      data: responseInput.data,
-      variables: responseInput.variables,
-      language: responseInput.language || "default",
-      responseFinished: response.finished,
-      tx,
-    });
-
-    if (quotaResult.shouldEndSurvey) {
-      if (quotaResult.refreshedResponse) {
-        return ok(quotaResult.refreshedResponse);
-      }
-
-      return ok({
-        ...response,
-        finished: true,
-        ...(quotaResult.quotaFull?.endingCardId && {
-          endingId: quotaResult.quotaFull.endingCardId,
-        }),
-      });
-    }
-
-    return ok(response);
-  });
-
-  return txResponse;
+  return createResponse(environmentId, responseInput);
 };

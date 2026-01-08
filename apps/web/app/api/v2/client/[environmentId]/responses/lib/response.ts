@@ -12,39 +12,13 @@ import { TResponseInputV2 } from "@/app/api/v2/client/[environmentId]/responses/
 import { getOrganizationByEnvironmentId } from "@/lib/organization/service";
 import { calculateTtcTotal } from "@/lib/response/utils";
 import { validateInputs } from "@/lib/utils/validate";
-import { evaluateResponseQuotas } from "@/modules/ee/quotas/lib/evaluation-service";
 import { getContact } from "./contact";
 
 export const createResponseWithQuotaEvaluation = async (
   responseInput: TResponseInputV2
 ): Promise<TResponseWithQuotaFull> => {
-  // Create the response first in a transaction
-  const response = await prisma.$transaction(async (tx) => {
-    return await createResponse(responseInput, tx);
-  });
-
-  // Evaluate quotas outside the transaction so it doesn't block/fail response creation
-  // If you're not using quotas, this will return early without doing much work
-  let quotaResult;
-  try {
-    quotaResult = await evaluateResponseQuotas({
-      surveyId: responseInput.surveyId,
-      responseId: response.id,
-      data: responseInput.data,
-      variables: responseInput.variables,
-      language: responseInput.language,
-      responseFinished: response.finished,
-    });
-  } catch (error) {
-    // Log quota evaluation errors but don't fail the response creation
-    logger.error({ error, responseId: response.id }, "Error evaluating quotas after response creation");
-    quotaResult = { shouldEndSurvey: false };
-  }
-
-  return {
-    ...response,
-    ...(quotaResult.quotaFull && { quotaFull: quotaResult.quotaFull }),
-  };
+  const response = await createResponse(responseInput);
+  return response;
 };
 
 const buildPrismaResponseData = (

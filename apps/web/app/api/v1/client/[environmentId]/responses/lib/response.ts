@@ -10,7 +10,6 @@ import { buildPrismaResponseData } from "@/app/api/v1/lib/utils";
 import { getOrganizationByEnvironmentId } from "@/lib/organization/service";
 import { calculateTtcTotal } from "@/lib/response/utils";
 import { validateInputs } from "@/lib/utils/validate";
-import { evaluateResponseQuotas } from "@/modules/ee/quotas/lib/evaluation-service";
 import { getContactByUserId } from "./contact";
 
 export const responseSelection = {
@@ -55,31 +54,13 @@ export const responseSelection = {
 export const createResponseWithQuotaEvaluation = async (
   responseInput: TResponseInput
 ): Promise<TResponseWithQuotaFull> => {
-  const txResponse = await prisma.$transaction(async (tx) => {
-    const response = await createResponse(responseInput, tx);
-
-    const quotaResult = await evaluateResponseQuotas({
-      surveyId: responseInput.surveyId,
-      responseId: response.id,
-      data: responseInput.data,
-      variables: responseInput.variables,
-      language: responseInput.language,
-      responseFinished: response.finished,
-      tx,
-    });
-
-    return {
-      ...response,
-      ...(quotaResult.quotaFull && { quotaFull: quotaResult.quotaFull }),
-    };
-  });
-
-  return txResponse;
+  const response = await createResponse(responseInput);
+  return response;
 };
 
 export const createResponse = async (
   responseInput: TResponseInput,
-  tx: Prisma.TransactionClient
+  tx?: Prisma.TransactionClient
 ): Promise<TResponse> => {
   validateInputs([responseInput, ZResponseInput]);
 
