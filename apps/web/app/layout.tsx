@@ -8,10 +8,13 @@ import {
   SENTRY_DSN,
   SENTRY_ENVIRONMENT,
   SENTRY_RELEASE,
+  WEBAPP_URL,
 } from "@/lib/constants";
 import { I18nProvider } from "@/lingodotdev/client";
 import { getLocale } from "@/lingodotdev/language";
 import "../modules/ui/globals.css";
+
+const isStaging = WEBAPP_URL.includes("staging.surveys.digiopinion.com");
 
 export const metadata: Metadata = {
   title: {
@@ -19,6 +22,12 @@ export const metadata: Metadata = {
     default: "Opinodo Surveys",
   },
   description: "Open-Source Survey Suite",
+  ...(isStaging && {
+    robots: {
+      index: false,
+      follow: false,
+    },
+  }),
 };
 
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
