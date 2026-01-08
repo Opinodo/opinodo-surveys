@@ -19,9 +19,8 @@ export async function POST(request: NextRequest) {
     // Use raw SQL for much faster truncation
     await prisma.$transaction([
       // First clear dependent tables with foreign keys
-      prisma.$executeRawUnsafe('TRUNCATE TABLE "ResponseNote" CASCADE'),
       prisma.$executeRawUnsafe('TRUNCATE TABLE "TagsOnResponses" CASCADE'),
-      prisma.$executeRawUnsafe('TRUNCATE TABLE "Document" CASCADE'),
+      prisma.$executeRawUnsafe('TRUNCATE TABLE "ResponseQuotaLink" CASCADE'),
       // Then truncate the responses table itself
       prisma.$executeRawUnsafe('TRUNCATE TABLE "Response" CASCADE'),
     ]);
