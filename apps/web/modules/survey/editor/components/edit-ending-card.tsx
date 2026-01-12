@@ -19,7 +19,7 @@ import { getTextContent } from "@formbricks/types/surveys/validation";
 import { TUserLocale } from "@formbricks/types/user";
 import { cn } from "@/lib/cn";
 import { recallToHeadline } from "@/lib/utils/recall";
-import { translateText } from "@/modules/survey/editor/actions";
+import { translateTextAction } from "@/modules/survey/editor/actions";
 import { AffiliateOfferForm } from "@/modules/survey/editor/components/affiliate-offer-form";
 import { EditorCardMenu } from "@/modules/survey/editor/components/editor-card-menu";
 import { EndScreenForm } from "@/modules/survey/editor/components/end-screen-form";
@@ -212,7 +212,14 @@ export const EditEndingCard = ({
       .filter((code) => code !== "en" && code !== "default");
 
     try {
-      const translationsByLang = await translateText(languageCodes, textsToTranslate);
+      const result = await translateTextAction({
+        targetLanguageCodes: languageCodes,
+        texts: textsToTranslate,
+      });
+      if (!result?.data) {
+        throw new Error("Translation failed");
+      }
+      const translationsByLang = result.data;
 
       for (const [languageCode, translatedTexts] of Object.entries(translationsByLang)) {
         updateEndingCardWithTranslatedTexts(endingCardToTranslate, translatedTexts, languageCode);

@@ -295,9 +295,13 @@ export const createActionClassAction = authenticatedActionClient.schema(ZCreateA
   )
 );
 
-export async function translateText(
-  targetLanguageCodes: string[],
-  texts: { [key: string]: string }
-): Promise<{ [p: string]: { [p: string]: string } }> {
-  return translateTextMulti(targetLanguageCodes, texts);
-}
+const ZTranslateTextAction = z.object({
+  targetLanguageCodes: z.array(z.string()),
+  texts: z.record(z.string(), z.string()),
+});
+
+export const translateTextAction = authenticatedActionClient
+  .schema(ZTranslateTextAction)
+  .action(async ({ parsedInput }) => {
+    return translateTextMulti(parsedInput.targetLanguageCodes, parsedInput.texts);
+  });

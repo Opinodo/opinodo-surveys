@@ -3,18 +3,18 @@
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { Hand, LanguagesIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { TSurvey, TSurveyWelcomeCard } from "@formbricks/types/surveys/types";
 import { TUserLocale } from "@formbricks/types/user";
 import { cn } from "@/lib/cn";
 import { ElementFormInput } from "@/modules/survey/components/element-form-input";
-import { translateText } from "@/modules/survey/editor/actions";
+import { translateTextAction } from "@/modules/survey/editor/actions";
 import { FileInput } from "@/modules/ui/components/file-input";
 import { Label } from "@/modules/ui/components/label";
 import { LoadingSpinner } from "@/modules/ui/components/loading-spinner";
 import { Switch } from "@/modules/ui/components/switch";
-import { useState } from "react";
-import toast from "react-hot-toast";
 
 interface EditWelcomeCardProps {
   localSurvey: TSurvey;
@@ -82,7 +82,14 @@ export const EditWelcomeCard = ({
       .filter((code) => code !== "en" && code !== "default");
 
     try {
-      const translationsByLang = await translateText(languageCodes, textsToTranslate);
+      const result = await translateTextAction({
+        targetLanguageCodes: languageCodes,
+        texts: textsToTranslate,
+      });
+      if (!result?.data) {
+        throw new Error("Translation failed");
+      }
+      const translationsByLang = result.data;
 
       for (const [languageCode, translatedTexts] of Object.entries(translationsByLang)) {
         updateEndingCardWithTranslatedTexts(welcomeCard, translatedTexts, languageCode);
@@ -128,7 +135,7 @@ export const EditWelcomeCard = ({
   return (
     <div className={cn(open ? "shadow-lg" : "shadow-md", "group flex flex-row rounded-lg bg-white")}>
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75">
+        <div className="bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-white">
           <LoadingSpinner />
         </div>
       )}

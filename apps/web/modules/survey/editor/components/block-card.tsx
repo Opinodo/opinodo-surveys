@@ -17,7 +17,7 @@ import { getTextContent } from "@formbricks/types/surveys/validation";
 import { TUserLocale } from "@formbricks/types/user";
 import { cn } from "@/lib/cn";
 import { recallToHeadline } from "@/lib/utils/recall";
-import { translateText } from "@/modules/survey/editor/actions";
+import { translateTextAction } from "@/modules/survey/editor/actions";
 import { AdElementForm } from "@/modules/survey/editor/components/ad-element-form";
 import { AddElementToBlockButton } from "@/modules/survey/editor/components/add-element-to-block-button";
 import { AddressElementForm } from "@/modules/survey/editor/components/address-element-form";
@@ -295,7 +295,14 @@ export const BlockCard = ({
     }
 
     try {
-      const translationsByLang = await translateText(languageCodes, textsToTranslate);
+      const result = await translateTextAction({
+        targetLanguageCodes: languageCodes,
+        texts: textsToTranslate,
+      });
+      if (!result?.data) {
+        throw new Error("Translation failed");
+      }
+      const translationsByLang = result.data;
 
       for (const [languageCode, translatedTexts] of Object.entries(translationsByLang)) {
         // Update all elements in the block
