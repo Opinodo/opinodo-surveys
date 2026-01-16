@@ -21,29 +21,21 @@ ${JSON.stringify(texts, null, 2)}
 Languages: ${targetLanguageCodes.join(", ")}
 `;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [
+  const response = await openai.responses.create({
+    model: "gpt-4o-mini",
+    input: [
       {
         role: "system",
-        content:
-          "You are a professional translator. Keep translations accurate, natural-sounding, and preserve formatting.",
+        content: "You are a translation engine. Return ONLY valid JSON. No markdown. No explanations.",
       },
       {
         role: "user",
         content: prompt,
       },
     ],
-    temperature: 0.3,
+    temperature: 0.2,
   });
 
-  const message = response.choices[0].message.content;
-  const jsonMatch = message?.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  const cleanText = jsonMatch ? jsonMatch[1] : message;
-
-  if (!cleanText) {
-    throw new Error("Translation response was empty or not in JSON format.");
-  }
-
-  return JSON.parse(cleanText);
+  const output = response.output_text;
+  return JSON.parse(output);
 }
