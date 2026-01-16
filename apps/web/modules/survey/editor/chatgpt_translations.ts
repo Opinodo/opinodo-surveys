@@ -1,4 +1,4 @@
-import { OpenAI } from "openai";
+import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -22,7 +22,7 @@ Languages: ${targetLanguageCodes.join(", ")}
 `;
 
   const response = await openai.responses.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-mini",
     input: [
       {
         role: "system",
@@ -37,5 +37,10 @@ Languages: ${targetLanguageCodes.join(", ")}
   });
 
   const output = response.output_text;
+
+  if (!output) {
+    throw new Error("No response from OpenAI");
+  }
+
   return JSON.parse(output);
 }
