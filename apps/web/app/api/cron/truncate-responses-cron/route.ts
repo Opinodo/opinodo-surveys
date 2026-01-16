@@ -37,6 +37,6 @@ export async function POST() {
   } catch (error) {
     const errMsg = error instanceof Error ? (error.stack ?? error.message) : JSON.stringify(error);
     logger.error(`Error truncating response tables from cron job: ${errMsg}`);
-    return responses.internalServerErrorResponse("Error truncating response tables from cron job", error);
+    return responses.internalServerErrorResponse("Error truncating response tables from cron job");
   }
 }
