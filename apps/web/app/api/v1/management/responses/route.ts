@@ -25,8 +25,34 @@ export const GET = withV1ApiWrapper({
   }) => {
     const searchParams = req.nextUrl.searchParams;
     const surveyId = searchParams.get("surveyId");
-    const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined;
-    const offset = searchParams.get("skip") ? Number(searchParams.get("skip")) : undefined;
+
+    // Validate and sanitize pagination parameters
+    const MAX_LIMIT = 1000;
+    let limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined;
+    let offset = searchParams.get("skip") ? Number(searchParams.get("skip")) : undefined;
+
+    // Validate limit
+    if (limit !== undefined) {
+      if (isNaN(limit) || limit < 1) {
+        return {
+          response: responses.badRequestResponse("Invalid limit: must be a positive number"),
+        };
+      }
+      if (limit > MAX_LIMIT) {
+        return {
+          response: responses.badRequestResponse(`Invalid limit: maximum allowed is ${MAX_LIMIT}`),
+        };
+      }
+    }
+
+    // Validate offset
+    if (offset !== undefined) {
+      if (isNaN(offset) || offset < 0) {
+        return {
+          response: responses.badRequestResponse("Invalid offset: must be a non-negative number"),
+        };
+      }
+    }
 
     try {
       let allResponses: TResponse[] = [];
