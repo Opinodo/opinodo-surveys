@@ -19,7 +19,7 @@ const nextConfig = {
   basePath: process.env.BASE_PATH || undefined,
   output: "standalone",
   poweredByHeader: false,
-  productionBrowserSourceMaps: true,
+  productionBrowserSourceMaps: false,
   serverExternalPackages: ["@aws-sdk", "@opentelemetry/instrumentation", "pino", "pino-pretty"],
   outputFileTracingIncludes: {
     "/api/auth/**/*": ["../../node_modules/jose/**/*"],
