@@ -48,6 +48,47 @@ const BUTTON_TRANSLATIONS: { [key: string]: { Next: string; Back: string } } = {
   "zh-Hans": { Next: "下一步", Back: "返回" },
 };
 
+async function translateBatch(
+  languageCodes: string[],
+  textsToTranslate: { [key: string]: string }
+): Promise<{ [languageCode: string]: { [key: string]: string } }> {
+  const prompt = `
+Translate the following English phrases into multiple languages.
+Return ONLY the translations as a JSON object in the format:
+{ "fr": { ... }, "es": { ... }, ... }
+
+Use Cyrillic script for Serbian ("sr").
+
+Phrases:
+${JSON.stringify(textsToTranslate, null, 2)}
+
+Languages: ${languageCodes.join(", ")}
+`;
+
+  const response = await openai.responses.create({
+    model: "gpt-4.1-mini",
+    input: [
+      {
+        role: "system",
+        content: "You are a translation engine. Return ONLY valid JSON. No markdown. No explanations.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    temperature: 0.2,
+  });
+
+  const output = response.output_text;
+
+  if (!output) {
+    throw new Error("No response from OpenAI");
+  }
+
+  return JSON.parse(output);
+}
+
 export async function translateTextMulti(
   targetLanguageCodes: string[],
   texts: { [key: string]: string }
@@ -81,41 +122,21 @@ export async function translateTextMulti(
     return result;
   }
 
-  const prompt = `
-Translate the following English phrases into multiple languages.
-Return ONLY the translations as a JSON object in the format:
-{ "fr": { ... }, "es": { ... }, ... }
-
-Use Cyrillic script for Serbian ("sr").
-
-Phrases:
-${JSON.stringify(textsToTranslate, null, 2)}
-
-Languages: ${targetLanguageCodes.join(", ")}
-`;
-
-  const response = await openai.responses.create({
-    model: "gpt-4.1-mini",
-    input: [
-      {
-        role: "system",
-        content: "You are a translation engine. Return ONLY valid JSON. No markdown. No explanations.",
-      },
-      {
-        role: "user",
-        content: prompt,
-      },
-    ],
-    temperature: 0.2,
-  });
-
-  const output = response.output_text;
-
-  if (!output) {
-    throw new Error("No response from OpenAI");
+  // Batch languages in groups of 10
+  const BATCH_SIZE = 10;
+  const batches: string[][] = [];
+  for (let i = 0; i < targetLanguageCodes.length; i += BATCH_SIZE) {
+    batches.push(targetLanguageCodes.slice(i, i + BATCH_SIZE));
   }
 
-  const translationResult = JSON.parse(output);
+  // Process all batches and wait for all to complete
+  const batchResults = await Promise.all(batches.map((batch) => translateBatch(batch, textsToTranslate)));
+
+  // Merge all batch results
+  const translationResult: { [languageCode: string]: { [key: string]: string } } = {};
+  for (const batchResult of batchResults) {
+    Object.assign(translationResult, batchResult);
+  }
 
   // Merge button translations back in
   for (const langCode of targetLanguageCodes) {
