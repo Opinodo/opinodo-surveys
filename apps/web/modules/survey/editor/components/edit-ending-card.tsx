@@ -211,11 +211,17 @@ export const EditEndingCard = ({
       .map((lang) => lang.language.code)
       .filter((code) => code !== "en" && code !== "default");
 
+    // Show loading toast to indicate translation is in progress
+    const toastId = toast.loading(
+      `Translating to ${languageCodes.length} language${languageCodes.length > 1 ? "s" : ""}...`
+    );
+
     try {
       const result = await translateTextAction({
         targetLanguageCodes: languageCodes,
         texts: textsToTranslate,
       });
+      toast.dismiss(toastId);
       if (!result?.data) {
         throw new Error("Translation failed");
       }
@@ -229,6 +235,7 @@ export const EditEndingCard = ({
       setLocalSurvey(updatedSurvey);
       toast.success("Ending card translated.");
     } catch (error) {
+      toast.dismiss(toastId);
       toast.error("Translation failed.");
       console.error("Translation error:", error);
     } finally {

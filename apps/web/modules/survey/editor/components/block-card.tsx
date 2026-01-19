@@ -294,11 +294,17 @@ export const BlockCard = ({
       return;
     }
 
+    // Show loading toast to indicate translation is in progress
+    const toastId = toast.loading(
+      `Translating to ${languageCodes.length} language${languageCodes.length > 1 ? "s" : ""}...`
+    );
+
     try {
       const result = await translateTextAction({
         targetLanguageCodes: languageCodes,
         texts: textsToTranslate,
       });
+      toast.dismiss(toastId);
       if (!result?.data) {
         throw new Error("Translation failed");
       }
@@ -323,6 +329,7 @@ export const BlockCard = ({
       setLocalSurvey(updatedSurvey);
       toast.success("Block translated successfully.");
     } catch (error) {
+      toast.dismiss(toastId);
       toast.error("Translation failed.");
       console.error("Translation error:", error);
     } finally {
