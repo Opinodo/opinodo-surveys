@@ -36,6 +36,11 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang={locale} translate="no">
       <body className="flex h-dvh flex-col transition-all ease-in-out">
+        {/* Initialize adsbygoogle array before library loads */}
+        <Script id="adsense-init" strategy="beforeInteractive">
+          {`window.adsbygoogle = window.adsbygoogle || [];`}
+        </Script>
+
         {/* Load Google AdSense */}
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1574672111746393"

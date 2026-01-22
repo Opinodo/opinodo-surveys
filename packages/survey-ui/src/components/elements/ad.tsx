@@ -47,11 +47,10 @@ function Ad({
   showLess = "Show less",
 }: Readonly<AdProps>): React.JSX.Element {
   React.useEffect(() => {
-    if (window.adsbygoogle && Array.isArray(window.adsbygoogle)) {
-      try {
-        window.adsbygoogle.push({});
-      } catch (e) {}
-    }
+    try {
+      // Initialize the array if it doesn't exist and push
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (e) {}
   }, []);
 
   return (
