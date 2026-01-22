@@ -36,30 +36,15 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang={locale} translate="no">
       <body className="flex h-dvh flex-col transition-all ease-in-out">
-        {/* Initialize googletag FIRST */}
-        <Script id="googletag-init" strategy="beforeInteractive">
-          {`window.googletag = window.googletag || { cmd: [] };`}
-        </Script>
-
-        {/* Load GPT library */}
+        {/* Load Google AdSense */}
         <Script
-          src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1574672111746393"
           strategy="afterInteractive"
+          crossOrigin="anonymous"
           async
         />
 
-        {/* Enable GPT services after library loads */}
-        <Script id="googletag-enable" strategy="afterInteractive">
-          {`
-            window.googletag = window.googletag || { cmd: [] };
-            window.googletag.cmd.push(function() {
-              window.googletag.pubads().enableSingleRequest();
-              window.googletag.enableServices();
-            });
-          `}
-        </Script>
-
-        {/* Then GTM */}
+        {/* GTM */}
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],

@@ -191,11 +191,6 @@ export type TSurveyCTAElement = z.infer<typeof ZSurveyCTAElement>;
 export const ZSurveyAdElement = ZSurveyElementBase.extend({
   type: z.literal(TSurveyElementTypeEnum.Ad),
   buttonLabel: ZI18nString.optional(),
-  adUnitPath: z.string().optional(),
-  adSizes: z.array(z.union([z.string(), z.array(z.number())])).optional(),
-  adDivId: z.string().optional(),
-  minWidth: z.string().optional(),
-  minHeight: z.string().optional(),
 });
 
 export type TSurveyAdElement = z.infer<typeof ZSurveyAdElement>;

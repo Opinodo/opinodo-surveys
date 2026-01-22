@@ -53,11 +53,6 @@ export function AdElement({
         required={element.required}
         imageUrl={element.imageUrl}
         videoUrl={element.videoUrl}
-        adUnitPath={element.adUnitPath}
-        adSizes={element.adSizes}
-        adDivId={element.adDivId}
-        minWidth={element.minWidth}
-        minHeight={element.minHeight}
         dir={dir}
       />
     </form>

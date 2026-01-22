@@ -2,21 +2,9 @@ import * as React from "react";
 import { AdExplanation } from "@/components/elements/ad-explanation";
 import { ElementHeader } from "@/components/general/element-header";
 
-interface GoogleTagSlot {
-  addService: (service: GoogleTagService) => GoogleTagSlot;
-}
-
-type GoogleTagService = Record<string, unknown>;
-
 declare global {
   interface Window {
-    googletag?: {
-      cmd: (() => void)[];
-      defineSlot: (adUnitPath: string, size: (string | number[])[], divId: string) => GoogleTagSlot | null;
-      display: (divId: string) => void;
-      pubads: () => GoogleTagService;
-      enableServices: () => void;
-    };
+    adsbygoogle?: Record<string, unknown>[];
   }
 }
 
@@ -35,16 +23,6 @@ interface AdProps {
   imageUrl?: string;
   /** Video URL to display above the headline */
   videoUrl?: string;
-  /** Google Ad Manager ad unit path */
-  adUnitPath?: string;
-  /** Ad sizes configuration */
-  adSizes?: (string | number[])[];
-  /** ID for the ad container div */
-  adDivId?: string;
-  /** Minimum width for the ad container */
-  minWidth?: string;
-  /** Minimum height for the ad container */
-  minHeight?: string;
   /** Text for the button that expands the explanation */
   whyAmISeeingThisAd?: string;
   /** Title shown when explanation is expanded */
@@ -63,28 +41,18 @@ function Ad({
   dir = "auto",
   imageUrl,
   videoUrl,
-  adUnitPath = "/9505169/SURVEYS_ALL_MIDPAGE_INCONTENT_RESP",
-  adSizes = ["fluid", [320, 100], [300, 250], [336, 280]],
-  adDivId = "div-gpt-surveys-midpage",
-  minWidth = "300px",
-  minHeight = "100px",
   whyAmISeeingThisAd = "Why am I seeing this ad?",
   adExplanation = "About This Ad",
   adDescription = "Ads help support the surveys you take. We show relevant ads based on your interests and survey responses.",
   showLess = "Show less",
 }: Readonly<AdProps>): React.JSX.Element {
   React.useEffect(() => {
-    if (window.googletag?.cmd) {
-      window.googletag.cmd.push(() => {
-        const pubadsService = window.googletag?.pubads();
-        if (pubadsService) {
-          window.googletag?.defineSlot(adUnitPath, adSizes, adDivId)?.addService(pubadsService);
-
-          window.googletag?.display(adDivId);
-        }
-      });
+    if (window.adsbygoogle && Array.isArray(window.adsbygoogle)) {
+      try {
+        window.adsbygoogle.push({});
+      } catch (e) {}
     }
-  }, [adUnitPath, adSizes, adDivId]);
+  }, []);
 
   return (
     <div className="w-full space-y-4" id={elementId} dir={dir}>
@@ -97,9 +65,16 @@ function Ad({
         videoUrl={videoUrl}
       />
 
-      {/* Ad Container */}
+      {/* AdSense Ad Container */}
       <div className="w-full">
-        <div id={adDivId} style={{ minWidth, minHeight }} />
+        <ins
+          className="adsbygoogle"
+          style={{ display: "block" }}
+          data-ad-client="ca-pub-1574672111746393"
+          data-ad-slot="3700116888"
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
       </div>
 
       {/* Ad Explanation */}
