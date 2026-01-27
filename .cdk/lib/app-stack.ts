@@ -354,21 +354,15 @@ export class AppStack extends Stack {
         // Grant the Lambda permission to read the secret
         cronSecret.grantRead(truncateResponsesCronLambda);
 
-        // Create EventBridge rule to trigger the Lambda
-        // For staging: every 5 minutes for testing
-        // For production: monthly (1st day of month at 00:00 UTC)
+        // Create EventBridge rule to trigger the Lambda monthly (1st day of month at 00:00 UTC)
         const truncateResponsesCronRule = new events.Rule(this, 'TruncateResponsesCronRule', {
-            schedule: props.environmentName === 'production'
-                ? events.Schedule.cron({
-                    minute: '0',
-                    hour: '0',
-                    day: '1',
-                    month: '*',
-                })
-                : events.Schedule.rate(Duration.minutes(5)),
-            description: props.environmentName === 'production'
-                ? 'Triggers the truncate-responses-cron endpoint once per month'
-                : 'Triggers the truncate-responses-cron endpoint every 5 minutes (staging test)',
+            schedule: events.Schedule.cron({
+                minute: '0',
+                hour: '0',
+                day: '1',
+                month: '*',
+            }),
+            description: 'Triggers the truncate-responses-cron endpoint once per month',
         });
 
         // Add the Lambda as a target for the EventBridge rule
