@@ -388,17 +388,27 @@ export const BlockCard = ({
     if (element.type === TSurveyElementTypeEnum.Matrix && "rows" in element && "columns" in element) {
       if (Array.isArray(element.rows)) {
         element.rows.forEach((row, idx) => {
-          if (row?.["default"]) {
-            textsToTranslate[`${prefix}row_${idx}`] = row["default"];
+          if (row.label?.["default"]) {
+            textsToTranslate[`${prefix}row_${idx}`] = row.label["default"];
           }
         });
       }
       if (Array.isArray(element.columns)) {
         element.columns.forEach((col, idx) => {
-          if (col?.["default"]) {
-            textsToTranslate[`${prefix}column_${idx}`] = col["default"];
+          if (col.label?.["default"]) {
+            textsToTranslate[`${prefix}column_${idx}`] = col.label["default"];
           }
         });
+      }
+    }
+
+    // Extract rating labels
+    if (element.type === TSurveyElementTypeEnum.Rating) {
+      if ("lowerLabel" in element && element.lowerLabel?.["default"]) {
+        textsToTranslate[`${prefix}lowerLabel`] = element.lowerLabel["default"];
+      }
+      if ("upperLabel" in element && element.upperLabel?.["default"]) {
+        textsToTranslate[`${prefix}upperLabel`] = element.upperLabel["default"];
       }
     }
 
@@ -446,18 +456,28 @@ export const BlockCard = ({
       if (Array.isArray(element.rows)) {
         element.rows.forEach((row, idx) => {
           const translatedRow = translatedTexts[`${prefix}row_${idx}`];
-          if (row && translatedRow) {
-            row[languageCode] = translatedRow;
+          if (row.label && translatedRow) {
+            row.label[languageCode] = translatedRow;
           }
         });
       }
       if (Array.isArray(element.columns)) {
         element.columns.forEach((col, idx) => {
           const translatedCol = translatedTexts[`${prefix}column_${idx}`];
-          if (col && translatedCol) {
-            col[languageCode] = translatedCol;
+          if (col.label && translatedCol) {
+            col.label[languageCode] = translatedCol;
           }
         });
+      }
+    }
+
+    // Update rating labels
+    if (element.type === TSurveyElementTypeEnum.Rating) {
+      if ("lowerLabel" in element && element.lowerLabel && translatedTexts[`${prefix}lowerLabel`]) {
+        element.lowerLabel[languageCode] = translatedTexts[`${prefix}lowerLabel`];
+      }
+      if ("upperLabel" in element && element.upperLabel && translatedTexts[`${prefix}upperLabel`]) {
+        element.upperLabel[languageCode] = translatedTexts[`${prefix}upperLabel`];
       }
     }
   };
