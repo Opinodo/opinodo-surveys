@@ -9,6 +9,9 @@ import {
     aws_elasticache as elasticcache,
     aws_s3 as s3,
     aws_efs as efs,
+    aws_events as events,
+    aws_events_targets as targets,
+    aws_secretsmanager as secretsmanager,
     CfnOutput,
     CustomResource,
     Duration,
@@ -203,6 +206,14 @@ export class AppStack extends Stack {
             logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs`, logGroup: migrationLogGroup}),
         });
 
+        // Reference the CRON_SECRET from AWS Secrets Manager for the web app
+        const cronSecretName = `${props.environmentName}/cron_secret`;
+        const cronSecret = secretsmanager.Secret.fromSecretNameV2(
+            this,
+            'CronSecretForWeb',
+            cronSecretName
+        );
+
         const webTask = new ecs.FargateTaskDefinition(this, `${projectName}-web`, {
             family: `${projectName}-web`,
             memoryLimitMiB: props.taskMemory,
@@ -256,6 +267,10 @@ export class AppStack extends Stack {
             environmentFiles: [
                 ecs.EnvironmentFile.fromBucket(props.bucket, props.envFileName),
             ],
+            secrets: {
+                // Inject CRON_SECRET from Secrets Manager
+                CRON_SECRET: ecs.Secret.fromSecretsManager(cronSecret),
+            },
             logging: ecs.LogDriver.awsLogs({streamPrefix: `ecs`, logGroup: webLogGroup}),
             portMappings: [{containerPort: 3000}],
             command: [
@@ -318,6 +333,46 @@ export class AppStack extends Stack {
         scalableTarget.scaleOnCpuUtilization(`${projectName}-ScaleUpCPU`, {
             targetUtilizationPercent: 60,
         });
+
+        // Create a Lambda function that calls the truncate-responses-cron endpoint
+        // Use the same cronSecret reference we created earlier for the web container
+        const truncateResponsesCronLambda = new NodejsFunction(this, "TruncateResponsesCronLambda", {
+            runtime: aws_lambda.Runtime.NODEJS_20_X,
+            entry: path.join(__dirname, `/../lambda/truncate-responses-cron.ts`),
+            handler: "handler",
+            retryAttempts: 0,
+            environment: {
+                // Use load balancer DNS name or fallback to environment-specific URL
+                WEBAPP_URL: props.environmentName === 'production'
+                    ? 'https://surveys.digiopinion.com'
+                    : 'https://staging.surveys.digiopinion.com',
+                CRON_SECRET: cronSecret.secretValue.unsafeUnwrap(),
+            },
+            timeout: Duration.seconds(30),
+        });
+
+        // Grant the Lambda permission to read the secret
+        cronSecret.grantRead(truncateResponsesCronLambda);
+
+        // Create EventBridge rule to trigger the Lambda
+        // For staging: every 5 minutes for testing
+        // For production: monthly (1st day of month at 00:00 UTC)
+        const truncateResponsesCronRule = new events.Rule(this, 'TruncateResponsesCronRule', {
+            schedule: props.environmentName === 'production'
+                ? events.Schedule.cron({
+                    minute: '0',
+                    hour: '0',
+                    day: '1',
+                    month: '*',
+                })
+                : events.Schedule.rate(Duration.minutes(5)),
+            description: props.environmentName === 'production'
+                ? 'Triggers the truncate-responses-cron endpoint once per month'
+                : 'Triggers the truncate-responses-cron endpoint every 5 minutes (staging test)',
+        });
+
+        // Add the Lambda as a target for the EventBridge rule
+        truncateResponsesCronRule.addTarget(new targets.LambdaFunction(truncateResponsesCronLambda));
 
         const logReceivingLambdaFunction = new NodejsFunction(this, "LogReceivingLambdaFunction", {
             runtime: aws_lambda.Runtime.NODEJS_20_X,

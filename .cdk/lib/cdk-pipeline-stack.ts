@@ -71,10 +71,6 @@ export class CdkPipelineStack extends Stack {
                             type: BuildEnvironmentVariableType.PLAINTEXT,
                             value: "--max_old_space_size=16384"
                         },
-                        "CRON_SECRET": {
-                            type: BuildEnvironmentVariableType.PLAINTEXT,
-                            value: "bd7bd817feff04e40b3112dc373ac5dbecca81afc4b9f471b40292a4bb64cf16"
-                        },
                         "STAGING_DATABASE_URL": {
                             type: BuildEnvironmentVariableType.SECRETS_MANAGER,
                             value: "arn:aws:secretsmanager:eu-central-1:627299429402:secret:staging/database_url-J1rGRE",
