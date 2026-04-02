@@ -45,6 +45,8 @@ const defaultFeatures: TEnterpriseLicenseFeatures = {
   saml: false,
   spamProtection: false,
   ai: false,
+  aiSmartTools: false,
+  aiDataAnalysis: false,
   auditLogs: false,
   multiLanguageSurveys: false,
   accessControl: false,

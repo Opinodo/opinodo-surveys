@@ -14,9 +14,11 @@ const ZEnterpriseLicenseFeatures = z.object({
   sso: z.boolean(),
   saml: z.boolean(),
   spamProtection: z.boolean(),
-  ai: z.boolean(),
+  ai: z.boolean().optional().default(false),
+  aiSmartTools: z.boolean().optional().default(false),
+  aiDataAnalysis: z.boolean().optional().default(false),
   auditLogs: z.boolean(),
-  multiLanguageSurveys: z.boolean(),
+  multiLanguageSurveys: z.boolean().optional().default(false),
   accessControl: z.boolean(),
   quotas: z.boolean(),
 });
